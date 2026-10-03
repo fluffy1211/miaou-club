@@ -1,0 +1,52 @@
+[
+  {
+    "slug": "maine-coon",
+    "file": "maine-coon.jpeg",
+    "title": "Mâle_Black_Silver_Blotched_Tabby.jpeg",
+    "source": "https://commons.wikimedia.org/wiki/File:M%C3%A2le_Black_Silver_Blotched_Tabby.jpeg",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/87/M%C3%A2le_Black_Silver_Blotched_Tabby.jpeg",
+    "author": "",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  {
+    "slug": "siamese",
+    "file": "siamese.jpg",
+    "title": "Siamese_cat_Vaillante.JPG",
+    "source": "https://commons.wikimedia.org/wiki/File:Siamese_cat_Vaillante.JPG",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/1/16/Siamese_cat_Vaillante.JPG",
+    "author": "Meekahoo",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+  },
+  {
+    "slug": "bengal",
+    "file": "bengal.jpg",
+    "title": "Paintedcats_Red_Star_standing.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Paintedcats_Red_Star_standing.jpg",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/b/ba/Paintedcats_Red_Star_standing.jpg",
+    "author": "User:Lightburst",
+    "license": "CC BY-SA 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0"
+  },
+  {
+    "slug": "persian",
+    "file": "persian.jpg",
+    "title": "Persialainen.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Persialainen.jpg",
+    "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/8/81/Persialainen.jpg",
+    "author": "The original uploader was Lajoma at Finnish Wikipedia.",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/"
+  },
+  {
+    "slug": "british-shorthair",
+    "file": "british-shorthair.jpg",
+    "title": "Mystica_from_British_Empire_Cattery.jpg",
+    "source": "https://commons.wikimedia.org/wiki/File:Mystica_from_British_Empire_Cattery.jpg",
+    "imageUrl": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2d/Mystica_from_British_Empire_Cattery.jpg/1280px-Mystica_from_British_Empire_Cattery.jpg",
+    "author": "BritishEmpire",
+    "license": "CC BY-SA 3.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0"
+  }
+]

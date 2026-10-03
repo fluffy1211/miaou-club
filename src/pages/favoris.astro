@@ -1,0 +1,31 @@
+---
+import Layout from "../layouts/Layout.astro";
+import BreedGrid from "../components/BreedGrid.astro";
+import Icon from "../components/Icon.astro";
+import { getBreeds } from "../lib/breeds";
+const breeds = await getBreeds();
+---
+
+<Layout
+  title="Mes favoris"
+  description="Retrouve les races que tu as ajoutées à ton carnet."
+  noindex
+>
+  <p id="favorites-meta" hidden></p>
+  <div id="favorites-filled" hidden>
+    <BreedGrid breeds={breeds} id="favorites-grid" />
+  </div>
+  <section class="empty" id="favorites-empty">
+    <Icon name="doodle" />
+    <h2>Ton carnet attend ses premiers chats.</h2>
+    <p>Touche le cœur d’une race pour la retrouver ici.</p>
+    <a class="button" href="/races/">
+      Découvrir les races <Icon />
+    </a>
+  </section>
+  <noscript>
+    <p class="no-js-note">
+      Active JavaScript pour enregistrer et retrouver tes favoris.
+    </p>
+  </noscript>
+</Layout>

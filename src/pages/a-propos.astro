@@ -1,0 +1,95 @@
+---
+import Layout from "../layouts/Layout.astro";
+import { getBreeds } from "../lib/breeds";
+const breeds = await getBreeds();
+---
+
+<Layout
+  title="À propos & sources"
+  description="Les informations, références et crédits photo de Miaou Club."
+>
+  <div class="about-layout">
+    <section class="about-intro tape">
+      <h2>Le club des curieux</h2>
+      <p>
+        Miaou Club est un carnet pour découvrir les races de chats et garder tes
+        coups de cœur.
+      </p>
+      <p>Des photos, des fiches à feuilleter et des rencontres au hasard.</p>
+    </section>
+    <div class="about-sections">
+      <section>
+        <h2>Les informations</h2>
+        <p>
+          Le pays d’origine, le pelage, le caractère, le poids et la longévité
+          indicative proviennent de l’API{" "}
+          <a
+            class="underlined"
+            href="https://docs.thecatapi.com/docs/examples/breeds"
+            target="_blank"
+            rel="noopener"
+          >
+            TheCatAPI
+          </a>
+          . Les présentations françaises résument les descriptions de TheCatAPI
+          ou s’appuient sur la{" "}
+          <a
+            class="underlined"
+            href="https://cfa.org/breeds/"
+            target="_blank"
+            rel="noopener"
+          >
+            Cat Fanciers’ Association
+          </a>
+          . La source est indiquée sur chaque fiche.
+        </p>
+      </section>
+      <section>
+        <h2>Les photos</h2>
+        <p>
+          Les photos proviennent de Wikimedia Commons ou de TheCatAPI. Leurs
+          références disponibles sont regroupées ci-dessous. Certaines races
+          attendent encore leur portrait.
+        </p>
+      </section>
+      <section>
+        <h2>Ton carnet</h2>
+        <p>
+          Les favoris sont enregistrés dans ton navigateur. Tu peux les retirer
+          en touchant à nouveau le cœur.
+        </p>
+      </section>
+    </div>
+  </div>
+  <details class="credits">
+    <summary>Crédits des photos</summary>
+    <div class="credits-list">
+      {breeds
+        .filter((b) => b.credit)
+        .map((b) => (
+          <div class="credit-item">
+            <strong>{b.name}</strong>
+            <a href={b.credit!.source} target="_blank" rel="noopener">
+              {b.credit!.title} — {b.credit!.provider}
+            </a>{" "}
+            — {b.credit!.author || "Auteur non renseigné par la source"}
+            {b.credit!.licenseUrl ? (
+              <>
+                {" · "}
+                <a href={b.credit!.licenseUrl} target="_blank" rel="noopener">
+                  {b.credit!.license}
+                </a>
+              </>
+            ) : (
+              <span class="block">
+                Licence individuelle non précisée par TheCatAPI.
+              </span>
+            )}
+            <span class="block">
+              Image redimensionnée et convertie en WebP pour le site.
+            </span>
+          </div>
+        ))}
+    </div>
+  </details>
+</Layout>

@@ -1,0 +1,22 @@
+---
+import type { Breed } from "../lib/breeds";
+interface Props {
+  breed: Breed;
+  compact?: boolean;
+}
+const { breed, compact = false } = Astro.props;
+---
+
+<button
+  class={compact ? "favorite-toggle icon-button" : "button secondary"}
+  data-favorite={breed.id}
+  data-name={breed.name}
+  aria-pressed="false"
+  aria-label={`Ajouter ${breed.name} aux favoris`}
+>
+  {compact ? (
+    <svg class="favorite-heart" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M20.8 4.6a5.2 5.2 0 0 0-7.4 0L12 6l-1.4-1.4a5.2 5.2 0 0 0-7.4 7.4L12 20.8l8.8-8.8a5.2 5.2 0 0 0 0-7.4Z" />
+    </svg>
+  ) : "♡ Ajouter aux favoris"}
+</button>

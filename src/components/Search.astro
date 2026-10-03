@@ -1,0 +1,26 @@
+---
+import Icon from "./Icon.astro";
+interface Props {
+  id?: string;
+}
+const { id = "search" } = Astro.props;
+---
+
+<div class="search-wrap">
+  <form class="search" action="/races/" method="get" role="search">
+    <Icon name="search" />
+    <label for={id} class="sr-only">
+      Chercher une race
+    </label>
+    <input
+      id={id}
+      name="q"
+      type="search"
+      placeholder="Chercher une race…"
+      autocomplete="off"
+      aria-controls={`${id}-suggestions`}
+      aria-expanded="false"
+    />
+  </form>
+  <div class="suggestions" id={`${id}-suggestions`} hidden></div>
+</div>

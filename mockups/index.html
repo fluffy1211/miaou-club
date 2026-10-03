@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#FFF8ED">
+  <title>Miaou Club — Maquette</title>
+  <link rel="stylesheet" href="assets/fonts.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#main">Aller au contenu</a>
+  <header class="site-header container">
+    <a class="logo" href="#/" aria-label="Miaou Club, accueil"><svg viewBox="0 0 44 44" aria-hidden="true"><path d="M8 20 6 5l13 9h7L38 5l-2 17c5 15-27 22-28-2Z"/><path d="m14 25 4 1m10-1-4 1m-5 6q3 3 6 0"/></svg>miaou club</a>
+    <button class="menu-toggle icon-button" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="navigation"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+    <nav id="navigation" aria-label="Navigation principale">
+      <a href="#/races" data-nav="races">Les races</a>
+      <a href="#/a-propos" data-nav="a-propos">Le club</a>
+      <a class="nav-favorites" href="#/favoris" data-nav="favoris"><span aria-hidden="true">♡</span> Mes favoris <span class="favorite-count" hidden></span></a>
+    </nav>
+  </header>
+  <main id="main" tabindex="-1" class="container"></main>
+  <footer class="site-footer container"><a class="logo" href="#/">miaou club</a><a href="#/a-propos">À propos & sources</a></footer>
+  <div class="toast" role="status" aria-live="polite"></div>
+  <dialog id="photo-dialog"><button class="dialog-close icon-button" aria-label="Fermer la photo">×</button><img src="assets/figue-cover.jpg" alt=""><p></p></dialog>
+  <script src="app.js"></script>
+</body>
+</html>

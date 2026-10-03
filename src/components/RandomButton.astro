@@ -1,0 +1,13 @@
+---
+import Icon from "./Icon.astro";
+interface Props {
+  label?: string;
+  white?: boolean;
+}
+const { label = "Surprends-moi", white = false } = Astro.props;
+---
+
+<button class:list={["button", { white }]} data-random>
+  {label}
+  <Icon />
+</button>
