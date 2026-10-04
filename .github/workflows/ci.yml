@@ -26,6 +26,7 @@ jobs:
           --health-cmd "pg_isready -U miaou_test -d miaou_test"
           --health-interval 2s --health-timeout 3s --health-retries 30
     env:
+      MIAOU_OFFLINE_CATALOG: "1"
       TEST_DATABASE_URL: postgresql://miaou_test:local-test-only@127.0.0.1:54330/miaou_test
       STORYBOOK_DISABLE_TELEMETRY: "1"
     steps:
