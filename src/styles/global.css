@@ -1590,3 +1590,12 @@ main:focus {
 .credits-list {
   overflow-wrap: anywhere;
 }
+
+.access-notice {
+  max-width: 480px;
+  padding: 32px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: var(--white);
+  box-shadow: var(--shadow-paper);
+}

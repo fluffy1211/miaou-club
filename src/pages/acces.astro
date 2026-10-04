@@ -1,0 +1,30 @@
+---
+import { AccessNotice } from "../components/AccessNotice";
+import "../styles/global.css";
+const unavailable = Astro.url.searchParams.get("etat") === "indisponible";
+Astro.response.headers.set("Cache-Control", "no-store");
+---
+
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Miaou Club — accès</title>
+    <link rel="stylesheet" href="/fonts/fonts.css" />
+  </head>
+  <body>
+    <main>
+      <AccessNotice unavailable={unavailable} />
+    </main>
+  </body>
+</html>
+<style>
+  main {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+</style>

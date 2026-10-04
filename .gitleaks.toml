@@ -1,0 +1,10 @@
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Generated or dependency directories; source is scanned"
+paths = ['''(^|/)(node_modules|\.git|\.cache|dist|storybook-static|test-results|playwright-report)/''']
+
+[[allowlists]]
+description = "Local private environment and editor state; examples stay scanned"
+paths = ['''(^|/)\.env$''', '''(^|/)\.codex/''']

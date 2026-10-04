@@ -6,3 +6,6 @@ dist/
 .env
 .env.*
 !.env.example
+storybook-static/
+test-results/
+playwright-report/

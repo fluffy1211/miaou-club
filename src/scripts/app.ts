@@ -28,9 +28,8 @@ const catalogGrid = document.querySelector<HTMLElement>("#catalog-grid");
 const catalogCards = Array.from(
   catalogGrid?.querySelectorAll<HTMLElement>("[data-breed]") || [],
 );
-const dailyDiscoveries = document.querySelector<HTMLElement>(
-  "#daily-discoveries",
-);
+const dailyDiscoveries =
+  document.querySelector<HTMLElement>("#daily-discoveries");
 if (dailyDiscoveries) {
   const date = new Intl.DateTimeFormat("fr-CA", {
     year: "numeric",
@@ -241,7 +240,8 @@ document.addEventListener("click", (event) => {
   if (button?.hasAttribute("data-favorite")) {
     const id = button.dataset.favorite!;
     const previous = saved.has(id);
-    previous ? saved.delete(id) : saved.add(id);
+    if (previous) saved.delete(id);
+    else saved.add(id);
     let persisted = true;
     try {
       localStorage.setItem(storageKey, JSON.stringify([...saved]));

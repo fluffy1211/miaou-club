@@ -11,6 +11,9 @@ const { breeds, id, visibleCount } = Astro.props;
 
 <div class="breed-grid" id={id}>
   {breeds.map((breed, index) => (
-    <BreedCard breed={breed} hidden={visibleCount !== undefined && index >= visibleCount} />
+    <BreedCard
+      breed={breed}
+      hidden={visibleCount !== undefined && index >= visibleCount}
+    />
   ))}
 </div>

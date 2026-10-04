@@ -233,7 +233,8 @@ export function catalogRecords(records: ApiBreed[]) {
 
 export async function loadApiBreeds(editorial: EditorialBreed[]) {
   const key = process.env.CAT_API_KEY?.trim();
-  if (!key)
+  const offline = process.env.MIAOU_OFFLINE_CATALOG === "1";
+  if (!key && !offline)
     throw new Error(
       "[Miaou Club] CAT_API_KEY manquante. Copie .env.example vers .env et renseigne ta clé TheCatAPI.",
     );
@@ -251,11 +252,13 @@ export async function loadApiBreeds(editorial: EditorialBreed[]) {
     fetchApi({
       name: "thecatapi-breeds-full",
       url: "https://api.thecatapi.com/v1/breeds",
-      headers: { "x-api-key": key },
+      headers: key ? { "x-api-key": key } : {},
+      offline,
       parse: (value) => catApiSchema.parse(value),
     }),
     fetchApi({
       name: "wikimedia-images",
+      offline,
       url: commonsUrl.href,
       parse: (value) => commonsSchema.parse(value),
     }),
@@ -284,7 +287,7 @@ export async function loadApiBreeds(editorial: EditorialBreed[]) {
       throw new Error(`Photo Wikimedia introuvable : ${item.commonsFile}`);
     if (new URL(image.url).hostname !== "upload.wikimedia.org")
       throw new Error("Hôte de photo Wikimedia inattendu.");
-    const { catApiId, commonsFile, ...content } = item;
+    const { catApiId, commonsFile: _commonsFile, ...content } = item;
     return {
       ...content,
       sourceLabel: "Cat Fanciers’ Association",
@@ -354,7 +357,7 @@ export async function loadApiBreeds(editorial: EditorialBreed[]) {
         lifeSpan: record.life_span.replace(/\s*-\s*/g, "–"),
         weight: record.weight?.metric.replace(/\s*-\s*/g, "–"),
         temperament: frenchTemperament(record.temperament),
-      source: "https://docs.thecatapi.com/docs/examples/breeds",
+        source: "https://docs.thecatapi.com/docs/examples/breeds",
         sourceLabel: "TheCatAPI",
         api: {
           name: "TheCatAPI",

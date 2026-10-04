@@ -1,0 +1,55 @@
+name: miaou-local
+services:
+  db:
+    image: postgres:17.7-alpine
+    environment:
+      POSTGRES_USER: miaou
+      POSTGRES_PASSWORD: local-development-only
+      POSTGRES_DB: miaou_dev
+    ports:
+      - "127.0.0.1:54329:5432"
+    volumes:
+      - miaou-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U miaou -d miaou_dev"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  db-test:
+    image: postgres:17.7-alpine
+    profiles: [test]
+    environment:
+      POSTGRES_USER: miaou_test
+      POSTGRES_PASSWORD: local-test-only
+      POSTGRES_DB: miaou_test
+    ports:
+      - "127.0.0.1:54330:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U miaou_test -d miaou_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+  app:
+    profiles: [app]
+    build:
+      context: .
+      target: development
+    ports:
+      - "127.0.0.1:${MIAOU_APP_PORT:-4321}:4321"
+    environment:
+      DATABASE_URL: postgresql://miaou:local-development-only@db:5432/miaou_dev
+      MIAOU_OFFLINE_CATALOG: "1"
+      BETTER_AUTH_URL: http://localhost:${MIAOU_APP_PORT:-4321}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:-}
+    volumes:
+      - ./src:/app/src
+      - ./server/src:/app/server/src
+      - ./packages:/app/packages
+      - ./public:/app/public:ro
+    depends_on:
+      db:
+        condition: service_healthy
+volumes:
+  miaou-db:

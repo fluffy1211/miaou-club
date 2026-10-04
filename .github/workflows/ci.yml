@@ -1,0 +1,68 @@
+name: CI
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17.7-alpine
+        env:
+          POSTGRES_USER: miaou_test
+          POSTGRES_PASSWORD: local-test-only
+          POSTGRES_DB: miaou_test
+        ports: [54330:5432]
+        options: >-
+          --health-cmd "pg_isready -U miaou_test -d miaou_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgresql://miaou_test:local-test-only@127.0.0.1:54330/miaou_test
+      STORYBOOK_DISABLE_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium webkit
+      - run: npm run verify:full
+      - run: docker build --target runtime -t "miaou-candidate:${GITHUB_SHA}" .
+      - name: Test runtime candidate
+        run: MIAOU_IMAGE="miaou-candidate:${GITHUB_SHA}" npm run test:image
+      - uses: aquasecurity/trivy-action@57a97c7e7821a5776cebc9bb87c984fa69cba8f1 # 0.35.0
+        with:
+          version: v0.75.0
+          image-ref: miaou-candidate:${{ github.sha }}
+          scanners: vuln
+          severity: HIGH,CRITICAL
+          exit-code: "1"
+          hide-progress: true
+      # A tested candidate, never a deployment. Only branch pushes are promotable.
+      - name: Package tested candidate
+        if: github.event_name == 'push'
+        run: |
+          mkdir -p candidate
+          docker save "miaou-candidate:${GITHUB_SHA}" -o candidate/image.tar
+          docker image inspect "miaou-candidate:${GITHUB_SHA}" --format '{{.Id}}' > candidate/image-id.txt
+          cd candidate
+          sha256sum image.tar > SHA256SUMS
+          printf '%s\n' "$GITHUB_SHA" > commit.txt
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: github.event_name == 'push'
+        with:
+          name: candidate-${{ github.sha }}
+          path: candidate/
+          retention-days: 7

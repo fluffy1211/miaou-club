@@ -1,0 +1,204 @@
+# Miaou Club — développement et exploitation
+
+Lecture ciblée : [Git](#git) · [CI](#ci) · [Frontend](#frontend) · [IA](#ia) · [Hébergement](#hebergement) · [Sécurité](#securite) · [Données](#donnees) · [Sauvegardes](#sauvegardes) · [Lots](#lots)
+
+« Validé » désigne un choix de Gabriel, « proposé » un mécanisme à décider/éprouver. État daté et vérifications dans [NEXT_SESSION.md](../NEXT_SESSION.md) ; fichiers présents, tests locaux réussis et activation distante sont des preuves distinctes. Les lots nécessitent une demande de réalisation ; ce document n'autorise ni installation ni opération Git/GitHub/déploiement à lui seul.
+
+Règles : [CADRAGE.md](CADRAGE.md) · Montage : [ARCHITECTURE.md](ARCHITECTURE.md) · Contrats/offres : [FOURNISSEURS.md](FOURNISSEURS.md) · Analyse juridique : [JURIDIQUE.md](JURIDIQUE.md) · Brouillons : [TEXTES_UTILISATEURS.md](TEXTES_UTILISATEURS.md).
+
+<a id="git"></a>
+## Git/livraison — validé
+
+| Branche/action | Règle |
+| --- | --- |
+| `main` | Par défaut, référence production, protégée |
+| `develop` | Intégration et préproduction automatique, protégée |
+| `feat/…`, `fix/…`, `chore/…` | Depuis develop, PR vers develop, squash |
+| Livraison | PR develop → main, commit fusion ; production manuelle |
+| Hotfix | Depuis main, PR vers main, report immédiat develop |
+
+Pas de push forcé ; PR/contrôles requis, pas d'approbateur supplémentaire obligatoire en solo. Préserver l'historique commun main/develop. Conventional Commits proposé ; versions 0.x pour les tests puis 1.0.0 pour un lancement validé proposées. Pas de changement version pour chaque tâche documentaire.
+Protections à configurer au lot GitHub après inspection permissions/offre ; elles ne sont pas déjà appliquées.
+
+<a id="ci"></a>
+## CI/CD — exigences validées
+
+- Format/lint/types/builds frontend/backend ; tests métier permissions/confidentialité/suspension/modération.
+- Build Storybook et contrôles composants/E2E requis selon la section Outillage frontend.
+- PostgreSQL jetable : contraintes, transactions, migrations initiales et depuis version précédente.
+- Parcours critiques connexion/publication/édition/suppression/signalement/admin. CI déterministe avec doubles des services externes ; vrai Google testé en préprod, pas de compte humain automatisé dans CI.
+- Aucun secret, DB ou bucket production dans tests CI. Vérifier les règles de secrets pour PR externes.
+- Workflow : permissions minimales par job, actions tierces verrouillées sur un SHA complet vérifié dans leur dépôt officiel. Ne pas exécuter du code de PR non fiable avec des secrets ou droits d'écriture ; relire les logs/artefacts avant partage. Référence : [GitHub, utilisation sécurisée](https://docs.github.com/en/actions/reference/security/secure-use), consultée le 4 octobre 2026, date de mise à jour non affichée.
+- Fusion develop : contrôles puis préprod ; main : version candidate, promotion manuelle artefact/commit testé. Pas de reconstruction silencieuse avec dépendances différentes.
+- Migrations contrôlées, exécutées une fois avant activation ; santé, compatibilité ancienne application et procédure reprise. Pas de rollback SQL destructif automatique.
+
+Scripts des `package.json` : référence des commandes, inspectée avant exécution. Réutiliser les mêmes scripts localement, en pre-push et en CI ; le hook local est contournable et ne remplace pas les contrôles requis avant fusion. L'activation du hook et les protections GitHub doivent être vérifiées séparément, avec l'autorisation correspondante.
+
+Sélection des contrôles : documentation/skills → métadonnées, références et diff ; code → format/lint/types et tests des comportements modifiés ; schéma → PostgreSQL jetable, base vide puis version précédente ; parcours → application réelle et assertions API/UI adaptées ; rendu → application et stories concernées. Une correction de test doit préserver la règle attendue.
+Commandes livrées au lot 1 (les scripts restent la référence exécutable) :
+
+| Usage | Commande et prérequis |
+| --- | --- |
+| Installation | Node selon `.node-version`, `npm ci`, Docker/Compose ; `npx playwright install chromium webkit` (Linux CI : `--with-deps`) ; Python 3 pour servir les stories compilées pendant les E2E |
+| Configuration locale | Conserver la clé catalogue éventuelle de `.env`, ajouter les noms de `.env.example` ; secret Better Auth privé généré localement, jamais commité |
+| PostgreSQL développement | `npm run db:up`, puis `npm run db:migrate` avec `DATABASE_URL` de développement ; génération séparée `db:auth-schema`/`db:generate`, SQL à relire |
+| Docker application | `docker compose --profile app up -d --build app` ; source montée, catalogue enregistré sans clé fournisseur. Si 4321 est déjà occupé : préfixer `MIAOU_APP_PORT=43993`, ne pas arrêter l’autre serveur |
+| Application hôte | `npm run dev` pour éditer ; `npm run build:offline && npm run start` pour vérifier l’assemblage compilé, notamment les images protégées. `HOST`/`PORT` configurables, `.env` chargé côté serveur |
+| Contrôles rapides | `npm run verify` : format/lint, tests catalogue, types Astro/backend, builds application/backend et Storybook |
+| Contrôles complets | `npm run db:test:up`, puis `npm run verify:full` : contrôles précédents + PostgreSQL/auth + E2E Chromium/WebKit + audit dépendances, Gitleaks et actionlint |
+| Storybook | `npm run storybook` / `npm run build:storybook` ; `AccessNotice` réellement rendu par Astro, mêmes styles/polices. Stories et parcours mobiles exercés, pas audit visuel complet |
+| Hook | `npm run hooks:install` configure `.githooks` ; pre-push lance DB de test et `verify:full`. Activation locale vérifiée au lot 1 ; contournable, aucun push exécuté |
+| Image candidate | `docker build --target runtime -t miaou-lot1:local .`, puis `npm run test:image` et `npm run security:image` ; test du runtime avec DB unique et contrôle HIGH/CRITICAL, sans exclusion de CVE |
+| Arrêt local | `docker compose --profile app --profile test stop app db db-test`, seulement si ces services ne sont pas utilisés par un autre chat ; volume de développement conservé |
+
+`verify` et l’image Docker utilisent `MIAOU_OFFLINE_CATALOG=1` : réponses publiques réelles enregistrées depuis le cache existant dans `tests/fixtures/catalogue`, toujours validées, sans repli sur des données inventées. Ce mode n’affirme pas la fraîcheur du fournisseur ; le build normal et `data:refresh` conservent le flux réel. Les tests serveur refusent une cible sans suffixe `_test`, créent une base unique par test puis la détruisent ; E2E crée aussi une base unique et des sessions synthétiques. Aucun test ne tronque la base de développement. Les rapports ne contiennent pas de traces/screenhots/vidéos de session ; cookies temporaires en `.cache`, supprimés à la fermeture.
+
+CI préparée : PR vers develop/main et push develop/main, permissions en lecture, actions verrouillées par SHA, même `verify:full`, image runtime, test de démarrage sur DB unique et scan Trivy. Un push réussi peut produire une archive candidate liée au SHA et à l’identifiant d’image, avec checksum. `promotion-preflight.yml` vérifie manuellement le run CI, sa réussite, l’événement push, la branche attendue (develop/préprod, main/prod), le SHA et l’archive exacte. **Ce workflow ne déploie pas.** Activation GitHub, environnements/protections, publication de l’image, migrations distantes verrouillées, préprod automatique, promotion réelle, santé et reprise restent au lot livraison autorisé séparément. Aucune CI distante réussie ni infrastructure active présumée.
+
+Sécurité du socle : Gitleaks analyse les sources avec redaction, hors dépendances/artefacts générés, `.env` privé et état local Codex ; exemples et fixtures restent analysés. Actionlint/ShellCheck valide les workflows. `npm audit --audit-level=high` signale encore quatre alertes modérées d’outillage Drizzle Kit/esbuild ; pas de correctif stable proposé sans régression de Kit. Ces outils sont explicitement absents du runtime Docker, comme npm/Yarn. À suivre lors des mises à jour, sans `audit fix --force` automatique. Scan image HIGH/CRITICAL éprouvé localement au 4 octobre ; maintenance nécessaire. Dépendabot est seulement préparé dans le dépôt.
+
+<a id="frontend"></a>
+## Outillage frontend et uniformité — ajout validé
+
+**Playwright pour les E2E** et **Storybook pour le design system** demandés par Gabriel. Vérifier versions installées, configurations et preuves dans le code et NEXT_SESSION ; la présence des dépendances ne démontre pas l'exécution des parcours.
+
+- Playwright : application réelle, backend et PostgreSQL de test isolés, fixtures et sessions par rôle. Google réel vérifié en préprod ; aucun endpoint de connexion factice livré en production. Couvrir publication/carnet/édition, privé/public, images directes, signalements/masquage/suspension. Chromium et WebKit en formats mobiles recommandés ; vrais téléphones nécessaires pour caméra/installation.
+- Assertions sur comportements observables, sans délais arbitraires ; données isolées et traces sur échec. Rapports sans secrets/données personnelles, rétention courte. Corriger les tests intermittents plutôt que masquer les erreurs par réessais.
+- Storybook React/Vite recommandé : composants React réellement utilisés par l'application, mêmes tokens CSS et polices, variantes et états utiles (vide/chargement/erreur/désactivé/focus). Fixtures locales sans backend requis pour les stories.
+- Pas de copie divergente du design system. Les composants Astro ne sont pas automatiquement couverts par React Storybook ; vérifier leur intégration dans l'application sans imposer de réécriture générale.
+- Tests interaction/accessibilité ciblés pour composants sensibles. Build Storybook ne prouve pas fidélité visuelle ; comparaisons visuelles ciblées après stabilisation des références. Aucun service payant externe requis au départ.
+
+**Plop reste une option à décider**, pas une dépendance validée. Stabiliser d'abord un composant représentatif et ses conventions. Générateur proposé : composant TypeScript, story et styles selon conventions ; valider nom/chemin et refuser l'écrasement. Pas de tests vides ou de fichiers/exports inutiles générés.
+L'agent recherche un composant existant avant d'en créer un. Tokens, contrats de props, lint/types, stories et revue contrôlent l'uniformité ; génération seule insuffisante.
+Commandes E2E/Storybook dans `package.json`, configurations et prérequis à vérifier avant usage. Génération et documentation IA : section suivante ; aucun autre MCP ou skill requis sans besoin concret.
+
+Sources : [Playwright](https://playwright.dev/docs/intro), [Storybook React/Vite](https://storybook.js.org/docs/get-started/frameworks/react-vite), [Plop](https://plopjs.com/documentation/).
+
+<a id="ia"></a>
+## Développement avec l'IA — pratiques autorisées le 4 octobre 2026
+
+AGENTS porte les limites et règles de confiance ; les deux skills locaux routent les travaux backend et les vérifications. Les décisions produit restent dans CADRAGE. Pas de troisième skill généraliste, de copie des manuels ou de changement de stack/Git flow.
+
+- Documentation ciblée : identifier la version dans le lockfile et le package concerné, poser une question précise, puis vérifier l'exemple par compilation ou test dans le lot autorisé. Une documentation « latest » n'établit pas la compatibilité locale. Effect : documentation v3 pour une dépendance v3 ; Drizzle : génération/revue/migration selon ARCHITECTURE, pas de bascule implicite vers `push`.
+- Astro : MCP officiel HTTP configuré pour ce dépôt dans [`.codex/config.toml`](../.codex/config.toml), limité à `search_astro_docs`, sans credentials, installation de paquet ni droits sur l'application. Envoyer une question technique minimale, pas des fichiers complets ou des données de membres. Le service reçoit la requête. En cas d'indisponibilité, consulter directement la documentation officielle ; ne pas élargir les droits. Le chargement effectif par Codex dépend de la confiance du projet et d'une nouvelle session.
+- Better Auth : consulter directement l'adaptateur/session/plugin de la version concernée. Son pack de skills et MCP sont disponibles chez l'éditeur, mais ne sont pas installés : conserver les règles locales d'admission et de MFA, et n'ajouter un outil que si la consultation directe s'avère insuffisante sur une tâche récurrente.
+- Playwright : génération assistée dans le même agent à partir d'une règle CADRAGE et des fixtures existantes ; relire les locators/assertions, exécuter le test, inspecter la trace sur échec, corriger la cause puis relancer le contrôle touché. Pour une permission, inclure une demande API/URL directe et un rôle refusé. Aucun compte réel, aucune donnée de production, aucun endpoint d'authentification factice livré.
+- Les définitions officielles planner/generator/healer se testent en dossier temporaire ; ne pas lancer `init-agents` dans le checkout partagé ni déléguer automatiquement. Leur installation/délégation n'est pas nécessaire pour générer un test dans le même agent. Le healer fourni peut proposer `test.fixme()` : ne pas adopter cette règle, ni réduire les assertions de confidentialité pour obtenir du vert. Une panne persistante est rapportée, sans boucle illimitée.
+- Reprise : date, branche/état local, périmètre autorisé, fichiers touchés, commandes/résultats et blocages dans NEXT_SESSION. Ne qualifier de testé que ce qui a été exécuté sur la cible indiquée. Évaluer les changements de consignes sur des demandes représentatives (migration, image privée, rendu, documentation) avant d'ajouter des règles supplémentaires ; aucun gain de tokens/productivité présumé.
+
+Sources consultées le 4 octobre 2026 : [OpenAI, skills/prompts](https://developers.openai.com/blog/rethinking-skills-and-prompts-for-gpt-6-astra) (publication 11 septembre 2026, conseils liés au modèle, pas une mesure du projet) ; [étude AGENTS.md v3](https://arxiv.org/abs/2602.11988v3) (publication initiale 12 février, révision 29 septembre 2026, résultats expérimentaux non extrapolés à Miaou Club) ; [Astro IA/MCP](https://docs.astro.build/en/guides/build-with-ai/), [Better Auth skills](https://better-auth.com/docs/ai-resources/skills), [Playwright agents](https://playwright.dev/docs/test-agents), [Codex MCP](https://developers.openai.com/codex/mcp), [injections d'instructions](https://openai.com/safety/prompt-injections/) (documentations sans date de publication/mise à jour affichée). Protocole Astro `initialize`, `tools/list` et recherche React exécutés avec succès ; activation dans une nouvelle session Codex à confirmer.
+Essai Playwright du 4 octobre : génération des définitions Codex et découverte du seed réussies en dossier temporaire ; test API synthétique exécuté, assertion de refus mise en défaut par une mutation 401 → 200. Pas de preuve applicative ni de sous-agent exécuté. Le lancement navigateur a échoué faute du binaire Chromium correspondant à la version installée ; aucun téléchargement global, définitions générées non installées dans le dépôt.
+
+<a id="hebergement"></a>
+## Environnements et hébergement — choix validés, montage à éprouver
+
+Local, préprod et pilote séparés : DB, stockage, secrets et OAuth. Fixtures/comptes dédiés ; aucune copie brute de données personnelles dans les tests.
+
+| Usage | Choix actuel | État et limites |
+| --- | --- | --- |
+| Pilote gratuit | Render Free + Neon Free | Application/passerelle à Francfort ; DB en région UE exacte à choisir. Veille, quotas et reprise à éprouver ; Render déconseille Free en production |
+| Photos du pilote | Supabase Storage Free | Région spécifique UE à choisir ; accès privé et capacité à tester. Remplace R2 pour le démarrage, pas le socle auth/DB |
+| Préprod | Render Free + Neon Free, stockage distinct | Données de test uniquement ; lenteur possible, ne représente pas les conditions payantes |
+| Carte | MapLibre GL JS + MapTiler Cloud Free | Essais non commerciaux ; contrat et flux non résolus |
+| E-mails applicatifs | Resend Free | Choix validé ; analyse anti-abus d’échantillons acceptée, rétention/transferts et délivrabilité à éprouver |
+| Sauvegardes | Backblaze B2 EU Central (Amsterdam), provisoire | Contrat exploitant individuel non résolu ; isolation/capacité/restauration à éprouver |
+| Domaine et boîte contact | OVHcloud, `miaou.club`, Starter incluse visée | Aucun achat ni boîte ; disponibilité, tarif du nom exact et inclusion à vérifier |
+| Option ultérieure | Render payant + Render Postgres payant ; R2 photos | À arbitrer avant activation, aucune bascule automatique |
+
+Budget initial validé : objectif **0 € de services**, domaine seul coût envisagé, aucun achat autorisé. Estimation d’usage léger : quatre ou cinq personnes, peu de photos/jour ; aucun volume exact ni plafond par personne ajouté. Admission : CADRAGE, pas un quota. Préférence validée pour blocage au quota gratuit plutôt que facturation ; aucun montage à coût nul garanti. Réexaminer Supabase si sa capacité est trop vite atteinte ; pas déplacer automatiquement les photos primaires chez le fournisseur de sauvegarde.
+
+Stockage principal UE, transferts nécessaires encadrés et documentés : orientation validée. Pas d’exigence exclusivement UE pour tous les traitements. Région ≠ absence de transferts. L’option payante Render prévoit application et DB à Francfort ; R2 éventuel avec juridiction `eu`. Séparation géographique/isolation des sauvegardes à vérifier.
+
+Sources datées, quotas, restrictions, attributions carte, comparaison domaine et conditions par fournisseur : [FOURNISSEURS.md](FOURNISSEURS.md). Détail du mécanisme carte/GPS : [ARCHITECTURE.md](ARCHITECTURE.md#carte). Qualification et bases légales : [JURIDIQUE.md](JURIDIQUE.md).
+
+<a id="securite"></a>
+## Sécurité et exploitation — principes validés, détails proposés
+
+Exigence RGPD/OWASP validée dans CADRAGE. Références consultées le 3 octobre 2026 : [guide sécurité CNIL](https://www.cnil.fr/fr/guide-de-la-securite-des-donnees-personnelles), [principes RGPD](https://www.cnil.fr/protection-des-donnees-les-bons-reflexes), [durées de conservation](https://www.cnil.fr/fr/passer-laction/les-durees-de-conservation-des-donnees) et [OWASP ASVS](https://owasp.org/www-project-application-security-verification-standard/). Avant ouverture réelle, associer chaque exigence applicable à une preuve de contrôle ; justifier les exclusions. ASVS sert de référentiel technique de vérification, pas de certification ni de preuve de conformité RGPD. Référentiel technique retenu au lot 1 : ASVS 5.0.0, cible niveau 2 pour les exigences applicables aux comptes et données personnelles ([version stable OWASP](https://owasp.org/projects/asvs), vérifiée le 4 octobre 2026). Cartographie des exigences et preuves à compléter dans les lots concernés ; aucune conformité niveau 2 démontrée par ce socle.
+
+Analyse, inventaire et contrats dans JURIDIQUE/FOURNISSEURS ; textes dans TEXTES_UTILISATEURS. Préparer une procédure de gestion des violations ; un audit SOC 2 ne suffit pas à établir la conformité RGPD. Tests serveur prioritaires : permissions données/images, révocation/suspension, sessions/MFA/liaison, CSRF/XSS/injections, validation uploads, limites et secrets. Les durées de session validées dans CADRAGE restent à mettre en œuvre et tester, sans label de conformité automatique ; distinguer expiration de session et conservation des journaux/données.
+
+### Accès, comptes et récupération
+
+- HTTPS, cookies HttpOnly/Secure, SameSite compatible OAuth ; contrôle CSRF mutations, origines de confiance et retour interne.
+- Contrôle statut/rôle/ownership serveur ; suspension conserve portail personnel restreint, ne pas utiliser un bannissement auth interdisant toute connexion sans ce portail.
+- Google et e-mail/mot de passe ; liaison implicite désactivée, preuve e-mail vérifié selon méthode ; réauthentification sensible. Parcours e-mail de vérification/réinitialisation et fournisseur d'envoi à préparer au lot comptes, sans configurer de service à ce stade.
+- Récupération des comptes ordinaires validée le 4 octobre 2026 dans CADRAGE. [OWASP récupération consulté le 4 octobre 2026](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html) : liens expirants à usage unique, réponse uniforme et révocation des sessions ; durée retenue dans CADRAGE = choix projet, pas seuil OWASP. Au lot comptes, tester expiration, consommation atomique du lien, refus des réutilisations, révocation effective et confirmation dans le parcours applicatif selon CADRAGE, sans e-mail supplémentaire ; aucune connexion automatique après réinitialisation. Définir les preuves de propriété acceptables et une opération manuelle restreinte/journalisée avant d'offrir la récupération exceptionnelle ; ne pas promettre un transfert sans preuve. Préserver liaison explicite, suspension et MFA admin. Aucun mécanisme testé ni conformité démontrée.
+- Envoi e-mails : Better Auth génère/valide les liens, adaptateur serveur Resend envoie via HTTPS ; limiter les demandes, surveiller quotas et tester délivrabilité. Authentifier domaine/expéditeur au lot comptes. Critères de choix et contrats : [FOURNISSEURS.md](FOURNISSEURS.md), périmètre unique des envois : CADRAGE.
+- MFA admin validé, règles dans CADRAGE. Premier admin attribué hors inscription et journalisé ; aucun rôle privilégié fourni depuis le frontend. Enrôlement et modification du facteur sous réauthentification, sans élévation via simple session volée. Vérification [Better Auth 2FA du 3 octobre 2026](https://better-auth.com/docs/plugins/2fa) : TOTP/codes de secours documentés ; OAuth n'est pas soumis au défi 2FA par défaut, contrôle serveur explicite à intégrer/tester. Activation pour un compte Google sans mot de passe nécessite le mode documenté `allowPasswordless`, qui ne suffit pas à imposer le défi OAuth. Récupération MFA admin validée le 4 octobre 2026 dans CADRAGE. Mécanisme de preuve liée à la session, stockage sécurisé et procédure technique de récupération restent à préparer/tester au lot comptes ; accès admin bloqué tant que la preuve requise manque.
+- Récupération MFA : [source officielle OWASP consultée le 4 octobre 2026](https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Multifactor_Authentication_Cheat_Sheet.md#resetting-mfa), récupération adaptée au contexte avec vérification rigoureuse et recommandation de notification lors du remplacement de facteur. Décision Gabriel du 4 octobre 2026 : aucune notification admin ni e-mail supplémentaire ; cet écart à la recommandation reste à examiner dans l’analyse de sécurité du lot comptes, sans présenter le parcours comme conforme à OWASP. Au lot comptes, définir les canaux préétablis et l'autorité de validation, préparer une opération d'exploitation limitée/journalisée pour le seul admin bloqué, sans exposer de contournement public. Vérifier refus sans preuves, absence d'élévation pendant le réenrôlement, révocation des sessions/anciens moyens de récupération, audit et obligation du nouveau TOTP pour les deux méthodes de connexion. Aucun mécanisme exécuté ni conformité démontrée.
+### Compteurs et résistance aux abus
+
+- Protections contre les abus et seuils initiaux validés le 3 octobre 2026 : référence unique dans CADRAGE, section « Protections contre les abus ». Stockage technique validé : compteurs partagés PostgreSQL, mises à jour atomiques et conservation après redémarrage. Purge après expiration des fenêtres, au plus tard sous 48 h ; identifiants techniques protégés, sans e-mail/IP en clair dans les compteurs. Ces identifiants restent des données personnelles à encadrer, pas des données anonymes. Audit sécurité distinct selon CADRAGE. Protection complémentaire par IP avec tolérance aux réseaux partagés ; seuil IP, progression exacte des délais et plafond global e-mails à préciser au lot comptes ; quota consultable dans l’administration, sans notification admin selon CADRAGE. Limites export/suppression/recherche coûteuse à préciser. Plafonds globaux de concurrence/mémoire/durée des uploads et protection des lectures d'images contre la saturation à mesurer au lot images, en respectant la politique sans cache. Aucune protection implémentée ou éprouvée à ce stade.
+- Sources officielles consultées le 3 octobre 2026 : [OWASP authentification](https://cheatsheetseries.owasp.org/cheatsheets/Authentication_Cheat_Sheet.html) (compteurs par compte, protection contre le blocage malveillant), [récupération](https://cheatsheetseries.owasp.org/cheatsheets/Forgot_Password_Cheat_Sheet.html) (réponse uniforme, limitation des demandes, jetons à usage unique expirants), [uploads](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html) et [déni de service](https://cheatsheetseries.owasp.org/cheatsheets/Denial_of_Service_Cheat_Sheet.html) (bornes fichiers, requêtes et ressources), [CNIL principes RGPD](https://www.cnil.fr/fr/comprendre-le-rgpd/les-six-grands-principes-du-rgpd) (minimisation et conservation proportionnée). Ces références ne valident pas les chiffres choisis et ne prouvent ni intégration ni conformité. Contrôles à démontrer : concurrence sans dépassement des compteurs, persistance après redémarrage, fenêtres/purge, réseau partagé, absence d'énumération, récupération malgré limitation du mot de passe, réessais publication et signalements sans doublons, limites octets/traitement.
+### Sessions, validation et exploitation
+
+- Politique de session validée dans CADRAGE. [Better Auth](https://better-auth.com/docs/concepts/session-management) : expiration glissante/fraîcheur configurables, plafond absolu à intégrer ; [OWASP](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html) : délais absolus/inactivité, révocation serveur et rotation après élévation. Déconnexion/réinitialisation révoquent les sessions concernées côté serveur ; suspension applique CADRAGE à chaque demande. Preuve MFA liée à la session, activité admin suivie côté serveur (rafraîchissement automatique exclu). Cache de session désactivé au départ ; tester plafonds/rotation/révocation et éviter perte de brouillon à expiration sans introduire de stockage privé implicite. Choix validés, aucune conformité démontrée par ces seules durées.
+- Validation serveur longueurs/date/visibilité/zones/formats et bornes images ; textes échappés, pas de HTML utilisateur proposé.
+- Logs structurés : ID requête/opération/statut/durée/code erreur. Pas de tokens/cookies/e-mail/photo/GPS/bio ou corps brut. Audit métier distinct ; durée et accès à définir.
+- Santé/readiness, erreurs suivies, alertes actionnables DB/stockage/traitements/tâches bloquées ; pas de pile lourde sans besoin.
+- Secrets Google, Better Auth, DB, stockage et mécanisme admin : stockage par environnement, noms/placeholders seulement dans futur `.env.example`. Rotation/révocation/droits minimaux ; vérifier absence des secrets dans bundles/artefacts.
+
+<a id="donnees"></a>
+## Purge et exercice des droits — mécanismes à éprouver
+
+Durées validées : section « Conservation et suppression » de CADRAGE. Leur mise en œuvre reste à tester.
+
+[CNIL conservation](https://www.cnil.fr/fr/passer-laction/les-durees-de-conservation-des-donnees) et [journalisation](https://www.cnil.fr/fr/securite-tracer-les-operations) consultées le 3 octobre 2026 : durées selon finalités ; recommandation de 6 mois à un an pour les événements journalisés. Les durées retenues dans CADRAGE sont des choix projet, pas des délais légaux génériques. Paramétrage et rétentions propres aux fournisseurs à vérifier ; ne pas annoncer la purge de leurs données avant contrôle. Comptes inactifs, signalements clos et suspensions : règles validées dans CADRAGE ; préservation exceptionnelle pour obligation/contentieux seulement sur justification, périmètre limité et durée documentée.
+
+Mise en œuvre à préparer : suivi des dossiers ouverts, avertissement par e-mail/réactivation avant suppression pour inactivité (exception validée dans CADRAGE) et réexamen des suspensions selon CADRAGE. Conservation d'identifiants pour prévenir une réinscription après suppression non autorisée par défaut, à arbitrer séparément si nécessaire. Préservation exceptionnelle seulement si justification documentée. Aucune conformité démontrée par la seule validation de ces règles.
+
+Export/suppression : réauthentification selon CADRAGE pour les parcours autonomes ; exercice des droits hors connexion avec vérification proportionnée. Règles accès/portabilité/délais dans CADRAGE, section « Accès et export des données ». Références officielles consultées le 4 octobre 2026 : [RGPD articles 12, 15 et 20 via CNIL](https://www.cnil.fr/fr/reglement-europeen-protection-donnees/chapitre3), [réponse au droit d'accès](https://www.cnil.fr/fr/repondre-une-demande-de-droit-dacces), [portabilité](https://www.cnil.fr/fr/respecter-les-droits-des-personnes/professionnels-comment-repondre-une-demande-de-droit-la-portabilite). Préparer la cartographie des données par finalité/base légale et identifier ce que couvre l'export autonome ou un complément manuel ; fournir aussi les informations de traitement requises pour l'accès. Contrat proposé de l’export : [ARCHITECTURE.md](ARCHITECTURE.md#export) ; cartographie : [JURIDIQUE.md](JURIDIQUE.md#cartographie). Vérifier ouverture des CSV dans Excel (encodage/accents/dates) et neutralisation des cellules susceptibles d'être interprétées comme formules, sans altérer les valeurs de référence du JSON. Ce format n'est pas imposé par le RGPD. Ne pas promettre les originaux déjà purgés. Définir lien protégé et génération durable ; tester exhaustivité selon cartographie, droits tiers, refus d'accès à l'export d'autrui, expiration/purge et possibilité d'obtenir une nouvelle copie. Prévoir suivi des demandes/délais, compléments et refus motivés ; les plafonds techniques ne doivent pas empêcher l'exercice des droits. Contrôler les rétentions fournisseurs ; aucune conformité prouvée à ce stade.
+Mise en œuvre de la suppression proposée : bloquer accès, révoquer sessions appropriées, références supprimées et purge variantes/exports via tâches durables. Expliquer expiration sauvegardes ; lors d'une restauration, rejouer suppressions récentes pour ne pas republier des données effacées.
+
+<a id="sauvegardes"></a>
+## Sauvegardes et reprise — objectifs validés, mécanismes proposés
+
+Objectifs validés le 4 octobre 2026 sous exigence RGPD/OWASP : sauvegarde quotidienne de la base et des photos conservées, chiffrée, accès séparés de l’application ; perte maximale visée **24 h (RPO)**, remise en service visée **48 h après détection**. Alerte sur échec ; restauration avant ouverture puis tous les trois mois. Rétention unique dans CADRAGE ; pas de copie des originaux temporaires ni prolongation artificielle par recopie. Ce sont des objectifs projet, pas garanties actuelles ou délais imposés par RGPD/OWASP.
+
+À préparer et éprouver :
+
+- Chiffrement avant envoi, clés protégées/récupérables séparément ; l’application ne doit pas pouvoir supprimer toutes les sauvegardes.
+- Planification indépendante de la veille Render ; Object Lock et marge de purge compatibles avec la rétention, sans confondre verrouillage et copie hors ligne.
+- Copie géographiquement distincte et protection d’au moins une copie hors ligne selon CNIL, ou alternative avec justification de risque à préciser. Gabriel n’a pas de disque externe/NAS ; une copie dans un bucket avec les mêmes accès ne suffit pas.
+- Point DB/photos cohérent ; relevé protégé des suppressions/masquages/suspensions indépendant de la sauvegarde restaurée, sans copie des contenus. Rejouer ces décisions avant remise en ligne.
+- Révoquer sessions et liens temporaires restaurés, purger exports expirés ; mesurer intégrité, perte/durée réelle, cohérence photos, non-réapparition des contenus et droits révoqués. Préparer reprise après compromission sans réduire les permissions.
+- Capacité gratuite, rotation des versions/parts inachevées, isolement, coût de restauration et contrat B2 selon [FOURNISSEURS.md](FOURNISSEURS.md). Aucun compte/bucket/tâche/sauvegarde/restauration configuré ou testé.
+
+Sources consultées le 4 octobre 2026 : [CNIL sauvegardes](https://www.cnil.fr/fr/securite-sauvegarder), [CNIL reprise](https://www.cnil.fr/fr/securite-prevoir-la-continuite-et-la-reprise-dactivite), [OWASP DB](https://cheatsheetseries.owasp.org/cheatsheets/Database_Security_Cheat_Sheet.html), [OWASP chiffrement](https://cheatsheetseries.owasp.org/cheatsheets/Cryptographic_Storage_Cheat_Sheet.html). Chiffrement au repos/en transit, droits minimaux, récupération des clés, rotation/purge et transferts doivent avoir des preuves avant ouverture.
+
+<a id="lots"></a>
+## Lots proposés et critères de sortie
+
+Extension du lot 1 autorisée le 4 octobre 2026 : établir dès le démarrage le socle Docker, contrôles pre-push, CI et préparation CD dans le dépôt, avec contrôles de sécurité adaptés au code réellement introduit. Réutiliser les mêmes commandes localement et en CI ; distinguer fichiers préparés, contrôles exécutés et activation distante non réalisée. Protections GitHub et déploiements du lot 6 ne sont pas acquis par l’existence d’un workflow. Ce socle nécessite une maintenance régulière ; il ne garantit pas une sécurité définitive.
+
+| Lot | Résultat vérifiable |
+| --- | --- |
+| 0 — préparation | Docs/AGENTS/skills cohérents, validations distinguées, reprise courte |
+| 1 — compatibilité et bases de développement | Versions stables, workspace, Docker/DB locale, migration minimale, Google test, handler Effect et rendu Astro assemblés ; socle Playwright/Storybook, lint/format/types/tests/build, pre-push et workflows CI/CD préparés ; preuves locales et limites distantes explicites |
+| 2 — comptes | Admission personnelle, déclaration 18+/acceptation CGU ; Google et inscription/connexion e-mail/mot de passe, vérification adresse/réinitialisation, profil/permissions/portail suspendu, tests ownership/refus, refus sans admission/acceptation (Google comme e-mail), retrait d’accès et liaison explicite, stratégie MFA |
+| 3 — Polaroid complet | Upload → traitement → aperçu → publication durable → carnet ; idempotence/privé/public/suppression |
+| 4 — découverte/carte | Accueil/profil/listes paginées, grille hiérarchique, carte et secours ; tests refus anonyme/non invité sur profils/listes/carte/images/API et conditions fournisseur |
+| 5 — administration/données | Signalements/masquage/suspension/audit, export/suppression et reprise après panne |
+| 6 — livraison amis | GitHub/protections/CI, préprod/prod, secrets/HTTPS, restauration sauvegarde, vrais mobiles/PWA/E2E |
+| Complément V1 — amis, avant livraison | Parcours et exclusions selon CADRAGE ; demandes/relations persistantes et contrôles serveur à préparer, tests des réessais, demandes croisées/concurrentes, plafonds durables, permissions et nouvelle demande après refus/annulation |
+
+Sécurité construite/testée dans chaque lot ; lots 5/6 avant ouverture réelle. Aucun compte réel du pilote sans modération opérationnelle ; accès fermé ne remplace pas les permissions des ressources.
+
+## Points à résoudre — lire au lot concerné
+
+| Lot/dossier | Travail restant |
+| --- | --- |
+| Compatibilité | Socle local livré ; vrai Google et limites de livraison détaillés dans NEXT_SESSION. Maintenir les versions et contrôles dans les lots suivants |
+| Comptes | Admission/retrait, preuves de récupération, MFA OAuth, sessions, seuils IP/délais/plafonds et réauthentification |
+| Images/carte | HEIC/bibliothèque, ressources et débit passerelle ; origine de grille, cellules frontalières, permission/consentement et réseau sur vrais mobiles |
+| Données/reprise | Inventaire contre schéma réel, export exhaustif, droits tiers, purge active/fournisseurs, capacité/isolation/planification/restauration |
+| Composants | Stabiliser un composant représentatif puis décider Plop |
+| Contrats | MapTiler/B2 : demandes rédigées, non envoyées ; réponses nécessaires, pas répétition de la même recherche publique |
+| Juridique pilote | Qualification économique/DSA et exception domestique, déclaration 18+/indices de minorité, AIPD, mentions légales, données de tiers et textes non publiables |
+
+Chaque détail et son état sont dans la référence liée ci-dessus ; les choix produit déjà validés ne sont pas à redemander. Push après V1 : détails ci-dessous. Commandes installées dans le socle : section CI ; les mécanismes fonctionnels futurs restent à implémenter et vérifier.
+
+## Notifications push — étude pour après V1
+
+Gabriel privilégie le report si l’ajout n’est pas simple : retenu hors V1 le 4 octobre 2026. Évaluation : charge modérée, distincte de l’affichage de demandes dans l’application ; mise en place de la réception Web Push, permission volontaire, abonnements par appareil, envoi serveur, désabonnement/nettoyage, comptes déconnectés et tests sur vrais téléphones. Pas d’estimation chiffrée ni d’intégration éprouvée. Sources officielles consultées le même jour : [MDN Push API](https://developer.mozilla.org/en-US/docs/Web/API/Push_API), [Apple Web Push](https://developer.apple.com/documentation/usernotifications/sending-web-push-notifications-in-web-apps-and-browsers). Sur iPhone/iPad, Web Push disponible pour les web apps ajoutées à l’écran d’accueil à partir d’iOS/iPadOS 16.4, avec permission utilisateur ; pas promesse de réception sur tous les appareils. Les futures notifications restent utilisateur, pas admin, conformément à CADRAGE. Examiner alors flux/confidentialité des services push, contenu visible sur écran verrouillé et compatibilité ; aucun nouveau fournisseur ni dispositif installé.
