@@ -165,3 +165,52 @@ test("nullable fields on unrelated API breeds do not invalidate the complete res
   assert.equal(catApiSchema.parse(response)[0].origin, null);
   assert.throws(() => catApiSchema.parse([{ id: "other" }]));
 });
+
+test("offline builds validate recorded data and refuse missing/corrupt snapshots without network", async () => {
+  const cacheDir = await mkdtemp(join(tmpdir(), "miaou-offline-test-"));
+  try {
+    let calls = 0;
+    const options = {
+      name: "breeds",
+      url,
+      parse,
+      cacheDir,
+      now,
+      offline: true,
+      fetcher: async () => {
+        calls++;
+        return new Response("[]");
+      },
+    };
+    await assert.rejects(
+      fetchApi(options),
+      /Missing or invalid recorded API response/,
+    );
+    await writeFile(
+      join(cacheDir, "breeds.json"),
+      JSON.stringify({
+        url,
+        fetchedAt: new Date(now - 30 * 86_400_000).toISOString(),
+        payload: ["recorded-provider-value"],
+      }),
+    );
+    assert.deepEqual((await fetchApi(options)).payload, [
+      "recorded-provider-value",
+    ]);
+    await writeFile(
+      join(cacheDir, "breeds.json"),
+      JSON.stringify({
+        url,
+        fetchedAt: new Date(now).toISOString(),
+        payload: {},
+      }),
+    );
+    await assert.rejects(
+      fetchApi(options),
+      /Missing or invalid recorded API response/,
+    );
+    assert.equal(calls, 0);
+  } finally {
+    await rm(cacheDir, { recursive: true });
+  }
+});

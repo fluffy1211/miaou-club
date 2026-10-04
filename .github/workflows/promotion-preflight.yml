@@ -1,0 +1,44 @@
+name: CD — contrôle préalable de promotion (sans déploiement)
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run:
+        description: ID du run CI réussi contenant le candidat testé
+        required: true
+        type: string
+      target:
+        description: Environnement futur
+        required: true
+        type: choice
+        options: [preproduction, production]
+permissions:
+  contents: read
+  actions: read
+jobs:
+  preflight:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Validate candidate source and download exact artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CANDIDATE_RUN: ${{ inputs.candidate_run }}
+          TARGET: ${{ inputs.target }}
+        run: |
+          [[ "$CANDIDATE_RUN" =~ ^[0-9]+$ ]] || exit 1
+          gh api "repos/$GH_REPO/actions/runs/$CANDIDATE_RUN" > run.json
+          test "$(jq -r .conclusion run.json)" = success
+          test "$(jq -r .event run.json)" = push
+          test "$(jq -r .path run.json)" = .github/workflows/ci.yml
+          expected=develop
+          if [ "$TARGET" = production ]; then expected=main; fi
+          test "$(jq -r .head_branch run.json)" = "$expected"
+          sha=$(jq -r .head_sha run.json)
+          [[ "$sha" =~ ^[a-f0-9]{40}$ ]] || exit 1
+          gh run download "$CANDIDATE_RUN" -n "candidate-$sha" -D candidate
+          test "$(cat candidate/commit.txt)" = "$sha"
+          cd candidate
+          sha256sum -c SHA256SUMS
+          printf 'Candidat vérifié : %s pour %s.\n\n' "$sha" "$TARGET" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Aucun déploiement exécuté. Infrastructure, secrets, migrations verrouillées, contrôles de santé et reprise restent à configurer au lot livraison.\n' >> "$GITHUB_STEP_SUMMARY"

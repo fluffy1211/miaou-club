@@ -15,6 +15,7 @@ interface Options<T> {
   cacheDir?: string;
   refresh?: boolean;
   now?: number;
+  offline?: boolean;
   warn?: (message: string) => void;
 }
 const DAY = 86_400_000;
@@ -26,7 +27,13 @@ export async function fetchApi<T>({
   parse,
   fetcher = fetch,
   headers = {},
-  cacheDir = join(process.cwd(), ".cache/miaou-api"),
+  cacheDir = join(
+    process.cwd(),
+    process.env.MIAOU_OFFLINE_CATALOG === "1"
+      ? "tests/fixtures/catalogue"
+      : ".cache/miaou-api",
+  ),
+  offline = false,
   refresh = process.env.MIAOU_REFRESH_API === "1",
   now = Date.now(),
   warn = console.warn,
@@ -49,6 +56,13 @@ export async function fetchApi<T>({
     }
   } catch {
     /* Missing or invalid cache must be refreshed from the API. */
+  }
+  if (offline) {
+    if (!cached)
+      throw new Error(
+        `[Miaou Club] Missing or invalid recorded API response: ${name}`,
+      );
+    return cached;
   }
   const age = cached ? now - Date.parse(cached.fetchedAt) : Infinity;
   if (cached && age < DAY && !refresh) return cached;
@@ -81,6 +95,7 @@ export async function fetchApi<T>({
     }
     throw new Error(
       `[Miaou Club] Impossible de charger ${name} depuis ${url}. ${error instanceof Error ? error.message : String(error)}`,
+      { cause: error },
     );
   }
 }

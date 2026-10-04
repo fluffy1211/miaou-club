@@ -5,14 +5,9 @@ import BreedGrid from "../../components/BreedGrid.astro";
 import FavoriteButton from "../../components/FavoriteButton.astro";
 import { getBreeds, coatLabel } from "../../lib/breeds";
 import { photos } from "../../lib/media";
-export async function getStaticPaths() {
-  return (await getBreeds()).map((b) => ({
-    params: { id: b.id },
-    props: { b },
-  }));
-}
-const { b } = Astro.props;
 const breeds = await getBreeds();
+const b = breeds.find((breed) => breed.id === Astro.params.id);
+if (!b) return Astro.redirect("/404");
 ---
 
 <Layout title={b.name} description={b.intro}>

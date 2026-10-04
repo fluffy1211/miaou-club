@@ -1,0 +1,15 @@
+.git
+node_modules
+dist
+.env
+.env.*
+!.env.example
+.cache
+mockups
+docs
+.agents
+storybook-static
+playwright-report
+test-results
+
+.codex

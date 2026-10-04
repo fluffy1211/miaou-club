@@ -1,0 +1,17 @@
+{
+  "name": "@miaou/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./http": "./src/http/runtime.ts"
+  },
+  "dependencies": {
+    "@better-auth/drizzle-adapter": "1.7.7",
+    "@effect/platform": "0.97.2",
+    "better-auth": "1.7.7",
+    "drizzle-orm": "0.45.3",
+    "effect": "3.22.2",
+    "pg": "8.23.1"
+  }
+}
