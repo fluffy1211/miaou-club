@@ -921,3 +921,49 @@ test("deleted encounter tombstones expire after seven days and interrupted local
       await rm(dir, { recursive: true, force: true });
     }
   }));
+
+test("maintenance processes deletion behind twenty old published photos without purging live variants", async () =>
+  isolated(async (h) => {
+    const a = await h.member("queue@example.test");
+    const bytes = await optimize(await photo());
+    const oldIds: string[] = [];
+    for (let n = 0; n < 20; n++) {
+      const id = randomUUID();
+      oldIds.push(id);
+      await h.pool.query(
+        "insert into media(id,owner_id,bytes,state,width,height,original_present,expires_at,next_attempt_at) values($1,$2,1,'ready',80,160,false,now()-interval '2 days',now()-interval '3 days')",
+        [id, a.id],
+      );
+      await h.pool.query(
+        "insert into encounter(id,owner_id,media_id,request_key,fingerprint,title,encounter_date,published_at) values($1,$2,$3,$4,'synthetic','Ancienne publication synthétique','2026-10-03',now()-interval '3 days')",
+        [randomUUID(), a.id, id, randomUUID()],
+      );
+      await h.storage.put(id + "/image.webp", bytes.image);
+      await h.storage.put(id + "/thumb.webp", bytes.thumb);
+    }
+    const target = await h.ready(a.cookies),
+      entry = await h.publish(a.cookies, target);
+    await h.call(
+      a.cookies,
+      "/api/v1/encounters/" + entry.id,
+      undefined,
+      "DELETE",
+    );
+    await h.service.maintenance();
+    await h.service.maintenance();
+    assert.equal(
+      h.storage.objects.has(target + "/image.webp"),
+      false,
+      "new deletion must not starve behind live published media",
+    );
+    assert.equal(h.storage.objects.has(target + "/thumb.webp"), false);
+    assert.equal(
+      (await h.pool.query("select state from media where id=$1", [target]))
+        .rows[0].state,
+      "deleted",
+    );
+    for (const id of oldIds) {
+      assert.equal(h.storage.objects.has(id + "/image.webp"), true);
+      assert.equal(h.storage.objects.has(id + "/thumb.webp"), true);
+    }
+  }));

@@ -491,7 +491,7 @@ export class Encounters {
   }
   async maintenance() {
     const rows = await this.pool.query(
-      "select id,owner_id from media where state not in ('deleted') and next_attempt_at<=now() and (state in ('uploading','pending','processing','deleting') or (state='failed' and error='storage_unavailable' and attempts<3) or original_present or expires_at<=now()) order by next_attempt_at limit 20",
+      "select id,owner_id from media where state not in ('deleted') and next_attempt_at<=now() and (state in ('uploading','pending','processing','deleting') or (state='failed' and error='storage_unavailable' and attempts<3) or original_present or (expires_at<=now() and not exists(select 1 from encounter where media_id=media.id and deleted_at is null))) order by next_attempt_at limit 20",
     );
     for (const row of rows.rows) {
       try {
