@@ -54,6 +54,10 @@ MCP documentaire Astro : configuration locale limitée à `search_astro_docs`, s
 
 Playwright installé : génération officielle Codex testée en dossier temporaire, trois TOML valides et seed découvert ; aucun sous-agent lancé ni définition installée dans le projet. Le healer recommande `test.fixme()` : boucle non retenue. Test API synthétique isolé réussi ; mutation 401 → 200 détectée par échec d'assertion. Cela vérifie l'outillage, pas les permissions de l'application. Essai navigateur bloqué par l'absence du binaire Chromium attendu par cette version ; aucun téléchargement global effectué. Aucun rebuild ou test applicatif du lot 1 exécuté par ce chat.
 
+## Correction Playwright macOS — 6 octobre 2026
+
+Garde dans `playwright.config.ts` : refus de Seatbelt avant serveurs/navigateurs ; exécution Codex autorisée hors sandbox prescrite dans DEVELOPPEMENT#ci, sans changement global de sécurité. Vérification sur le checkout du lot 4 après sa fin : 24 E2E Chromium/WebKit réussis en 22,8 s, zéro réessai, aucun nouveau rapport de crash (47 avant/après). Refus propre dans Seatbelt, format/lint ciblés réussis. Branche de livraison isolée `fix/playwright-macos-sandbox` depuis develop ; contrôles pre-push et CI à distinguer de cette preuve. AGENTS et autres travaux locaux non suivis exclus de la livraison.
+
 ## Prochaine action
 
 Lot 3 local vérifié ; livraison autorisée en cours après séparation de la tranche documentaire concurrente. prochaine tranche fonctionnelle : lot 4 découverte/carte, seulement après demande. Préserver la tranche documentaire concurrente et les fichiers locaux non suivis. Ne pas ouvrir le pilote avant résolution des blocages et parcours manquants. Déploiement, achat et contact fournisseur exigent leur autorisation correspondante.
