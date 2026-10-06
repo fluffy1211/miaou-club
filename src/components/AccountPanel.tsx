@@ -162,6 +162,7 @@ export function AccountPanel({
           {me.access !== "group" ? (
             <div role="note">
               <h2>Ton espace personnel</h2>
+              <a href="/carnet">Retrouver mon carnet</a>
               <p>
                 {me.reason ??
                   "L’accès au groupe n’est pas autorisé pour ce compte."}
@@ -174,6 +175,10 @@ export function AccountPanel({
             </div>
           ) : (
             <>
+              <p>
+                <a href="/photo">Photographier un chat</a> ·{" "}
+                <a href="/carnet">Mon carnet</a>
+              </p>
               <a href="/races">Découvrir le catalogue</a>
               <form
                 onSubmit={async (e) => {
@@ -431,8 +436,16 @@ export function AccountPanel({
           <button
             disabled={busy}
             onClick={async () => {
-              if (await send("/api/auth/sign-out", {}))
+              if (await send("/api/auth/sign-out", {})) {
+                try {
+                  for (const key of Object.keys(sessionStorage))
+                    if (key.startsWith("miaou-draft-"))
+                      sessionStorage.removeItem(key);
+                } catch {
+                  /* Storage may be disabled. */
+                }
                 window.location.assign("/profil");
+              }
             }}
           >
             Se déconnecter

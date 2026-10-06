@@ -1,0 +1,8 @@
+---
+import EncounterLayout from "../../layouts/EncounterLayout.astro";
+import { Notebook } from "../../components/Notebook";
+---
+
+<EncounterLayout title="Un souvenir">
+  <Notebook id={Astro.params.id} client:load />
+</EncounterLayout>

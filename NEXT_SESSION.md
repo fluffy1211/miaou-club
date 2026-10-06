@@ -1,6 +1,6 @@
 # Miaou Club — reprise
 
-6 octobre 2026. **Lot 1 livré ; lot 2 comptes réalisé sur `feat/lot-2-comptes`, issu de `develop` (`528060b`).** Gabriel autorise sa publication et sa fusion vers `develop` par PR après CI, puis un nouveau chat pour construire le lot 3. Vérifier la PR et le SHA distant avant reprise ; les contrôles locaux ci-dessous datent du 4 octobre, la livraison relance le pre-push et la CI. Aucun déploiement ni compte réel créé. Checkout partagé : maquettes, consignes/skills, configuration documentaire et documents non suivis préservés. Un seul agent.
+6 octobre 2026. **Lots 1 et 2 livrés ; lot 3 Polaroid implémenté localement sur `feat/lot-3-polaroid`, depuis `develop` (`fac3185`).** [PR 2](https://github.com/fluffy1211/miaou-club/pull/2) fusionnée par squash `fac3185acb25d3114d78a10ab0b2fade214b596a` le 6 octobre ; CI `37486982626` entièrement réussie, état distant relu dans ce chat. Lot 3 autorisé jusqu'à la tranche fonctionnelle vérifiée ; Gabriel autorise le 6 octobre sa livraison vers develop par PR après CI. Aucun déploiement demandé. Un seul agent. Tranche documentaire concurrente review/AGENTS/skill préservée et distinguée ci-dessous ; fichiers locaux non suivis conservés. Aucun compte réel, photo personnelle ou service fournisseur activé.
 
 ## Configuration reviews et dépendances — 6 octobre 2026
 
@@ -12,6 +12,18 @@ Tranche isolée du checkout lot 3 : `chore/pr-tooling` depuis le `develop` dista
 - Commandes, exploitation/récupération et limites des lots : [DEVELOPPEMENT](docs/DEVELOPPEMENT.md#lots).
 - Contrats et blocages : [FOURNISSEURS](docs/FOURNISSEURS.md) ; analyse du pilote : [JURIDIQUE](docs/JURIDIQUE.md) ; [CGU/notice en préparation](docs/TEXTES_UTILISATEURS.md), non publiables.
 
+## Lot 3 — Polaroid local
+
+Upload → traitement → aperçu → publication durable → carnet, édition sous révision et suppression. Sharp, passerelle sans cache, adaptateur Supabase privé et stockage local de test, migrations additives avec ownership/photo unique, compteurs PostgreSQL, idempotence et tâches de reprise/purge. Parcours mobile crème/violet/corail conforme à la direction des maquettes ; localisation absente dans cette tranche. Brouillon dans l'onglet explicitement annoncé, effaçable/expirant ; aucune image binaire ni coordonnée dans le brouillon persisté. Détails techniques dans ARCHITECTURE, exploitation dans DEVELOPPEMENT.
+
+Vérifications exécutées le 6 octobre : `npm run verify:full` réussi (12 tests catalogue, 25 tests serveur, 18 E2E Chromium/WebKit mobiles, format/lint, Astro/TypeScript, builds application/backend/Storybook, audit, Gitleaks et actionlint). Suite complète relancée après durcissement du bucket privé ; contrôle serveur ciblé réussi après stabilisation des horloges de frontière dans le test de session existant (assertions 30 jours/7 jours conservées). PostgreSQL jetable : base vide et upgrade du lot 2, idempotence concurrente, quotas, ownership, public → privé, masquage/suspension/retrait, refus API/images, échecs stockage, original/purge/reprise, fichiers partiels, expiration et suppression. Captures synthétiques description/aperçu/carnet inspectées à 390–393 px et 1280 px ; dialogue/focus, rechargement et stockage navigateur refusé vérifiés. Correction des dates locales PostgreSQL, de l’ordre FK/unique dans la migration générée (jamais livrée), du nettoyage des fichiers `.tmp`, du conteneur HEIF/AVIF et de la publication lorsque sessionStorage est refusé. Aucun test ignoré ni assertion affaiblie.
+
+Image `miaou-lot3:local` construite, smoke sur DB isolée (santé, readiness, rendu, refus des APIs et images) et scan Trivy HIGH/CRITICAL réussis. Sharp natif également exécuté dans le conteneur limité à 512 Mio/1 CPU : PNG synthétique 60 Mpx → 1920×1800, environ 303 ms, pic processus 171 Mio ; mesure uniforme de traitement isolé, pas garantie de mémoire totale de l'application ni benchmark de photos réelles. Sur macOS, JPEG/PNG 60 Mpx synthétiques : pics 124/170 Mio dans des processus séparés. Audit npm final : quatre alertes modérées de la chaîne Drizzle Kit/esbuild, outils exclus du runtime ; aucune alerte haute bloquante. Bases/dossiers E2E et bases de test créées par cette tranche nettoyés, bases anciennes préservées. Pas de migration de `miaou_dev`.
+
+Auto-revue du lot 3 terminée depuis la base `develop`/upstream local et HEAD `fac3185`, fichiers locaux nouveaux inclus ; aucun défaut bloquant démontré restant dans cette tranche. Documentation/skills concurrentes review examinées seulement pour le routage et préservées, hors verdict applicatif. Verdict local : prêt pour push sous autorisation ; ce n'est ni une seconde lecture indépendante, ni une validation Supabase/iPhone/conformité. Livraison Git autorisée en cours, par branche feature puis PR vers develop après CI.
+
+Limites connues : HEIC non décodable par le binaire Sharp distribué, refus et conseil JPEG explicites ; pas de preuve iPhone/Android physique, caméra native ou PWA. Adaptateur Supabase testé avec double HTTP, aucun bucket réel ni purge distante vérifiés. Le processus actif reprend les tâches, sans garantie de délai lorsque l'hébergement dort ; scheduler/alertes/quota/sauvegarde/restauration à éprouver avant ouverture. Inscriptions réelles toujours fermées ; localisation/découverte, avatar photo et modération/export/suppression de compte hors tranche actuelle.
+
 ## Lot 2 — tranche réalisée
 
 Comptes e-mail et Google natifs Better Auth, adresse préautorisée et preuve serveur 18+/CGU, profil persistant/identifiant immuable, projection sans e-mail, liaison explicite, réinitialisation, révocation, portail suspendu/retrait. Plafonds et fraîcheur des sessions ; TOTP admin par session, secours et récupération manuelle auditée. Compteurs PostgreSQL atomiques, adaptateur Resend préparé, quota application sous MFA et purge locale. Pages React/Astro et stories de connexion. Migrations additives ; DB locale `miaou_dev` migrée, aucune autorisation réelle créée.
@@ -20,7 +32,7 @@ Décisions validées dans ce chat : **aucune vérification d’adresse obligatoi
 
 Vérifications exécutées : 12 tests catalogue, 15 tests serveur sur PostgreSQL isolé, 10 E2E Chromium/WebKit mobiles ; format/lint, Astro/TypeScript et builds application/backend/Storybook. Inscription sans vérification, acceptation obligatoire, ownership/refus, statut, reset concurrent à usage unique/expiration/révocation, délais, compteurs concurrents, MFA/recours, Google simulé sans fusion, liaison sous preuve fraîche, enrôlement TOTP d’un admin Google sans mot de passe et refus d’une autre session Google sans sa propre preuve MFA. Renouvellement du cookie natif sans remise à zéro du plafond absolu. Captures publiques connexion/inscription inspectées au format mobile. Migration DB locale exécutée. Image runtime `miaou-lot2:local` construite et démarrage testé sur DB isolée : santé, readiness, rendu et refus images. Trivy : aucune alerte HIGH/CRITICAL détectée. Gitleaks sans fuite, actionlint réussi ; `npm audit --audit-level=high` réussi avec six alertes modérées liées à Drizzle Kit/esbuild (chaîne d’outillage retirée du runtime). Aucun audit général de conformité. Aperçu compilé laissé actif sur `http://localhost:43994/profil` (session locale 35377), DB de développement démarrée ; readiness `200`, options réelles `google:false`/`signup:false`. Bases de test éphémères et conteneurs de smoke nettoyés.
 
-Limites : Google réel et délivrabilité Resend non testés ; aucun fournisseur configuré. `MIAOU_TERMS_VERSION` reste absente hors tests tant que les textes ne sont pas finalisés : inscriptions réelles fermées. Avatar photo/upload au lot 3 ; export/suppression/modération au lot 5 (gardes sensibles présentes, réponses `501` pour les opérations non réalisées). Pas de preuve de conformité RGPD/ASVS ni de purge chez les fournisseurs. Topologie proxy/IP fiable à valider avant déploiement.
+Limites : Google réel et délivrabilité Resend non testés ; aucun fournisseur configuré. `MIAOU_TERMS_VERSION` reste absente hors tests tant que les textes ne sont pas finalisés : inscriptions réelles fermées. Avatar photo hors tranche Polaroid actuelle ; export/suppression/modération au lot 5 (gardes sensibles présentes, réponses `501` pour les opérations non réalisées). Pas de preuve de conformité RGPD/ASVS ni de purge chez les fournisseurs. Topologie proxy/IP fiable à valider avant déploiement.
 
 ## Livraison du lot 1 — terminée
 
@@ -29,9 +41,9 @@ Limites : Google réel et délivrabilité Resend non testés ; aucun fournisseur
 ## Blocages avant ouverture réelle
 
 - CGU/notice, qualification du pilote, majorité/indices de minorité et filtrage AIPD : JURIDIQUE/TEXTES_UTILISATEURS à finaliser.
-- MapTiler et B2 : pièces contractuelles incomplètes ; demandes préparées non envoyées, aucun fournisseur contacté. Supabase Storage Free retenu pour le pilote, intégration photos encore absente.
+- MapTiler et B2 : pièces contractuelles incomplètes ; demandes préparées non envoyées, aucun fournisseur contacté. Supabase Storage Free retenu pour le pilote, adaptateur photo local réalisé ; service externe non activé ni éprouvé.
 - Domaine/boîte/expéditeur, Google réel, rétentions et transferts fournisseurs, stockage/purge/sauvegarde/restauration à éprouver. Aucun achat ni contrat accepté.
-- Lots rencontres/photos/carte/amis/modération/droits et livraison encore nécessaires ; pilote non prêt pour les données réelles.
+- Validation externe des médias, lots carte/amis/modération/droits et livraison encore nécessaires ; pilote non prêt pour les données réelles.
 
 ## Vérifications des consignes et outils documentaires — autre tranche
 
@@ -44,4 +56,4 @@ Playwright installé : génération officielle Codex testée en dossier temporai
 
 ## Prochaine action
 
-Terminer la livraison autorisée du lot 2 vers `develop` après CI, puis construire le lot 3 Polaroid complet dans le nouveau chat demandé par Gabriel. Repartir du `develop` livré, préserver les fichiers locaux non suivis et relire les critères du lot dans DEVELOPPEMENT. Ne pas ouvrir le pilote avant résolution des blocages et parcours manquants. Déploiement, achat et contact fournisseur exigent leur autorisation correspondante.
+Lot 3 local vérifié ; livraison autorisée en cours après séparation de la tranche documentaire concurrente. prochaine tranche fonctionnelle : lot 4 découverte/carte, seulement après demande. Préserver la tranche documentaire concurrente et les fichiers locaux non suivis. Ne pas ouvrir le pilote avant résolution des blocages et parcours manquants. Déploiement, achat et contact fournisseur exigent leur autorisation correspondante.

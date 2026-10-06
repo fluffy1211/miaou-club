@@ -5,6 +5,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname.replace(/\/$/, "") || "/";
   if (
     path.startsWith("/api/") ||
+    path.startsWith("/media/") ||
+    path === "/carnet" ||
+    path.startsWith("/rencontre/") ||
     [
       "/acces",
       "/profil",

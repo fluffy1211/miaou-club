@@ -415,10 +415,13 @@ test("sessions: absolute and idle boundaries, freshness, cannot reuse another se
       200,
     );
     assert.equal((await a.call("/api/v1/me/export", {})).status, 501);
-    await h.pool.query(
-      "update session_security set authenticated_at=now()-interval '30 days'",
-    );
-    assert.equal(await identity(h.db, h.auth, a.headers()), null);
+    // Use one clock for the exact boundary; the Docker DB clock can differ
+    // from Node by milliseconds. Keep the refusal at precisely 30 days.
+    const absoluteNow = new Date();
+    await h.pool.query("update session_security set authenticated_at=$1", [
+      new Date(absoluteNow.getTime() - 30 * 86400000),
+    ]);
+    assert.equal(await identity(h.db, h.auth, a.headers(), absoluteNow), null);
     assert.equal(
       (await h.pool.query("select count(*) from session")).rows[0].count,
       "0",
@@ -427,9 +430,10 @@ test("sessions: absolute and idle boundaries, freshness, cannot reuse another se
       email: a.email,
       password: "synthetic-password-long",
     });
-    await h.pool.query(
-      "update session_security set used_at=now()-interval '7 days'",
-    );
+    const idleNow = new Date();
+    await h.pool.query("update session_security set used_at=$1", [
+      new Date(idleNow.getTime() - 7 * 86400000),
+    ]);
     assert.equal((await a.call("/api/v1/me")).status, 401);
     assert.equal(safeReturn("https://outside.example.test"), "/profil");
     assert.equal(safeReturn("//outside.example.test"), "/profil");

@@ -58,6 +58,9 @@ try {
   for (const [path, expected] of [
     ["/api/ready", 200],
     ["/api/v1/access", 401],
+    ["/api/v1/me/encounters", 401],
+    ["/api/v1/encounters", 401],
+    ["/media/00000000-0000-0000-0000-000000000000/image", 401],
     ["/_image?href=synthetic", 401],
     ["/_astro/synthetic.%73vg", 401],
   ]) {
