@@ -64,6 +64,11 @@ try {
       "insert into profile (user_id,display_name) values ($1,$2)",
       [body.user.id, "Synthetic fixture"],
     );
+    if (role === "reader")
+      await pool.query(
+        "update profile set handle='synthetic_reader',color='corail',avatar='cat',bio='Profil synthétique du club.' where user_id=$1",
+        [body.user.id],
+      );
     await pool.query(
       "insert into session_security (session_id,authenticated_at,used_at,reauthenticated_at) select id,now(),now(),now() from session where user_id=$1",
       [body.user.id],

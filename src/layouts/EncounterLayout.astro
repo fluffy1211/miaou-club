@@ -39,6 +39,12 @@ const path = Astro.url.pathname;
         </svg>
         Accueil
       </a>
+      <a href="/carte" aria-current={path === "/carte" ? "page" : undefined}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m2 5 6-3 8 3 6-3v17l-6 3-8-3-6 3ZM8 2v17M16 5v17" />
+        </svg>
+        Carte
+      </a>
       <a href="/photo" aria-current={path === "/photo" ? "page" : undefined}>
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M3 7h5l2-3h4l2 3h5v13H3Z" />
@@ -46,7 +52,10 @@ const path = Astro.url.pathname;
         </svg>
         Photo
       </a>
-      <a href="/profil">
+      <a
+        href="/profil"
+        aria-current={path.startsWith("/profil") ? "page" : undefined}
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="7" r="4" />
           <path d="M4 22v-3a8 8 0 0 1 16 0v3" />

@@ -3,6 +3,7 @@ import type { Auth } from "../infrastructure/auth/auth.js";
 import { identity, groupAllowed } from "../accounts/security.js";
 import { reply } from "../accounts/http.js";
 import { Encounters, EncounterError, uuid } from "./service.js";
+import { mainland } from "./mainland.js";
 async function jsonBody(request: Request) {
   const reader = request.body?.getReader();
   if (!reader) throw new EncounterError("invalid_request");
@@ -39,6 +40,8 @@ export async function encountersHTTP(
     !path.startsWith("/api/v1/media") &&
     !path.startsWith("/api/v1/encounters") &&
     path !== "/api/v1/me/encounters" &&
+    !path.startsWith("/api/v1/map") &&
+    !/^\/api\/v1\/profiles\/[^/]+\/encounters$/.test(path) &&
     !path.startsWith("/media/")
   )
     return null;
@@ -83,6 +86,33 @@ export async function encountersHTTP(
     } else if (path === "/api/v1/me/encounters" && method === "GET")
       response = reply(
         await service.list(i, url.searchParams.get("after") ?? undefined),
+      );
+    else if (path === "/api/v1/map/contours" && method === "GET") {
+      if (!groupAllowed(i)) return reply({ code: "forbidden" }, 403);
+      response = reply({
+        type: "FeatureCollection",
+        license: "https://opendatacommons.org/licenses/odbl/1-0/",
+        source: "https://www.data.gouv.fr/datasets/contours-administratifs",
+        features: mainland.map((coordinates) => ({
+          type: "Feature",
+          properties: { source: "Etalab / IGN 2026", generalization: 100 },
+          geometry: { type: "Polygon", coordinates },
+        })),
+      });
+    } else if (
+      (path === "/api/v1/encounters" ||
+        path === "/api/v1/map" ||
+        /^\/api\/v1\/profiles\/[^/]+\/encounters$/.test(path)) &&
+      method === "GET"
+    )
+      response = reply(
+        await service.discover(i, {
+          after: url.searchParams.get("after") ?? undefined,
+          map: path === "/api/v1/map",
+          handle: path.startsWith("/api/v1/profiles/")
+            ? decodeURIComponent(path.split("/")[4])
+            : undefined,
+        }),
       );
     else if (path === "/api/v1/encounters" && method === "POST")
       response = reply(

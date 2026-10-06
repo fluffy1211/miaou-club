@@ -1,0 +1,4 @@
+ALTER TABLE "encounter" ADD COLUMN "location_size" integer;--> statement-breakpoint
+ALTER TABLE "encounter" ADD COLUMN "location_x" integer;--> statement-breakpoint
+ALTER TABLE "encounter" ADD COLUMN "location_y" integer;--> statement-breakpoint
+ALTER TABLE "encounter" ADD CONSTRAINT "encounter_location" CHECK (("encounter"."location_size" is null and "encounter"."location_x" is null and "encounter"."location_y" is null) or ("encounter"."location_size" is not null and "encounter"."location_x" is not null and "encounter"."location_y" is not null and "encounter"."location_size" in (500,1000,2000) and "encounter"."location_x" between 0 and 2600 and "encounter"."location_y" between 3000 and 14500));

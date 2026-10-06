@@ -4,6 +4,9 @@ import type {
   EncounterView,
   MediaView,
 } from "@miaou/contracts";
+import { cell } from "../../server/src/encounters/location";
+import { ZoneMap } from "./ZoneMap";
+import { locationLabel } from "./LocationFields";
 import { Polaroid } from "./Polaroid";
 import { EncounterFields } from "./EncounterFields";
 import {
@@ -78,7 +81,23 @@ export function PhotoFlow() {
             }
           }
         }
-        if (alive) setOwner(me.user.id);
+        if (alive) {
+          try {
+            const selected = sessionStorage.getItem(
+              "miaou-selected-cell-" + me.user.id,
+            );
+            if (selected) {
+              const location = cell(JSON.parse(selected));
+              setDraft((old) => ({ ...old, location, locationMethod: "map" }));
+              if (sessionStorage.getItem("miaou-draft-" + me.user.id))
+                setStep("describe");
+              sessionStorage.removeItem("miaou-selected-cell-" + me.user.id);
+            }
+          } catch {
+            /* Invalid selection or browser storage unavailable. */
+          }
+          setOwner(me.user.id);
+        }
       })
       .catch((e) => {
         if (alive) setMessage(e.message);
@@ -428,8 +447,9 @@ export function PhotoFlow() {
                   ? "Privé · toi uniquement"
                   : "Public · membres du club"}
                 <br />
-                Sans lieu partagé.
+                {locationLabel(draft.location)}
               </p>
+              {draft.location && <ZoneMap selected={draft.location} />}
               <div className="encounter-actions">
                 <button
                   className="encounter-button"
