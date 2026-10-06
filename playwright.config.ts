@@ -1,4 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
+
+// Refuse before starting servers or browsers: macOS Seatbelt blocks browser startup.
+if (process.platform === "darwin" && process.env.CODEX_SANDBOX === "seatbelt") {
+  throw new Error(
+    "Playwright ne peut pas démarrer dans le sandbox macOS de Codex. " +
+      "Relancer cette commande avec l'exécution Codex autorisée hors sandbox, " +
+      "ou depuis le Terminal. Ne pas retirer CODEX_SANDBOX pour contourner cette garde.",
+  );
+}
+
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
