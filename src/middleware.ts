@@ -3,7 +3,21 @@ import { handleRequest } from "@miaou/server/http";
 
 export const onRequest = defineMiddleware(async (context, next) => {
   const path = context.url.pathname.replace(/\/$/, "") || "/";
-  if (path.startsWith("/api/") || path === "/acces") return next();
+  if (
+    path.startsWith("/api/") ||
+    [
+      "/acces",
+      "/profil",
+      "/compte",
+      "/mot-de-passe-oublie",
+      "/reinitialisation",
+      "/conditions",
+    ].includes(path)
+  ) {
+    const page = await next();
+    page.headers.set("Cache-Control", "no-store");
+    return page;
+  }
   const response = await handleRequest(
     new Request(new URL("/api/v1/access", context.url), {
       headers: context.request.headers,
@@ -11,7 +25,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
   );
   if (response.status !== 200) {
     const redirect = context.redirect(
-      response.status === 503 ? "/acces?etat=indisponible" : "/acces",
+      response.status === 503
+        ? "/acces?etat=indisponible"
+        : "/profil?retour=" + encodeURIComponent(path + context.url.search),
       302,
     );
     redirect.headers.set("Cache-Control", "no-store");
@@ -19,5 +35,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   }
   const page = await next();
   page.headers.set("Cache-Control", "no-store");
+  for (const cookie of response.headers.getSetCookie())
+    page.headers.append("set-cookie", cookie);
   return page;
 });

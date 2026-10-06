@@ -9,6 +9,9 @@ const { handleRequest, dispose } =
 const baseURL = process.env.BETTER_AUTH_URL;
 if (!baseURL) throw new Error("BETTER_AUTH_URL is required");
 const server = createServer(async (req, res) => {
+  // Overwrite any caller-supplied value before Astro forwards this trusted
+  // socket address; proxy deployments must be assessed separately.
+  req.headers["x-miaou-client-ip"] = req.socket.remoteAddress ?? "unknown";
   const started = performance.now();
   const requestId = randomUUID();
   res.setHeader("X-Request-Id", requestId);

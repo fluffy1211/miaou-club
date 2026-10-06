@@ -1,7 +1,10 @@
 import "dotenv/config";
+import { setInterval, clearInterval } from "node:timers";
+import { cleanupAccounts } from "../accounts/cleanup.js";
 import { Effect, Layer } from "effect";
 import { HttpApp } from "@effect/platform";
-import { createDatabase } from "../infrastructure/db/client.js";
+import { createDatabase, closePool } from "../infrastructure/db/client.js";
+import { resetSender } from "../accounts/mail.js";
 import { createAuth } from "../infrastructure/auth/auth.js";
 import * as schema from "../infrastructure/db/schema.js";
 import { app, Services } from "./app.js";
@@ -36,15 +39,39 @@ const layer = Layer.scoped(
         {
           secret,
           baseURL,
+          termsVersion: process.env.MIAOU_TERMS_VERSION,
+          ...(process.env.RESEND_API_KEY && process.env.MIAOU_MAIL_FROM
+            ? {
+                sendReset: resetSender(
+                  db,
+                  process.env.RESEND_API_KEY,
+                  process.env.MIAOU_MAIL_FROM,
+                ),
+              }
+            : {}),
           ...(googleId && googleSecret
             ? { google: { clientId: googleId, clientSecret: googleSecret } }
             : {}),
         },
         schema,
       );
-      return { db, pool, auth };
+      const clean = () =>
+        cleanupAccounts(db).catch(() =>
+          console.error(
+            JSON.stringify({ component: "accounts", code: "cleanup_failed" }),
+          ),
+        );
+      void clean();
+      const cleanupTimer = setInterval(() => {
+        void clean();
+      }, 12 * 3600000).unref();
+      return { db, pool, auth, cleanupTimer };
     }),
-    ({ pool }) => Effect.promise(() => pool.end()),
+    ({ pool, cleanupTimer }) =>
+      Effect.promise(async () => {
+        clearInterval(cleanupTimer);
+        await closePool(pool);
+      }),
   ),
 );
 const runtime = HttpApp.toWebHandlerLayer(app, layer);

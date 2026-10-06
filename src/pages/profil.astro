@@ -1,0 +1,10 @@
+---
+import AccountLayout from "../layouts/AccountLayout.astro";
+import { AccountPanel } from "../components/AccountPanel";
+import { safeReturn } from "../../server/src/accounts/security";
+const returnTo = safeReturn(Astro.url.searchParams.get("retour"));
+---
+
+<AccountLayout>
+  <AccountPanel client:load mode="profile" returnTo={returnTo} />
+</AccountLayout>

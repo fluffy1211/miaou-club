@@ -9,6 +9,7 @@ export function AccessNotice({ unavailable = false }: Props) {
           : "L’accès au club est réservé aux membres admis."}
       </p>
       <p>Les inscriptions ne sont pas encore ouvertes.</p>
+      <a href="/profil">Se connecter</a>
     </section>
   );
 }
