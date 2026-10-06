@@ -10,5 +10,9 @@
     "enabled": false
   },
   "ignorePatterns": "node_modules/**\ndist/**\n.cache/**\nstorybook-static/**\ndocs/archives/**",
-  "instructions": "Répondre en français. Vérifier les défauts concrets du diff dans le contexte du dépôt. Aucune correction ni approbation automatique."
+  "instructions": "Répondre en français. Vérifier les défauts concrets du diff dans le contexte du dépôt. Aucune correction ni approbation automatique.",
+  "statusCommentsEnabled": true,
+  "sequenceDiagramSection": {
+    "included": false
+  }
 }
