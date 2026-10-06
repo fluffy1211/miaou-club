@@ -2,6 +2,10 @@
 
 6 octobre 2026. **Lot 1 livré ; lot 2 comptes réalisé sur `feat/lot-2-comptes`, issu de `develop` (`528060b`).** Gabriel autorise sa publication et sa fusion vers `develop` par PR après CI, puis un nouveau chat pour construire le lot 3. Vérifier la PR et le SHA distant avant reprise ; les contrôles locaux ci-dessous datent du 4 octobre, la livraison relance le pre-push et la CI. Aucun déploiement ni compte réel créé. Checkout partagé : maquettes, consignes/skills, configuration documentaire et documents non suivis préservés. Un seul agent.
 
+## Configuration reviews et dépendances — 6 octobre 2026
+
+Tranche isolée du checkout lot 3 : `chore/pr-tooling` depuis le `develop` distant `fac3185`. Alertes Dependabot et correctifs automatiques activés/vérifiés par API. Greptile gratuit choisi par Gabriel ; ruleset Copilot `24590908` créé puis désactivé. Configuration Greptile Base à l’ouverture vers `develop`/`main`, sans auto-approbation/fusion ; consignes préparées, application sur Starter à vérifier. Connexion et accès GitHub Greptile à terminer par Gabriel ; aucune review exécutée. Dependabot regroupé chaque lundi 09:00 Europe/Paris ; fichier aussi nécessaire sur `main` pour activer les mises à jour régulières, PR configuration seule autorisée par Gabriel via hotfix. YAML/JSON, paramètres sensibles, format des configurations et diff contrôlés ; PR/CI à vérifier avant reprise. Aucun changement aux fichiers du lot 3.
+
 ## Références utiles
 
 - Règles produit : [CADRAGE](docs/CADRAGE.md) ; mécanismes et migrations : [ARCHITECTURE](docs/ARCHITECTURE.md).
