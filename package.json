@@ -9,7 +9,7 @@
     "build": "astro build && npm run build:server",
     "preview": "astro preview --host 127.0.0.1",
     "test": "node --test tests/*.test.ts",
-    "verify": "npm run format:check && npm run lint && npm run test && npm run check && npm run build:offline && npm run build:storybook",
+    "verify": "npm run format:check && npm run lint && npm run test && MIAOU_OFFLINE_CATALOG=1 npm run check && npm run build:offline && npm run build:storybook",
     "data:refresh": "MIAOU_REFRESH_API=1 astro sync --force",
     "dev:docker": "astro dev --host 0.0.0.0",
     "check:server": "tsc -p server/tsconfig.json",
@@ -35,7 +35,9 @@
     "security:secrets": "docker run --rm -v \"$PWD:/repo:ro\" ghcr.io/gitleaks/gitleaks:v8.30.0 dir /repo --config /repo/.gitleaks.toml --redact --no-banner",
     "security:image": "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v miaou-trivy-cache:/root/.cache aquasec/trivy:0.75.0 image --quiet --severity HIGH,CRITICAL --scanners vuln --exit-code 1 miaou-lot1:local",
     "security:workflows": "docker run --rm -v \"$PWD/.github/workflows:/work:ro\" -w /work rhysd/actionlint:1.7.12 ci.yml promotion-preflight.yml",
-    "test:image": "node scripts/smoke-image.mjs"
+    "test:image": "node scripts/smoke-image.mjs",
+    "accounts:ops": "tsx server/src/ops/accounts.ts",
+    "accounts:cleanup": "tsx server/src/ops/cleanup.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",

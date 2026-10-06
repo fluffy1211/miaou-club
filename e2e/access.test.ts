@@ -6,10 +6,12 @@ test("anonymous catalogue is closed and public Astro/React notice renders", asyn
   request,
 }) => {
   await page.goto("/races");
-  await expect(page).toHaveURL(/\/acces$/);
-  await expect(page.getByRole("heading", { name: "Miaou Club" })).toBeVisible();
+  await expect(page).toHaveURL(/\/profil\?retour=/);
   await expect(
-    page.getByText("Les inscriptions ne sont pas encore ouvertes."),
+    page.getByRole("heading", { name: "Retrouve ton petit monde." }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Se connecter", exact: true }),
   ).toBeVisible();
   expect((await request.get("/api/v1/access")).status()).toBe(401);
   expect((await request.get("/api/ready")).status()).toBe(200);
@@ -48,7 +50,7 @@ test("real session allows admitted member, refuses non-admitted and suspended fi
     expect(image.status()).toBe(role === "member" ? 200 : 403);
     expect(image.headers()["cache-control"]).toBe("no-store");
     if (role !== "member") {
-      await expect(page).toHaveURL(/\/acces$/);
+      await expect(page).toHaveURL(/\/profil\?retour=/);
       expect((await context.request.get("/api/v1/access")).status()).toBe(403);
     } else {
       await expect(page).toHaveURL(/\/races$/);

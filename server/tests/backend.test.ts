@@ -11,7 +11,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { Layer } from "effect";
 import { HttpApp } from "@effect/platform";
-import { createDatabase } from "../src/infrastructure/db/client.js";
+import { createDatabase, closePool } from "../src/infrastructure/db/client.js";
 import { createAuth } from "../src/infrastructure/auth/auth.js";
 import * as schema from "../src/infrastructure/db/schema.js";
 import { app, Services } from "../src/http/app.js";
@@ -39,9 +39,9 @@ async function isolated(
   try {
     await run(services);
   } finally {
-    if (!services.pool.ended) await services.pool.end();
+    if (!services.pool.ended) await closePool(services.pool);
     await admin.pool.query(`drop database "${name}" with (force)`);
-    await admin.pool.end();
+    await closePool(admin.pool);
   }
 }
 async function apply(
@@ -161,8 +161,11 @@ test("real Better Auth cookie: refusal, verified session, admission, suspension,
       const cookie = setCookie.split(";")[0];
       assert.equal((await request("/api/v1/access", cookie)).status, 403);
       await pool.query(
-        "insert into user_policy (user_id, admitted) values ($1,true)",
+        "insert into user_policy (user_id, admitted,accepted_at,terms_version) values ($1,true,now(),'synthetic-terms-v1')",
         [account.user.id],
+      );
+      await pool.query(
+        "insert into admission (email) values ('member@example.test')",
       );
       let response = await request("/api/v1/access", cookie);
       assert.equal(response.status, 200);
@@ -176,7 +179,8 @@ test("real Better Auth cookie: refusal, verified session, admission, suspension,
       assert.equal((await request("/api/v1/access", cookie)).status, 403);
       await pool.query("update user_policy set admitted=true");
       await pool.query('update "user" set email_verified=false');
-      assert.equal((await request("/api/v1/access", cookie)).status, 403);
+      // Gabriel removed email-verification as an access/publication prerequisite.
+      assert.equal((await request("/api/v1/access", cookie)).status, 200);
       await pool.query('update "user" set email_verified=true');
       await auth.api.signOut({ headers: new Headers({ cookie }) });
       assert.equal((await request("/api/v1/access", cookie)).status, 401);
@@ -191,7 +195,7 @@ test("real Better Auth cookie: refusal, verified session, admission, suspension,
           }),
         }),
       );
-      assert.equal(response.status, 400);
+      assert.equal(response.status, 403);
       assert.equal(
         (await pool.query('select count(*) from "user"')).rows[0].count,
         "1",
@@ -313,7 +317,10 @@ test("Google provider with deterministic double: native auth session, no auto-li
       configured.options.socialProviders.google?.disableSignUp,
       true,
     );
-    assert.equal(configured.options.account?.accountLinking?.enabled, false);
+    assert.equal(
+      configured.options.account?.accountLinking?.disableImplicitLinking,
+      true,
+    );
   }));
 
 test("database failure is a bounded 503 without driver details", async () =>
@@ -323,7 +330,7 @@ test("database failure is a bounded 503 without driver details", async () =>
       app,
       Layer.succeed(Services, { db, pool, auth }),
     );
-    await pool.end();
+    await closePool(pool);
     try {
       const response = await runtime.handler(
         new Request(baseURL + "/api/ready"),

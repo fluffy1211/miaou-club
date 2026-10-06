@@ -15,6 +15,13 @@
       "when": 1791123061950,
       "tag": "0001_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791129485845,
+      "tag": "0002_hesitant_xorn",
+      "breakpoints": true
     }
   ]
 }

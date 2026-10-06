@@ -70,7 +70,10 @@ try {
       throw new Error("Missing no-store");
   }
   const page = await fetch(origin + "/races", { redirect: "manual" });
-  if (page.status !== 302 || page.headers.get("location") !== "/acces")
+  if (
+    page.status !== 302 ||
+    page.headers.get("location") !== "/profil?retour=%2Fraces"
+  )
     throw new Error("Catalogue guard failed in image");
   const notice = await fetch(origin + "/acces");
   if (
