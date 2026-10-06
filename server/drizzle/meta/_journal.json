@@ -22,6 +22,20 @@
       "when": 1791129485845,
       "tag": "0002_hesitant_xorn",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1791300652293,
+      "tag": "0003_sweet_lester",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1791301571458,
+      "tag": "0004_wealthy_gateway",
+      "breakpoints": true
     }
   ]
 }

@@ -37,7 +37,8 @@
     "security:workflows": "docker run --rm -v \"$PWD/.github/workflows:/work:ro\" -w /work rhysd/actionlint:1.7.12 ci.yml promotion-preflight.yml",
     "test:image": "node scripts/smoke-image.mjs",
     "accounts:ops": "tsx server/src/ops/accounts.ts",
-    "accounts:cleanup": "tsx server/src/ops/cleanup.ts"
+    "accounts:cleanup": "tsx server/src/ops/cleanup.ts",
+    "media:maintenance": "tsx server/src/ops/media.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",

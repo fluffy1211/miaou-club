@@ -1,0 +1,371 @@
+.encounter-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: min(1120px, 100% - 40px);
+  margin: 24px auto 32px;
+  gap: 20px;
+}
+.encounter-header .logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--display);
+  font-size: 26px;
+  font-weight: 600;
+}
+.encounter-header .logo svg {
+  width: 30px;
+  height: 30px;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  fill: none;
+}
+.encounter-header > a:last-child {
+  font-size: 14px;
+  text-decoration: underline;
+}
+.encounter-main {
+  width: min(1040px, 100% - 40px);
+  margin: 0 auto 120px;
+}
+.encounter-main h1 {
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: clamp(28px, 5vw, 46px);
+  line-height: 1.12;
+  margin: 0 0 18px;
+  overflow-wrap: anywhere;
+}
+.encounter-main h2 {
+  font-family: var(--display);
+  font-weight: 500;
+  font-size: 28px;
+  overflow-wrap: anywhere;
+}
+.encounter-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+  z-index: 10;
+}
+.encounter-nav a {
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  font-size: 12px;
+  min-width: 64px;
+  min-height: 52px;
+}
+.encounter-nav svg {
+  width: 34px;
+  height: 34px;
+  padding: 6px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  border-radius: 12px;
+}
+.encounter-nav [aria-current] {
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.encounter-nav [aria-current] svg {
+  background: var(--coral);
+}
+.encounter-button {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 48px;
+  padding: 14px 24px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--coral);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+.encounter-button.secondary {
+  background: transparent;
+  border-color: var(--line);
+}
+.encounter-button:disabled,
+.encounter-link:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.encounter-link {
+  border: 0;
+  background: transparent;
+  padding: 12px 0;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--ink);
+  min-height: 44px;
+}
+.encounter-message {
+  min-height: 24px;
+  overflow-wrap: anywhere;
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+.photo-flow {
+  max-width: 900px;
+  margin: auto;
+}
+.photo-flow > h1,
+.photo-flow > p:not(.encounter-message) {
+  text-align: center;
+}
+.capture-frame {
+  background: var(--mint);
+  border: 2px dashed #9cafaa;
+  border-radius: 24px;
+  max-width: 480px;
+  min-height: 370px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  padding: 40px 28px;
+  margin: 28px auto 16px;
+}
+.capture-icon {
+  width: 54px;
+  height: 54px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+}
+.capture-frame p {
+  font-family: var(--hand);
+  font-size: 32px;
+  font-weight: 700;
+  margin: 18px 0;
+}
+.capture-frame .encounter-button {
+  width: 100%;
+  max-width: 320px;
+}
+.capture-gallery {
+  display: block;
+  margin: 10px auto 0;
+}
+.photo-help {
+  font-size: 13px;
+  color: var(--muted);
+}
+.photo-file {
+  display: none;
+}
+.encounter-editor,
+.encounter-detail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+  margin: 32px 0;
+}
+.encounter-editor > div,
+.encounter-detail > div {
+  min-width: 0;
+}
+.encounter-polaroid {
+  margin: 8px auto 24px;
+  background: white;
+  padding: 14px 14px 20px;
+  box-shadow: var(--shadow-paper);
+  max-width: 410px;
+  transform: rotate(-2deg);
+  overflow-wrap: anywhere;
+}
+.encounter-polaroid img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  background: var(--lilac);
+}
+.encounter-polaroid figcaption {
+  font-family: var(--hand);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+  margin: 14px 8px 0;
+}
+.encounter-polaroid.small figcaption {
+  font-size: 27px;
+}
+.encounter-description {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.photo-replace {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 13px;
+  margin: 20px 0;
+}
+.encounter-main form {
+  display: grid;
+  gap: 20px;
+}
+.encounter-main fieldset {
+  display: grid;
+  gap: 20px;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-width: 0;
+}
+.encounter-main label {
+  display: grid;
+  gap: 8px;
+  font-weight: 600;
+}
+.encounter-main input,
+.encounter-main textarea,
+.encounter-main select {
+  width: 100%;
+  padding: 13px 14px;
+  min-height: 48px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  color: var(--ink);
+  font: inherit;
+}
+.encounter-main small {
+  font-weight: 400;
+  font-size: 13px;
+}
+.encounter-privacy {
+  font-size: 14px;
+  background: var(--lilac);
+  padding: 16px;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.encounter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 24px 0;
+}
+.photo-pending {
+  min-height: 260px;
+  background: var(--lilac);
+  padding: 28px;
+  border-radius: 14px;
+}
+.notebook-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 32px 24px;
+  margin: 36px 0;
+}
+.encounter-meta {
+  font-size: 13px;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.empty-notebook {
+  background: var(--lilac);
+  padding: 32px;
+  border-radius: 18px;
+  margin: 32px 0;
+}
+.encounter-dialog {
+  width: min(440px, 100% - 32px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--paper);
+  color: var(--ink);
+  padding: 28px;
+}
+.encounter-dialog::backdrop {
+  background: #49366d66;
+}
+.encounter-main :focus-visible,
+.encounter-nav :focus-visible,
+.encounter-header :focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 4px;
+}
+@media (max-width: 650px) {
+  .encounter-editor,
+  .encounter-detail {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  .encounter-editor aside {
+    order: -1;
+  }
+  .encounter-editor .encounter-polaroid {
+    max-width: 230px;
+    margin-bottom: 16px;
+  }
+  .encounter-editor .encounter-polaroid figcaption {
+    font-size: 27px;
+  }
+  .encounter-header {
+    margin: 20px auto 24px;
+  }
+  .capture-frame {
+    min-height: 350px;
+    padding: 36px 24px;
+  }
+  .notebook-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px 18px;
+  }
+  .notebook-grid .encounter-polaroid {
+    padding: 8px 8px 14px;
+  }
+  .notebook-grid .encounter-polaroid figcaption {
+    font-size: 23px;
+    margin: 10px 2px 0;
+  }
+  .encounter-actions > * {
+    flex: 1 1 auto;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+/* Keep the off-screen skip link hidden even in full-page WebKit captures. */
+body > .skip-link {
+  visibility: hidden;
+}
+body > .skip-link:focus {
+  visibility: visible;
+}
+.draft-notice {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 24px;
+}
+.draft-notice p {
+  flex: 1;
+  min-width: 220px;
+  margin: 0;
+}

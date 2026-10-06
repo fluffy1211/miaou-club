@@ -1,3 +1,4 @@
+import sharp from "sharp";
 import { randomUUID } from "node:crypto";
 import { spawn } from "node:child_process";
 import { once } from "node:events";
@@ -34,6 +35,7 @@ try {
   const cookies: Record<string, string> = {};
   for (const [role, admitted, status] of [
     ["member", true, "active"],
+    ["reader", true, "active"],
     ["unadmitted", false, "active"],
     ["suspended", true, "suspended"],
   ] as const) {
@@ -76,6 +78,14 @@ try {
     '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"><rect width="16" height="16" fill="#bcdccb"/></svg>',
   );
   await mkdir(".cache", { recursive: true });
+  await mkdir(`.cache/${name}-media`, { recursive: true, mode: 0o700 });
+  await sharp(
+    Buffer.from(
+      `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480"><rect width="640" height="480" fill="#bcdccb"/><path d="M180 280L160 80L270 150L380 150L480 80L460 280Q450 410 320 410Q190 410 180 280" fill="#49366d"/><ellipse cx="260" cy="250" rx="30" ry="35" fill="#f4d978"/><ellipse cx="380" cy="250" rx="30" ry="35" fill="#f4d978"/><path d="M300 310L340 310L320 335Z" fill="#f47c67"/></svg>`,
+    ),
+  )
+    .png()
+    .toFile(".cache/e2e-photo.png");
   await writeFile(".cache/e2e-sessions.json", JSON.stringify(cookies), {
     mode: 0o600,
   });
@@ -85,6 +95,7 @@ try {
     env: {
       ...process.env,
       NODE_ENV: "test",
+      MIAOU_LOCAL_MEDIA_DIR: `${process.cwd()}/.cache/${name}-media`,
       MIAOU_TERMS_VERSION: "synthetic-terms-v1",
       HOST: "127.0.0.1",
       PORT: "43991",
@@ -104,4 +115,6 @@ try {
   await closePool(admin.pool);
   await rm("dist/client/_astro/e2e-fixture.svg", { force: true });
   await rm(".cache/e2e-sessions.json", { force: true });
+  await rm(".cache/e2e-photo.png", { force: true });
+  await rm(`.cache/${name}-media`, { recursive: true, force: true });
 }

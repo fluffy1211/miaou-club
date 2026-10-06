@@ -1,4 +1,6 @@
 import "dotenv/config";
+import { Encounters } from "../encounters/service.js";
+import { storageFromEnvironment } from "../encounters/storage.js";
 import { setInterval, clearInterval } from "node:timers";
 import { cleanupAccounts } from "../accounts/cleanup.js";
 import { Effect, Layer } from "effect";
@@ -55,6 +57,25 @@ const layer = Layer.scoped(
         },
         schema,
       );
+      const encounters = new Encounters(pool, storageFromEnvironment());
+      let mediaRunning = false;
+      const mediaClean = async () => {
+        if (mediaRunning) return;
+        mediaRunning = true;
+        try {
+          await encounters.maintenance();
+        } catch {
+          console.error(
+            JSON.stringify({ component: "media", code: "maintenance_failed" }),
+          );
+        } finally {
+          mediaRunning = false;
+        }
+      };
+      void mediaClean();
+      const mediaTimer = setInterval(() => {
+        void mediaClean();
+      }, 60000).unref();
       const clean = () =>
         cleanupAccounts(db).catch(() =>
           console.error(
@@ -65,11 +86,12 @@ const layer = Layer.scoped(
       const cleanupTimer = setInterval(() => {
         void clean();
       }, 12 * 3600000).unref();
-      return { db, pool, auth, cleanupTimer };
+      return { db, pool, auth, encounters, cleanupTimer, mediaTimer };
     }),
-    ({ pool, cleanupTimer }) =>
+    ({ pool, cleanupTimer, mediaTimer }) =>
       Effect.promise(async () => {
         clearInterval(cleanupTimer);
+        clearInterval(mediaTimer);
         await closePool(pool);
       }),
   ),

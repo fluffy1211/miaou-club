@@ -1,0 +1,3 @@
+ALTER TABLE "media" ADD CONSTRAINT "media_owner_identity" UNIQUE("id","owner_id");--> statement-breakpoint
+ALTER TABLE "encounter" ADD CONSTRAINT "encounter_media_owner_fk" FOREIGN KEY ("media_id","owner_id") REFERENCES "public"."media"("id","owner_id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "media" ADD CONSTRAINT "media_dimensions" CHECK ("media"."state" <> 'ready' or ("media"."width" is not null and "media"."height" is not null and "media"."width" between 1 and 1920 and "media"."height" between 1 and 1920));
