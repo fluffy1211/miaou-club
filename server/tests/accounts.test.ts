@@ -400,9 +400,9 @@ test("sessions: absolute and idle boundaries, freshness, cannot reuse another se
       "cookie refresh never resets the absolute deadline",
     );
 
-    await h.pool.query(
-      "update session_security set reauthenticated_at=now()-interval '5 minutes'",
-    );
+    await h.pool.query("update session_security set reauthenticated_at=$1", [
+      new Date(Date.now() - 300000),
+    ]);
     assert.equal((await a.call("/api/v1/me/export", {})).status, 403);
     assert.equal(
       (await a.call("/api/v1/reauth", { password: "wrong-synthetic-password" }))
@@ -779,9 +779,9 @@ test("Google admission and terms enforced before native creation; explicit linki
       }),
       (error: unknown) => (error as { statusCode?: number }).statusCode === 403,
     );
-    await h.pool.query(
-      "update session_security set reauthenticated_at=now()-interval '5 minutes'",
-    );
+    await h.pool.query("update session_security set reauthenticated_at=$1", [
+      new Date(Date.now() - 300000),
+    ]);
     await assert.rejects(
       auth.api.resetPassword({
         headers: cookies,
@@ -844,9 +844,9 @@ test("Google admission and terms enforced before native creation; explicit linki
       "credential",
       "google",
     ]);
-    await h.pool.query(
-      "update session_security set reauthenticated_at=now()-interval '5 minutes'",
-    );
+    await h.pool.query("update session_security set reauthenticated_at=$1", [
+      new Date(Date.now() - 300000),
+    ]);
     await assert.rejects(
       auth.api.linkSocialAccount({
         headers: existing.headers(),
