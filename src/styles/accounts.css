@@ -126,3 +126,12 @@
   outline: 3px solid var(--ink);
   outline-offset: 3px;
 }
+
+.data-panel > button {
+  margin: 0 8px 12px 0;
+}
+.data-panel form > div:has(> button) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}

@@ -38,7 +38,8 @@
     "test:image": "node scripts/smoke-image.mjs",
     "accounts:ops": "tsx server/src/ops/accounts.ts",
     "accounts:cleanup": "tsx server/src/ops/cleanup.ts",
-    "media:maintenance": "tsx server/src/ops/media.ts"
+    "media:maintenance": "tsx server/src/ops/media.ts",
+    "data:maintenance": "tsx server/src/ops/data.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",

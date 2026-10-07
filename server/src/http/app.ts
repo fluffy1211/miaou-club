@@ -10,6 +10,8 @@ import type { Auth } from "../infrastructure/auth/auth.js";
 import type { Database } from "../infrastructure/db/client.js";
 import { encountersHTTP } from "../encounters/http.js";
 import type { Encounters } from "../encounters/service.js";
+import { dataHTTP } from "../data/http.js";
+import type { DataManagement } from "../data/service.js";
 import { accountsHTTP } from "../accounts/http.js";
 
 export const Services = Context.GenericTag<{
@@ -17,6 +19,7 @@ export const Services = Context.GenericTag<{
   pool: Pool;
   auth: Auth;
   encounters?: Encounters;
+  dataManagement?: DataManagement;
 }>("miaou/Services");
 class Unavailable extends Data.TaggedError("Unavailable") {}
 const external = <T>(action: () => Promise<T>) =>
@@ -29,7 +32,7 @@ const json = (body: AccessResponse | ApiError | HealthResponse, status = 200) =>
 
 export const app = Effect.gen(function* () {
   const request = yield* HttpServerRequest.HttpServerRequest;
-  const { db, pool, auth, encounters } = yield* Services;
+  const { db, pool, auth, encounters, dataManagement } = yield* Services;
   const webRequest = yield* HttpServerRequest.toWeb(request);
   const path = new URL(webRequest.url).pathname;
   if (path === "/api/health" && request.method === "GET")
@@ -38,10 +41,15 @@ export const app = Effect.gen(function* () {
     yield* external(() => pool.query("select 1"));
     return json({ status: "ready" });
   }
-  const mediaResponse = encounters
-    ? yield* external(() => encountersHTTP(webRequest, db, auth, encounters))
+  const dataResponse = dataManagement
+    ? yield* external(() => dataHTTP(webRequest, db, auth, dataManagement))
     : null;
+  const mediaResponse =
+    !dataResponse && encounters
+      ? yield* external(() => encountersHTTP(webRequest, db, auth, encounters))
+      : null;
   const response =
+    dataResponse ??
     mediaResponse ??
     (yield* external(() => accountsHTTP(webRequest, db, auth)));
   return HttpServerResponse.fromWeb(response);

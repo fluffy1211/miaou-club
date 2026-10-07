@@ -36,6 +36,9 @@ try {
   for (const [role, admitted, status] of [
     ["member", true, "active"],
     ["reader", true, "active"],
+    ["admin", true, "active"],
+    ["data-chromium-mobile", true, "active"],
+    ["data-webkit-mobile", true, "active"],
     ["unadmitted", false, "active"],
     ["suspended", true, "suspended"],
   ] as const) {
@@ -73,6 +76,19 @@ try {
       "insert into session_security (session_id,authenticated_at,used_at,reauthenticated_at) select id,now(),now(),now() from session where user_id=$1",
       [body.user.id],
     );
+    if (role === "admin") {
+      await pool.query("update user_policy set role='admin' where user_id=$1", [
+        body.user.id,
+      ]);
+      await pool.query(
+        'update "user" set two_factor_enabled=true where id=$1',
+        [body.user.id],
+      );
+      await pool.query(
+        "update session_security set mfa_at=now(),admin_used_at=now() where session_id in(select id from session where user_id=$1)",
+        [body.user.id],
+      );
+    }
     cookies[role] = result.headers.get("set-cookie")!.split(";")[0];
   }
   await pool.query(

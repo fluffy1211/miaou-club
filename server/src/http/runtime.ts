@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { DataManagement } from "../data/service.js";
 import { Encounters } from "../encounters/service.js";
 import { storageFromEnvironment } from "../encounters/storage.js";
 import { setInterval, clearInterval } from "node:timers";
@@ -6,7 +7,7 @@ import { cleanupAccounts } from "../accounts/cleanup.js";
 import { Effect, Layer } from "effect";
 import { HttpApp } from "@effect/platform";
 import { createDatabase, closePool } from "../infrastructure/db/client.js";
-import { resetSender } from "../accounts/mail.js";
+import { resetSender, inactivitySender } from "../accounts/mail.js";
 import { createAuth } from "../infrastructure/auth/auth.js";
 import * as schema from "../infrastructure/db/schema.js";
 import { app, Services } from "./app.js";
@@ -57,13 +58,28 @@ const layer = Layer.scoped(
         },
         schema,
       );
-      const encounters = new Encounters(pool, storageFromEnvironment());
+      const storage = storageFromEnvironment();
+      const encounters = new Encounters(pool, storage);
+      const dataManagement = new DataManagement(
+        pool,
+        storage,
+        process.env.RESEND_API_KEY && process.env.MIAOU_MAIL_FROM
+          ? inactivitySender(
+              db,
+              process.env.RESEND_API_KEY,
+              process.env.MIAOU_MAIL_FROM,
+              baseURL,
+              secret,
+            )
+          : undefined,
+      );
       let mediaRunning = false;
       const mediaClean = async () => {
         if (mediaRunning) return;
         mediaRunning = true;
         try {
           await encounters.maintenance();
+          await dataManagement.maintenance();
         } catch {
           console.error(
             JSON.stringify({ component: "media", code: "maintenance_failed" }),
@@ -86,7 +102,15 @@ const layer = Layer.scoped(
       const cleanupTimer = setInterval(() => {
         void clean();
       }, 12 * 3600000).unref();
-      return { db, pool, auth, encounters, cleanupTimer, mediaTimer };
+      return {
+        db,
+        pool,
+        auth,
+        encounters,
+        dataManagement,
+        cleanupTimer,
+        mediaTimer,
+      };
     }),
     ({ pool, cleanupTimer, mediaTimer }) =>
       Effect.promise(async () => {

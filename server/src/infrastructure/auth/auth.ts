@@ -24,6 +24,7 @@ import {
   fresh,
   audit,
   manualResetKey,
+  recordActivity,
 } from "../../accounts/security.js";
 export type AuthOptions = {
   secret: string;
@@ -170,6 +171,12 @@ export function createAuth(
                 )[0]
               : null;
             const now = new Date();
+            if (!(await recordActivity(db, s.userId, now))) {
+              await db.delete(session).where(eq(session.id, s.id));
+              throw new APIError("FORBIDDEN", {
+                message: "Compte en cours de suppression.",
+              });
+            }
             await db.insert(sessionSecurity).values({
               sessionId: s.id,
               authenticatedAt: old?.authenticatedAt ?? now,

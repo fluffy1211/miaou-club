@@ -8,6 +8,8 @@ import { createOTP } from "@better-auth/utils/otp";
 import { createDatabase, closePool } from "../src/infrastructure/db/client.js";
 import { createAuth } from "../src/infrastructure/auth/auth.js";
 import * as schema from "../src/infrastructure/db/schema.js";
+import { DataManagement } from "../src/data/service.js";
+import { dataHTTP } from "../src/data/http.js";
 import { accountsHTTP } from "../src/accounts/http.js";
 import {
   identity,
@@ -74,6 +76,17 @@ async function setup(url: string) {
     },
     schema,
   );
+  const dataManagement = new DataManagement(pool, {
+    async put() {
+      throw new Error("Unused storage");
+    },
+    async get() {
+      throw new Error("Unused storage");
+    },
+    async remove() {
+      throw new Error("Unused storage");
+    },
+  });
   function client() {
     const jar = new Map<string, string>();
     return {
@@ -86,19 +99,18 @@ async function setup(url: string) {
         body?: Record<string, unknown>,
         method = body ? "POST" : "GET",
       ) {
-        const response = await accountsHTTP(
-          new Request(origin + path, {
-            method,
-            headers: {
-              ...Object.fromEntries(this.headers()),
-              origin,
-              "content-type": "application/json",
-            },
-            ...(body ? { body: JSON.stringify(body) } : {}),
-          }),
-          db,
-          auth,
-        );
+        const request = new Request(origin + path, {
+          method,
+          headers: {
+            ...Object.fromEntries(this.headers()),
+            origin,
+            "content-type": "application/json",
+          },
+          ...(body ? { body: JSON.stringify(body) } : {}),
+        });
+        const response =
+          (await dataHTTP(request, db, auth, dataManagement)) ??
+          (await accountsHTTP(request, db, auth));
         for (const cookie of response.headers.getSetCookie()) {
           const first = cookie.split(";")[0];
           const at = first.indexOf("=");
@@ -276,7 +288,7 @@ test("withdrawal and suspension preserve personal portal and fresh rights gates"
       ).status,
       403,
     );
-    assert.equal((await a.call("/api/v1/me/export", {})).status, 501);
+    assert.equal((await a.call("/api/v1/me/export", {})).status, 202);
     await operate(h.db, h.auth, "synthetic-operator", "reactivate", a.email);
     assert.equal((await a.call("/api/v1/access")).status, 200);
     await operate(h.db, h.auth, "synthetic-operator", "withdraw", a.email);
@@ -414,7 +426,7 @@ test("sessions: absolute and idle boundaries, freshness, cannot reuse another se
         .status,
       200,
     );
-    assert.equal((await a.call("/api/v1/me/export", {})).status, 501);
+    assert.equal((await a.call("/api/v1/me/export", {})).status, 202);
     // Use one clock for the exact boundary; the Docker DB clock can differ
     // from Node by milliseconds. Keep the refusal at precisely 30 days.
     const absoluteNow = new Date();
