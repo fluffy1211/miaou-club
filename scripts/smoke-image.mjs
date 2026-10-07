@@ -1,6 +1,5 @@
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
 import {
   createDatabase,
   closePool,
@@ -20,7 +19,6 @@ let database;
 try {
   await admin.pool.query(`create database "${name}"`);
   database = createDatabase(target.href);
-  await migrate(database.db, { migrationsFolder: "dist/drizzle" });
   const dockerURL = new URL(target);
   if (["localhost", "127.0.0.1"].includes(dockerURL.hostname))
     dockerURL.hostname = "host.docker.internal";
@@ -29,6 +27,24 @@ try {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });
+  // Exercise the compiled migration entry point of the actual runtime image,
+  // before activating the application; no host migrator or SQL rollback.
+  run([
+    "run",
+    "--rm",
+    "--add-host",
+    "host.docker.internal:host-gateway",
+    "-e",
+    `DATABASE_URL=${dockerURL.href}`,
+    "--entrypoint",
+    "node",
+    process.env.MIAOU_IMAGE ?? "miaou-lot1:local",
+    "dist/backend/infrastructure/db/migrate.js",
+  ]);
+  const migrations = await database.pool.query(
+    "select count(*)::int n from drizzle.__drizzle_migrations",
+  );
+  if (!migrations.rows[0].n) throw new Error("Runtime migrations missing");
   run([
     "run",
     "-d",
