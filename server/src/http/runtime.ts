@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { Friends } from "../friends/service.js";
 import { DataManagement } from "../data/service.js";
 import { Encounters } from "../encounters/service.js";
 import { storageFromEnvironment } from "../encounters/storage.js";
@@ -107,6 +108,7 @@ const layer = Layer.scoped(
         pool,
         auth,
         encounters,
+        friends: new Friends(pool),
         dataManagement,
         cleanupTimer,
         mediaTimer,

@@ -213,7 +213,7 @@ Extension du lot 1 autorisée le 4 octobre 2026 : établir dès le démarrage le
 | 4 — découverte/carte | Accueil/profil/listes paginées, grille hiérarchique, carte et secours ; tests refus anonyme/non invité sur profils/listes/carte/images/API et conditions fournisseur |
 | 5 — administration/données | Signalements/masquage/suspension/audit, export/suppression et reprise après panne |
 | 6 — livraison amis | GitHub/protections/CI, préprod/prod, secrets/HTTPS, restauration sauvegarde, vrais mobiles/PWA/E2E |
-| Complément V1 — amis, avant livraison | Parcours et exclusions selon CADRAGE ; demandes/relations persistantes et contrôles serveur à préparer, tests des réessais, demandes croisées/concurrentes, plafonds durables, permissions et nouvelle demande après refus/annulation |
+| Complément V1 — amis, avant livraison | Parcours et exclusions selon CADRAGE ; implémentation locale et preuves dans NEXT_SESSION, mécanismes dans ARCHITECTURE#amis ; livraison Git distincte sous autorisation |
 
 Sécurité construite/testée dans chaque lot ; lots 5/6 avant ouverture réelle. Aucun compte réel du pilote sans modération opérationnelle ; accès fermé ne remplace pas les permissions des ressources.
 

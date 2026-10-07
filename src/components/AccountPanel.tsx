@@ -177,7 +177,7 @@ export function AccountPanel({
             <>
               <p>
                 <a href="/photo">Photographier un chat</a> ·{" "}
-                <a href="/carnet">Mon carnet</a>
+                <a href="/carnet">Mon carnet</a> · <a href="/amis">Mes amis</a>
                 {me.profile?.handle && (
                   <>
                     {" "}

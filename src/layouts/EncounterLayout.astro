@@ -54,7 +54,9 @@ const path = Astro.url.pathname;
       </a>
       <a
         href="/profil"
-        aria-current={path.startsWith("/profil") ? "page" : undefined}
+        aria-current={
+          path.startsWith("/profil") || path === "/amis" ? "page" : undefined
+        }
       >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="7" r="4" />

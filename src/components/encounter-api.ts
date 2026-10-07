@@ -1,4 +1,5 @@
 const messages: Record<string, string> = {
+  friend_limited: "La limite de demandes d’amis est atteinte.",
   photo_size: "Choisis une photo de 30 Mo maximum.",
   photo_pixels: "Cette photo dépasse 60 millions de pixels.",
   photo_format: "Choisis une photo JPEG, PNG ou WebP.",

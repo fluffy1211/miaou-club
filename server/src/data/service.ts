@@ -336,6 +336,10 @@ export class DataManagement {
       "insert into account_deletion(owner_id) values($1) on conflict do nothing",
       [ownerId],
     );
+    await c.query("delete from friendship where low_id=$1 or high_id=$1", [
+      ownerId,
+    ]);
+    await c.query("delete from friend_attempt where owner_id=$1", [ownerId]);
     await c.query("delete from data_export where owner_id=$1", [ownerId]);
     await c.query("delete from report_consultation where actor=$1", [ownerId]);
     await c.query("delete from session where user_id=$1", [ownerId]);
@@ -496,6 +500,13 @@ export class DataManagement {
       // The owner lock blocks physical media purges until the archive commits.
       // Explicit column projections: authentication material must never enter archives.
       const selections: Record<string, string> = {
+        friends:
+          "select f.handle as peer_handle,case when s.sender_id=$1 then 'sent' else 'received' end as request_direction,s.created_at,s.accepted_at from friendship s left join profile f on f.user_id=case when s.low_id=$1 then s.high_id else s.low_id end where (s.low_id=$1 or s.high_id=$1) and s.state='accepted' order by s.id",
+        friend_requests:
+          "select f.handle as peer_handle,case when s.sender_id=$1 then 'sent' else 'received' end as direction,s.created_at from friendship s left join profile f on f.user_id=case when s.low_id=$1 then s.high_id else s.low_id end where (s.low_id=$1 or s.high_id=$1) and s.state='pending' order by s.id",
+        friend_attempts:
+          "select created_at from friend_attempt where owner_id=$1 order by created_at",
+
         profile:
           'select id,name,email,email_verified,image,two_factor_enabled,created_at,updated_at from "user" where id=$1',
         customization:
