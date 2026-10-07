@@ -1,4 +1,3 @@
-import { accountActivity } from "../db/data-schema.js";
 import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 import type { GoogleOptions } from "better-auth/social-providers";
@@ -25,6 +24,7 @@ import {
   fresh,
   audit,
   manualResetKey,
+  recordActivity,
 } from "../../accounts/security.js";
 export type AuthOptions = {
   secret: string;
@@ -171,13 +171,12 @@ export function createAuth(
                 )[0]
               : null;
             const now = new Date();
-            await db
-              .insert(accountActivity)
-              .values({ ownerId: s.userId, lastUsedAt: now })
-              .onConflictDoUpdate({
-                target: accountActivity.ownerId,
-                set: { lastUsedAt: now, warnedAt: null },
+            if (!(await recordActivity(db, s.userId, now))) {
+              await db.delete(session).where(eq(session.id, s.id));
+              throw new APIError("FORBIDDEN", {
+                message: "Compte en cours de suppression.",
               });
+            }
             await db.insert(sessionSecurity).values({
               sessionId: s.id,
               authenticatedAt: old?.authenticatedAt ?? now,

@@ -325,6 +325,9 @@ export class DataManagement {
     });
   }
   private async queueDeletion(c: PoolClient, ownerId: string) {
+    await c.query("select pg_advisory_xact_lock(hashtextextended($1,7))", [
+      ownerId,
+    ]);
     await c.query(
       "update user_policy set status='deleting',reason=null,updated_at=now() where user_id=$1",
       [ownerId],
@@ -361,11 +364,15 @@ export class DataManagement {
         )
       ).rows[0];
       if (!lock.ok) return;
+      const eligibility = `select a.*,u.email,(a.warned_at<=now()-interval '30 days' and a.last_used_at<=a.warned_at) due from account_activity a join "user" u on u.id=a.owner_id join user_policy p on p.user_id=a.owner_id where a.owner_id=$1 and a.last_used_at<=now()-interval '24 months' and p.status<>'deleting'`;
+      // This scan is only a candidate check, not the deletion decision. A return
+      // can update activity here; re-read under the shared activity lock below.
+      if (!(await c.query(eligibility, [ownerId])).rowCount) return;
+      await c.query("select pg_advisory_xact_lock(hashtextextended($1,7))", [
+        ownerId,
+      ]);
       const account = (
-        await c.query(
-          `select a.*,u.email,(a.warned_at<=now()-interval '30 days' and a.last_used_at<=a.warned_at) due from account_activity a join "user" u on u.id=a.owner_id join user_policy p on p.user_id=a.owner_id where a.owner_id=$1 and a.last_used_at<=now()-interval '24 months' and p.status<>'deleting' for update of a skip locked`,
-          [ownerId],
-        )
+        await c.query(eligibility + " for update of a", [ownerId])
       ).rows[0];
       if (!account) return;
       if (account.due) {
@@ -486,7 +493,7 @@ export class DataManagement {
       ).rows[0].date.toISOString();
       const data: Record<string, Record<string, unknown>[]> = {};
       // The repeatable snapshot preserves encounter metadata during edits/moderation.
-      // Media locks and the owner lock protect retained files until the archive commits.
+      // The owner lock blocks physical media purges until the archive commits.
       // Explicit column projections: authentication material must never enter archives.
       const selections: Record<string, string> = {
         profile:
@@ -506,7 +513,7 @@ export class DataManagement {
         encounters:
           "select id,title,description,encounter_date,published_at,updated_at,visibility,hidden,hidden_reason,location_size,location_x,location_y,location_context,media_id from encounter where owner_id=$1 and deleted_at is null order by id",
         media:
-          "select id,state,bytes,width,height,created_at,expires_at,error from media where owner_id=$1 and state not in ('deleting','deleted') order by id for share",
+          "select id,state,bytes,width,height,created_at,expires_at,error from media where owner_id=$1 and state not in ('deleting','deleted') order by id",
         uploads:
           "select bytes,created_at from upload_attempt where owner_id=$1",
         mail: 'select type,result,created_at from mail_attempt where recipient=(select email from "user" where id=$1)',

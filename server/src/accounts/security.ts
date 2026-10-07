@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
-import { and, eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 import type { Database } from "../infrastructure/db/client.js";
 import {
   admission,
@@ -106,6 +106,32 @@ export async function audit(
     .insert(securityAudit)
     .values({ id: randomUUID(), actor, target, action });
 }
+// Lock 7 is shared with the final inactivity/deletion decision, independently
+// of the owner/media lock. The preliminary scan must not block a member's return.
+export async function recordActivity(
+  db: Database,
+  ownerId: string,
+  now = new Date(),
+) {
+  return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`select pg_advisory_xact_lock(hashtextextended(${ownerId},7))`,
+    );
+    const [policy] = await tx
+      .select()
+      .from(userPolicy)
+      .where(eq(userPolicy.userId, ownerId));
+    if (policy?.status === "deleting") return false;
+    await tx
+      .insert(accountActivity)
+      .values({ ownerId, lastUsedAt: now })
+      .onConflictDoUpdate({
+        target: accountActivity.ownerId,
+        set: { lastUsedAt: now, warnedAt: null },
+      });
+    return true;
+  });
+}
 export async function identity(
   db: Database,
   auth: SessionReader,
@@ -130,13 +156,9 @@ export async function identity(
     .update(sessionSecurity)
     .set({ usedAt: now })
     .where(eq(sessionSecurity.sessionId, current.session.id));
-  await db
-    .insert(accountActivity)
-    .values({ ownerId: current.user.id, lastUsedAt: now })
-    .onConflictDoUpdate({
-      target: accountActivity.ownerId,
-      set: { lastUsedAt: now, warnedAt: null },
-    });
+  // Keep the identity for the existing status gate (403), without recording
+  // activity on a deleting account. Real deletion separately revokes sessions.
+  await recordActivity(db, current.user.id, now);
   const [policy] = await db
     .select()
     .from(userPolicy)

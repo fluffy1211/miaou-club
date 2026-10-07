@@ -1088,3 +1088,160 @@ test("export snapshot survives a real encounter edit during generation without p
       "Titre modifié pendant la copie",
     );
   }));
+
+for (const method of ["request", "sign-in"] as const) {
+  test(`authenticated ${method} cancels inactivity after the overdue preflight read`, () =>
+    isolated(async (h) => {
+      const a = await h.member(`return-${method}@example.test`);
+      await h.pool.query(
+        "update account_activity set last_used_at=now()-interval '25 months',warned_at=now()-interval '31 days' where owner_id=$1",
+        [a.id],
+      );
+      let returned = false;
+      const pool = new Proxy(h.pool, {
+        get(target, key) {
+          if (key === "connect")
+            return async () => {
+              const c = await target.connect();
+              return new Proxy(c, {
+                get(client, property) {
+                  if (property === "query")
+                    return async (sql: string, values: unknown[]) => {
+                      const result = await client.query(sql, values);
+                      if (!returned && sql.startsWith("select a.*,u.email")) {
+                        returned = true;
+                        const response =
+                          method === "request"
+                            ? await h.call(a.cookies, "/api/v1/me/exports")
+                            : await h.auth.handler(
+                                new Request(
+                                  origin + "/api/auth/sign-in/email",
+                                  {
+                                    method: "POST",
+                                    headers: {
+                                      origin,
+                                      "content-type": "application/json",
+                                    },
+                                    body: JSON.stringify({
+                                      email: `return-${method}@example.test`,
+                                      password: "synthetic-password-long",
+                                    }),
+                                  },
+                                ),
+                              );
+                        assert.equal(response.status, 200);
+                      }
+                      return result;
+                    };
+                  const value = Reflect.get(client, property);
+                  return typeof value === "function"
+                    ? value.bind(client)
+                    : value;
+                },
+              });
+            };
+          const value = Reflect.get(target, key);
+          return typeof value === "function" ? value.bind(target) : value;
+        },
+      });
+      await new DataManagement(pool, h.storage).maintenance();
+      assert.equal(returned, true);
+      assert.equal(
+        (
+          await h.pool.query(
+            "select warned_at from account_activity where owner_id=$1",
+            [a.id],
+          )
+        ).rows[0].warned_at,
+        null,
+      );
+      assert.equal(
+        (
+          await h.pool.query(
+            "select status from user_policy where user_id=$1",
+            [a.id],
+          )
+        ).rows[0].status,
+        "active",
+      );
+      assert.equal(
+        (
+          await h.pool.query(
+            "select owner_id from account_deletion where owner_id=$1",
+            [a.id],
+          )
+        ).rowCount,
+        0,
+      );
+    }));
+}
+
+test("export snapshot survives a real encounter deletion and retains photos until the archive commits", () =>
+  isolated(async (h) => {
+    const a = await h.member("export-delete@example.test");
+    const entry = await h.publish(
+      a.cookies,
+      await h.ready(a.cookies),
+      "private",
+    );
+    const id = (await (await h.call(a.cookies, "/api/v1/me/export", {})).json())
+      .export.id;
+    let deleted = false;
+    const pool = new Proxy(h.pool, {
+      get(target, key) {
+        if (key === "connect")
+          return async () => {
+            const c = await target.connect();
+            return new Proxy(c, {
+              get(client, property) {
+                if (property === "query")
+                  return async (sql: string, values: unknown[]) => {
+                    if (
+                      !deleted &&
+                      sql.startsWith("select id,state,bytes,width")
+                    ) {
+                      deleted = true;
+                      assert.equal(
+                        (
+                          await h.call(
+                            a.cookies,
+                            "/api/v1/encounters/" + entry.id,
+                            undefined,
+                            "DELETE",
+                          )
+                        ).status,
+                        200,
+                      );
+                      await h.service.maintenance();
+                      assert.equal(h.storage.objects.size, 2);
+                    }
+                    return client.query(sql, values);
+                  };
+                const value = Reflect.get(client, property);
+                return typeof value === "function" ? value.bind(client) : value;
+              },
+            });
+          };
+        const value = Reflect.get(target, key);
+        return typeof value === "function" ? value.bind(target) : value;
+      },
+    });
+    await new DataManagement(pool, h.storage).maintenance();
+    assert.equal(deleted, true);
+    const job = (
+      await h.pool.query(
+        "select state,attempts,archive from data_export where id=$1",
+        [id],
+      )
+    ).rows[0];
+    assert.equal(job.state, "ready");
+    assert.equal(job.attempts, 0);
+    const files = unzip(job.archive),
+      data = JSON.parse(files.get("data.json")!.toString());
+    assert.equal(data.data.encounters[0].id, entry.id);
+    assert.equal(data.data.media[0].state, "ready");
+    assert.ok(files.has("photos/" + entry.image.split("/")[2] + "-image.webp"));
+    await h.service.maintenance();
+    assert.equal(h.storage.objects.size, 0);
+    assert.equal((await h.call(a.cookies, entry.image)).status, 404);
+  }));
