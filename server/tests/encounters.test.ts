@@ -71,6 +71,21 @@ test("discovery, profiles and map revoke shared content while owner notebook sta
   await isolated(async (h) => {
     const a = await h.member("discover-author@example.test"),
       b = await h.member("discover-reader@example.test");
+    for (const handle of ["%ZZ", "%E0%A4%A", "%2F"]) {
+      assert.equal(
+        (await h.call(b.cookies, "/api/v1/profiles/" + handle + "/encounters"))
+          .status,
+        400,
+      );
+      const profile = await accountsHTTP(
+        new Request(origin + "/api/v1/profiles/" + handle, {
+          headers: { cookie: b.cookies },
+        }),
+        h.db,
+        h.auth,
+      );
+      assert.equal(profile.status, 400);
+    }
     await h.pool.query(
       "update profile set handle='synthetic_author' where user_id=$1",
       [a.id],

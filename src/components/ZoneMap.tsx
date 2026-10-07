@@ -1,5 +1,6 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { EncounterView, LocationCell } from "@miaou/contracts";
+import type { FeatureCollection } from "geojson";
 import {
   fromPosition,
   polygon,
@@ -30,14 +31,116 @@ export function ZoneMap({
   const host = useRef<HTMLDivElement>(null);
   const instance = useRef<import("maplibre-gl").Map | null>(null);
   const [error, setError] = useState("");
+  const current = useRef({
+    entries,
+    selected,
+    onSelect,
+    focus,
+    selectionSize,
+    navigationCenter,
+  });
+  const library = useRef<typeof import("maplibre-gl") | null>(null);
+  const markers = useRef<import("maplibre-gl").Marker[]>([]);
+  const updateData = useCallback(() => {
+    const map = instance.current;
+    if (!map || !map.isStyleLoaded() || !library.current) return;
+    if (host.current) delete host.current.dataset.ready;
+    const { entries, selected } = current.current;
+    const cells = [
+      ...entries.map((e) => e.location).filter((c): c is LocationCell => !!c),
+      ...(selected ? [selected] : []),
+    ];
+    const data: FeatureCollection = {
+      type: "FeatureCollection",
+      features: cells.map((c) => ({
+        type: "Feature",
+        properties: {},
+        geometry: { type: "Polygon", coordinates: [polygon(c)] },
+      })),
+    };
+    const source = map.getSource("zones") as
+      import("maplibre-gl").GeoJSONSource | undefined;
+    if (source) source.setData(data);
+    else {
+      map.addSource("zones", { type: "geojson", data });
+      map.addLayer({
+        id: "zones",
+        type: "fill",
+        source: "zones",
+        paint: { "fill-color": "#eb806d", "fill-opacity": 0.35 },
+      });
+      map.addLayer({
+        id: "zone-outlines",
+        type: "line",
+        source: "zones",
+        paint: { "line-color": "#49366d", "line-width": 2 },
+      });
+    }
+    for (const marker of markers.current) marker.remove();
+    markers.current = [];
+    const groups = new globalThis.Map<string, EncounterView[]>();
+    for (const e of entries) {
+      if (!e.location) continue;
+      const c = e.location,
+        key = `${c.size}/${c.x}/${c.y}`;
+      groups.set(key, [...(groups.get(key) ?? []), e]);
+    }
+    for (const group of groups.values()) {
+      const c = group[0].location!;
+      const link = document.createElement("a");
+      link.href = "#zone-" + group[0].id;
+      link.className = "zone-marker";
+      link.textContent = String(group.length);
+      link.setAttribute(
+        "aria-label",
+        `${group.length} rencontre(s) dans cette zone`,
+      );
+      markers.current.push(
+        new library.current.Marker({ element: link })
+          .setLngLat(
+            inverse((c.x + 0.5) * c.size, (c.y + 0.5) * c.size) as [
+              number,
+              number,
+            ],
+          )
+          .addTo(map),
+      );
+    }
+  }, []);
+  useEffect(() => {
+    current.current = {
+      entries,
+      selected,
+      onSelect,
+      focus,
+      selectionSize,
+      navigationCenter,
+    };
+    const map = instance.current;
+    if (!map) return;
+    if (map.isStyleLoaded()) updateData();
+    else map.once("idle", updateData);
+  }, [
+    entries,
+    selected,
+    onSelect,
+    focus,
+    selectionSize,
+    navigationCenter,
+    updateData,
+  ]);
+
   useEffect(() => {
     let alive = true;
     if (host.current) delete host.current.dataset.ready;
     let map: import("maplibre-gl").Map | undefined;
     void import("maplibre-gl")
-      .then(({ Map, NavigationControl, Marker, setWorkerUrl }) => {
+      .then((module) => {
+        const { Map, NavigationControl, setWorkerUrl } = module;
         if (!alive || !host.current) return;
+        library.current = module;
         setWorkerUrl(workerUrl);
+        const { focus, selected, entries, navigationCenter } = current.current;
         const center =
           focus ?? selected ?? entries.find((e) => e.location)?.location;
         map = new Map({
@@ -114,74 +217,22 @@ export function ZoneMap({
         });
         map.addControl(new NavigationControl({ showCompass: false }));
         instance.current = map;
+        map.on("movestart", () => {
+          if (alive && host.current) delete host.current.dataset.ready;
+        });
         map.on("idle", () => {
           if (alive && host.current) host.current.dataset.ready = "true";
         });
-        map.on("load", () => {
-          const cells = [
-            ...entries
-              .map((e) => e.location)
-              .filter((c): c is LocationCell => !!c),
-            ...(selected ? [selected] : []),
-          ];
-          map!.addSource("zones", {
-            type: "geojson",
-            data: {
-              type: "FeatureCollection",
-              features: cells.map((c) => ({
-                type: "Feature",
-                properties: {},
-                geometry: { type: "Polygon", coordinates: [polygon(c)] },
-              })),
-            },
-          });
-          map!.addLayer({
-            id: "zones",
-            type: "fill",
-            source: "zones",
-            paint: { "fill-color": "#eb806d", "fill-opacity": 0.35 },
-          });
-          map!.addLayer({
-            id: "zone-outlines",
-            type: "line",
-            source: "zones",
-            paint: { "line-color": "#49366d", "line-width": 2 },
-          });
-          const groups = new globalThis.Map<string, EncounterView[]>();
-          for (const e of entries) {
-            if (!e.location) continue;
-            const c = e.location,
-              key = `${c.size}/${c.x}/${c.y}`;
-            groups.set(key, [...(groups.get(key) ?? []), e]);
-          }
-          for (const group of groups.values()) {
-            const c = group[0].location!;
-            const link = document.createElement("a");
-            link.href = "#zone-" + group[0].id;
-            link.className = "zone-marker";
-            link.textContent = String(group.length);
-            link.setAttribute(
-              "aria-label",
-              `${group.length} rencontre(s) dans cette zone`,
-            );
-            new Marker({ element: link })
-              .setLngLat(
-                inverse((c.x + 0.5) * c.size, (c.y + 0.5) * c.size) as [
-                  number,
-                  number,
-                ],
-              )
-              .addTo(map!);
+        map.on("load", updateData);
+        map.on("click", (e) => {
+          const { onSelect, selectionSize } = current.current;
+          if (!onSelect) return;
+          try {
+            onSelect(fromPosition(e.lngLat.lng, e.lngLat.lat, selectionSize));
+          } catch {
+            setError("Choisis une zone en France continentale.");
           }
         });
-        if (onSelect)
-          map.on("click", (e) => {
-            try {
-              onSelect(fromPosition(e.lngLat.lng, e.lngLat.lat, selectionSize));
-            } catch {
-              setError("Choisis une zone en France continentale.");
-            }
-          });
         map.on("error", () => {
           if (alive)
             setError(
@@ -195,17 +246,40 @@ export function ZoneMap({
     return () => {
       alive = false;
       instance.current = null;
+      for (const marker of markers.current) marker.remove();
+      markers.current = [];
       map?.remove();
     };
-  }, [
-    entries,
-    selected,
-    onSelect,
-    focus,
-    selectionSize,
-    providerKey,
-    navigationCenter,
-  ]);
+  }, [providerKey, updateData]);
+  // Only an explicit destination or preview change moves the camera. Appending
+  // encounters, changing callbacks or choosing a cell on the map keeps its view.
+  useEffect(() => {
+    const map = instance.current;
+    if (!map) return;
+    if (navigationCenter) {
+      map.jumpTo({ center: navigationCenter, zoom: 12 });
+      return;
+    }
+    if (focus)
+      map.jumpTo({
+        center: inverse(
+          (focus.x + 0.5) * focus.size,
+          (focus.y + 0.5) * focus.size,
+        ) as [number, number],
+        zoom: focus.size === 500 ? 13 : focus.size === 1000 ? 12 : 11,
+      });
+  }, [focus, navigationCenter]);
+  useEffect(() => {
+    const map = instance.current;
+    if (!map || current.current.onSelect || !selected) return;
+    map.jumpTo({
+      center: inverse(
+        (selected.x + 0.5) * selected.size,
+        (selected.y + 0.5) * selected.size,
+      ) as [number, number],
+      zoom: selected.size === 500 ? 13 : selected.size === 1000 ? 12 : 11,
+    });
+  }, [selected]);
   return (
     <>
       <p>

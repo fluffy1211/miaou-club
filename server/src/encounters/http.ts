@@ -4,6 +4,7 @@ import { identity, groupAllowed } from "../accounts/security.js";
 import { reply } from "../accounts/http.js";
 import { Encounters, EncounterError, uuid } from "./service.js";
 import { mainland } from "./mainland.js";
+import { decodeHandle } from "../http/path.js";
 async function jsonBody(request: Request) {
   const reader = request.body?.getReader();
   if (!reader) throw new EncounterError("invalid_request");
@@ -104,17 +105,19 @@ export async function encountersHTTP(
         path === "/api/v1/map" ||
         /^\/api\/v1\/profiles\/[^/]+\/encounters$/.test(path)) &&
       method === "GET"
-    )
+    ) {
+      const handle = path.startsWith("/api/v1/profiles/")
+        ? decodeHandle(path.split("/")[4])
+        : undefined;
+      if (handle === null) return reply({ code: "invalid_request" }, 400);
       response = reply(
         await service.discover(i, {
           after: url.searchParams.get("after") ?? undefined,
           map: path === "/api/v1/map",
-          handle: path.startsWith("/api/v1/profiles/")
-            ? decodeURIComponent(path.split("/")[4])
-            : undefined,
+          handle,
         }),
       );
-    else if (path === "/api/v1/encounters" && method === "POST")
+    } else if (path === "/api/v1/encounters" && method === "POST")
       response = reply(
         {
           encounter: await service.publish(

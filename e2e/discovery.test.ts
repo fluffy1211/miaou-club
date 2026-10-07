@@ -9,6 +9,133 @@ async function login(context: BrowserContext, role = "reader") {
     { name, value: value.join("="), url: "http://localhost:43991" },
   ]);
 }
+test("map pagination keeps the canvas and the explored viewport during loading and after appending a page", async ({
+  page,
+  context,
+}, info) => {
+  await login(context);
+  const bytes = await readFile(".cache/e2e-photo.png");
+  const uploaded = await context.request.post("/api/v1/media", {
+    headers: {
+      origin: "http://localhost:43991",
+      "content-type": "application/octet-stream",
+    },
+    data: bytes,
+  });
+  expect(uploaded.status()).toBe(201);
+  const media = (await uploaded.json()).media;
+  const response = await context.request.post("/api/v1/encounters", {
+    headers: {
+      origin: "http://localhost:43991",
+      "idempotency-key": crypto.randomUUID(),
+    },
+    data: {
+      mediaId: media.id,
+      title: "Viewport fixture " + info.project.name,
+      encounterDate: "2026-10-06",
+      visibility: "public",
+      location: { size: 1000, x: 648, y: 6855 },
+      locationMethod: "map",
+    },
+  });
+  expect(response.status()).toBe(201);
+  const entry = (await response.json()).encounter;
+  // Transport double isolates viewport behavior; backend pagination is covered
+  // against PostgreSQL separately. All content comes from a real synthetic upload.
+  let release: () => void = () => {};
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let requested = false;
+  await page.route("**/api/v1/map*", async (route) => {
+    const url = new URL(route.request().url());
+    if (url.pathname !== "/api/v1/map") {
+      await route.continue();
+      return;
+    }
+    if (url.searchParams.has("after")) {
+      requested = true;
+      await pending;
+      await route.fulfill({
+        json: {
+          encounters: [
+            {
+              ...entry,
+              id: "00000000-0000-4000-8000-000000000001",
+              title: "Second synthetic page",
+            },
+          ],
+          next: null,
+        },
+      });
+    } else
+      await route.fulfill({
+        json: { encounters: [entry], next: "synthetic-page-cursor" },
+      });
+  });
+  try {
+    await page.goto("/carte");
+    const canvas = page.locator(".maplibregl-canvas");
+    await expect(page.locator(".zone-map")).toHaveAttribute(
+      "data-ready",
+      "true",
+    );
+    await expect(page.locator(".zone-marker")).toHaveCount(1);
+    const bounds = (await canvas.boundingBox())!;
+    const x = bounds.x + bounds.width * 0.3,
+      y = bounds.y + bounds.height * 0.3;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x + 80, y + 30, { steps: 8 });
+    await page.mouse.up();
+    // A DOM-rendered marker provides a browser-observable projection of the
+    // viewport; pan/zoom must move it away from its initial centered position.
+    const marker = page.locator(".zone-marker");
+    const center = await canvas.boundingBox();
+    await expect
+      .poll(async () => {
+        const b = await marker.boundingBox();
+        return Math.abs(b!.x + b!.width / 2 - (center!.x + center!.width / 2));
+      })
+      .toBeGreaterThan(20);
+    await page.getByRole("button", { name: "Zoom in", exact: true }).click();
+    await expect(page.locator(".zone-map")).toHaveAttribute(
+      "data-ready",
+      "true",
+    );
+    const before = await marker.boundingBox();
+    const beforeCanvas = await canvas.boundingBox();
+    const original = await canvas.elementHandle();
+    await page.getByRole("button", { name: "Voir la suite" }).click();
+    await expect.poll(() => requested).toBe(true);
+    await expect(canvas).toBeVisible();
+    expect(await canvas.evaluate((node, old) => node === old, original)).toBe(
+      true,
+    );
+    release();
+    await expect(marker).toHaveText("2");
+    await expect(
+      page.getByRole("button", { name: "Voir la suite" }),
+    ).toHaveCount(0);
+    const after = await marker.boundingBox();
+    const afterCanvas = await canvas.boundingBox();
+    // Loading more may scroll the document; compare projection within the map.
+    expect(
+      Math.abs(after!.x - afterCanvas!.x - (before!.x - beforeCanvas!.x)),
+    ).toBeLessThan(1);
+    expect(
+      Math.abs(after!.y - afterCanvas!.y - (before!.y - beforeCanvas!.y)),
+    ).toBeLessThan(1);
+    expect(await canvas.evaluate((node, old) => node === old, original)).toBe(
+      true,
+    );
+  } finally {
+    release();
+    await context.request.delete("/api/v1/encounters/" + entry.id, {
+      headers: { origin: "http://localhost:43991" },
+    });
+  }
+});
 test("local discovery and coarse GPS flow: action only, no precise request/storage, profile, map fallback and withdrawal", async ({
   page,
   context,

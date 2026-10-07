@@ -33,6 +33,7 @@ export function Discovery({
     [profile, setProfile] = useState<Profile | null>(null),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(true),
+    [ready, setReady] = useState(false),
     [selected, setSelected] = useState<LocationCell | null>(null),
     [focus, setFocus] = useState<LocationCell | null>(null);
   const [selectionSize, setSelectionSize] =
@@ -96,6 +97,7 @@ export function Discovery({
             ? await encounterAPI<Page>("/api/v1/me/encounters")
             : null;
         if (alive) {
+          setReady(true);
           setOwner(me.user.id);
           setName(me.profile?.displayName ?? "Membre");
           setProfile(p?.profile ?? null);
@@ -193,7 +195,7 @@ export function Discovery({
         <a href="/carte">La carte</a>
         <a href="/photo">Ajouter une rencontre</a>
       </div>
-      {mode === "map" && !busy && (
+      {mode === "map" && ready && (
         <>
           {providerKey && (
             <form
