@@ -15,3 +15,11 @@ Prochaine étape externe reste à autoriser : scheduler indépendant, journal co
 ## Livraison autorisée — 7 octobre 2026
 
 Gabriel demande « push et lance la suite dans un autre chat » : livraison de cette tranche par branche feature/PR vers develop, suivi CI/Greptile et fusion selon les consignes actuelles, puis lancement de la prochaine tranche locale dans un nouveau chat. Aucun déploiement, fournisseur, achat/contact, protection GitHub, migration miaou_dev, ouverture pilote ou réactivation automation autorisé. Publication et preuves distantes à compléter après exécution.
+
+## Publication — 7 octobre 2026
+
+Branche `feat/lot-6-local-delivery`, commit `1a5a1f450a65288af2d56c2cba37ed7c7134dc70`, push réussi avec hook normal hors sandbox : verify:full 14 catalogue/outillage, 68 serveur, 34 E2E en 2,3 min et contrôles sécurité réussis. PR #12 https://github.com/fluffy1211/miaou-club/pull/12 ouverte vers develop. CI/review distantes encore à vérifier ; aucune fusion ni déploiement. Cette note est locale non committée. Le nouveau chat reprend la livraison CI/Greptile/fusion autorisée, puis implémente la prochaine tranche locale : journal de décisions durable et copie indépendante permettant le rejeu après perte de la source. Autorisations externes inchangées, automation en pause, travaux concurrents préservés.
+
+## Correctif de review — 7 octobre 2026
+
+Greptile terminé sur `1a5a1f4` : signalements clôturés après backup restaurés ouverts. Régression sur DB jetable exécutée avant correction, échec attendu (deux signalements restaurés). Rejeu corrigé : clôtures conservées sans copier le texte outcome ultérieur ; signalements physiquement purgés exclus. Neuf tests recovery, types serveur et lint réussis ; diff final relu sans autre défaut bloquant démontré. Correctif à pousser avec hook normal, puis CI et nouvelle review du dernier SHA avant fusion. Le motif ultérieur et les nouvelles traces de modération ne sont pas reconstruits depuis le backup ancien. Publication explicitement reconfirmée par Gabriel dans ce chat après refus automatique de reconnaître la demande du chat source.

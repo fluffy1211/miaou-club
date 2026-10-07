@@ -111,6 +111,8 @@ export type Decisions = {
   policies: Row[];
   encounters: Row[];
   revokedCredentials: string[];
+  removedReports: string[];
+  closedReports: { id: string; closed_at: string }[];
 };
 export function assertLocalTestDatabase(url: string) {
   const parsed = new URL(url);
@@ -305,6 +307,7 @@ export async function captureDecisions(
           credentialFingerprint(accounts, factors, u.id),
       )
       .map((u) => String(u.id));
+    const reports = (await c.query("select id,closed_at from report")).rows;
     const friends = new Set(
       (await c.query("select id from friendship")).rows.map((r) => r.id),
     );
@@ -331,6 +334,19 @@ export async function captureDecisions(
         .filter((r) => !friends.has(r.id))
         .map((r) => String(r.id)),
       revokedCredentials,
+      removedReports: b.tables.report
+        .filter((r) => !reports.some((p) => p.id === r.id))
+        .map((r) => String(r.id)),
+      closedReports: reports
+        .filter(
+          (r) =>
+            r.closed_at &&
+            b.tables.report.some((p) => p.id === r.id && !p.closed_at),
+        )
+        .map((r) => ({
+          id: String(r.id),
+          closed_at: new Date(r.closed_at).toISOString(),
+        })),
       policies: policies.filter((p) =>
         b.tables.user.some((u) => u.id === p.user_id),
       ),
@@ -422,10 +438,19 @@ export async function restoreBackup(
         !(table === "admission" && deletedEmails.has(r.email)) &&
         !(
           table === "report" &&
-          (removedUsers.has(String(r.reporter_id)) ||
+          (decisions.removedReports.includes(String(r.id)) ||
+            removedUsers.has(String(r.reporter_id)) ||
             removedEncounters.has(String(r.encounter_id)))
         ),
     );
+  for (const row of copy.tables.report) {
+    const closed = decisions.closedReports.find((r) => r.id === row.id);
+    if (closed) {
+      row.closed_at = closed.closed_at;
+      // The later free-text outcome is deliberately absent from decision traces.
+      row.outcome = null;
+    }
+  }
   for (const row of copy.tables.user_policy) {
     const current = decisions.policies.find((p) => p.user_id === row.user_id);
     if (!current) throw new Error("Incomplete decision policies");

@@ -494,3 +494,44 @@ test("CLI writes independent encrypted archives, refuses overwrites and restores
       await rm(root, { recursive: true, force: true });
     }
   }));
+
+test("closed and purged reports cannot reopen after restoration, without copying outcome text", async () =>
+  exercise(async (source, target, objects, restored) => {
+    const { ids } = await seed(source, objects);
+    await source.pool.query(
+      "insert into report(id,encounter_id,reporter_id,reason) values('closed-later',$1,'bob','Synthetic reason'),('purged-later',$2,'bob','Synthetic reason')",
+      [ids[0], ids[1]],
+    );
+    await source.pool.query(
+      "insert into report(id,encounter_id,reporter_id,reason,closed_at,outcome) values('already-closed',$1,'bob','Synthetic reason',now(),'Saved outcome')",
+      [ids[2]],
+    );
+    const backup = await captureBackup(source.pool, objects);
+    await source.pool.query(
+      "update report set closed_at=now(),outcome='Synthetic private outcome' where id='closed-later'",
+    );
+    await source.pool.query("delete from report where id='purged-later'");
+    const decisions = await captureDecisions(source.pool, backup);
+    assert.ok(!JSON.stringify(decisions).includes("Synthetic private outcome"));
+    await restoreBackup(target.pool, restored, backup, decisions);
+    const reports = (
+      await target.pool.query(
+        "select id,closed_at,outcome from report order by id",
+      )
+    ).rows;
+    assert.equal(reports.length, 2);
+    assert.equal(reports[0].id, "already-closed");
+    assert.ok(reports[0].closed_at);
+    assert.equal(reports[0].outcome, "Saved outcome");
+    assert.equal(reports[1].id, "closed-later");
+    assert.ok(reports[1].closed_at);
+    assert.equal(reports[1].outcome, null);
+    assert.equal(
+      (
+        await target.pool.query(
+          "select count(*)::int n from report where closed_at is null",
+        )
+      ).rows[0].n,
+      0,
+    );
+  }));
