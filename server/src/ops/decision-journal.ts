@@ -312,9 +312,14 @@ function replay(b: Backup, c: Copy): Decisions {
       location_context: e.location_context,
     })),
   };
+  const policies = new Map(d.policies.map((p) => [p.user_id, p])),
+    encounters = new Map(d.encounters.map((e) => [e.id, e])),
+    openReports = new Set(
+      b.tables.report.filter((r) => !r.closed_at).map((r) => r.id),
+    );
   for (const e of c.events) {
-    const policy = d.policies.find((p) => p.user_id === e.subject),
-      encounter = d.encounters.find((p) => p.id === e.subject);
+    const policy = policies.get(e.subject),
+      encounter = encounters.get(e.subject);
     switch (e.code) {
       case "user_remove":
         d.removedUsers.push(e.subject);
@@ -362,10 +367,7 @@ function replay(b: Backup, c: Copy): Decisions {
         d.removedReports.push(e.subject);
         break;
       case "report_close":
-        if (
-          !d.closedReports.some((r) => r.id === e.subject) &&
-          b.tables.report.some((r) => r.id === e.subject && !r.closed_at)
-        )
+        if (openReports.delete(e.subject))
           d.closedReports.push({ id: e.subject, closed_at: e.createdAt });
         break;
     }

@@ -92,6 +92,13 @@
       "when": 1791396879125,
       "tag": "0012_strong_golden_guardian",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1791409200996,
+      "tag": "0013_recovery_prune_lock",
+      "breakpoints": true
     }
   ]
 }

@@ -355,7 +355,7 @@ test("migration runner serializes concurrent initial migrations and remains idem
       ).rows[0].n,
       count,
     );
-    assert.equal(count, 13);
+    assert.equal(count, 14);
     await assert.rejects(
       migrateDatabase(db.pool, "server/nonexistent-migrations"),
     );
@@ -957,87 +957,93 @@ test("independent journal survives actual source DB and file loss; replay preser
     assert.equal(reports[1].outcome, null);
   }));
 
-test("journal upgrade from delivered schema keeps content; pruning rejects backups below the retained floor", async () => {
-  await mkdir(".cache", { recursive: true, mode: 0o700 });
-  const previous = await mkdtemp(
-    join(process.cwd(), ".cache", "miaou-journal-upgrade-"),
-  );
-  try {
-    await cp("server/drizzle", previous, { recursive: true });
-    await rm(join(previous, "0012_strong_golden_guardian.sql"));
-    const metadata = JSON.parse(
-      await readFile(join(previous, "meta/_journal.json"), "utf8"),
+test("journal upgrades from schemas 0011 and 0012 keep content; pruning rejects backups below the retained floor", async () => {
+  for (const last of [11, 12]) {
+    await mkdir(".cache", { recursive: true, mode: 0o700 });
+    const previous = await mkdtemp(
+      join(process.cwd(), ".cache", "miaou-journal-upgrade-"),
     );
-    metadata.entries.pop();
-    await writeFile(
-      join(previous, "meta/_journal.json"),
-      JSON.stringify(metadata),
-    );
-    const admin = createDatabase(url),
-      name = "upgrade_" + randomUUID().replaceAll("-", "") + "_test",
-      connection = new URL(url);
-    connection.pathname = name;
-    await admin.pool.query(`create database "${name}"`);
-    const source = createDatabase(connection.href);
     try {
-      await migrateDatabase(source.pool, previous);
-      await source.pool.query(
-        `insert into "user"(id,name,email) values('alice','Synthetic Alice','alice@example.test')`,
+      await cp("server/drizzle", previous, { recursive: true });
+      if (last === 11)
+        await rm(join(previous, "0012_strong_golden_guardian.sql"));
+      await rm(join(previous, "0013_recovery_prune_lock.sql"));
+      const metadata = JSON.parse(
+        await readFile(join(previous, "meta/_journal.json"), "utf8"),
       );
-      await source.pool.query(
-        "insert into user_policy(user_id,admitted) values('alice',true)",
+      metadata.entries = metadata.entries.filter(
+        (entry: { idx: number }) => entry.idx <= last,
       );
-      await migrateDatabase(source.pool, "server/drizzle");
-      assert.equal(
-        (await source.pool.query("select admitted from user_policy")).rows[0]
-          .admitted,
-        true,
+      await writeFile(
+        join(previous, "meta/_journal.json"),
+        JSON.stringify(metadata),
       );
-      assert.equal(
-        (await source.pool.query("select head::text from recovery_state"))
-          .rows[0].head,
-        "0",
-      );
-      const root = await mkdtemp(
-        join(process.cwd(), ".cache", "journal-prune-"),
-      );
+      const admin = createDatabase(url),
+        name = "upgrade_" + randomUUID().replaceAll("-", "") + "_test",
+        connection = new URL(url);
+      connection.pathname = name;
+      await admin.pool.query(`create database "${name}"`);
+      const source = createDatabase(connection.href);
       try {
-        const backup = await captureBackup(
-          source.pool,
-          new LocalStorage(join(root, "source")),
+        await migrateDatabase(source.pool, previous);
+        await source.pool.query(
+          `insert into "user"(id,name,email) values('alice','Synthetic Alice','alice@example.test')`,
         );
         await source.pool.query(
-          "update user_policy set status='withdrawn' where user_id='alice'",
+          "insert into user_policy(user_id,admitted) values('alice',true)",
         );
-        await source.pool.query(
-          "update recovery_decision set created_at=now()-interval '31 days'",
-        );
-        await source.pool.query("select recovery_prune()");
+        await migrateDatabase(source.pool, "server/drizzle");
         assert.equal(
-          (await source.pool.query("select floor::text from recovery_state"))
-            .rows[0].floor,
-          "1",
+          (await source.pool.query("select admitted from user_policy")).rows[0]
+            .admitted,
+          true,
         );
-        await assert.rejects(
-          copyJournal(
+        assert.equal(
+          (await source.pool.query("select head::text from recovery_state"))
+            .rows[0].head,
+          "0",
+        );
+        const root = await mkdtemp(
+          join(process.cwd(), ".cache", "journal-prune-"),
+        );
+        try {
+          const backup = await captureBackup(
             source.pool,
-            backup,
-            join(root, "copies", "copy.enc"),
-            join(root, "anchors"),
-            randomBytes(32),
-          ),
-          /retained source journal/,
-        );
+            new LocalStorage(join(root, "source")),
+          );
+          await source.pool.query(
+            "update user_policy set status='withdrawn' where user_id='alice'",
+          );
+          await source.pool.query(
+            "update recovery_decision set created_at=now()-interval '31 days'",
+          );
+          await source.pool.query("select recovery_prune()");
+          assert.equal(
+            (await source.pool.query("select floor::text from recovery_state"))
+              .rows[0].floor,
+            "1",
+          );
+          await assert.rejects(
+            copyJournal(
+              source.pool,
+              backup,
+              join(root, "copies", "copy.enc"),
+              join(root, "anchors"),
+              randomBytes(32),
+            ),
+            /retained source journal/,
+          );
+        } finally {
+          await rm(root, { recursive: true, force: true });
+        }
       } finally {
-        await rm(root, { recursive: true, force: true });
+        await closePool(source.pool);
+        await admin.pool.query(`drop database "${name}" with(force)`);
+        await closePool(admin.pool);
       }
     } finally {
-      await closePool(source.pool);
-      await admin.pool.query(`drop database "${name}" with(force)`);
-      await closePool(admin.pool);
+      await rm(previous, { recursive: true, force: true });
     }
-  } finally {
-    await rm(previous, { recursive: true, force: true });
   }
 });
 
@@ -1100,5 +1106,93 @@ test("journal CLI copies a durable cut and restores through its independent anch
         ])
       ).rows[0].hidden,
       true,
+    );
+  }));
+
+test("journal pruning scans without holding the restriction counter lock", async () =>
+  exercise(async (source) => {
+    await source.pool.query(`insert into recovery_decision(seq,code,subject)
+      select n,'encounter_hide','synthetic-' || n from generate_series(1,20000) n`);
+    await source.pool.query("update recovery_state set head=20000");
+    const blocker = await source.pool.connect(),
+      pruner = await source.pool.connect(),
+      writer = await source.pool.connect();
+    let pruning: Promise<unknown> | undefined;
+    try {
+      await blocker.query("begin");
+      await blocker.query("lock recovery_decision in access exclusive mode");
+      const pid = (await pruner.query("select pg_backend_pid() pid")).rows[0]
+        .pid;
+      pruning = pruner.query("select recovery_prune()");
+      const deadline = Date.now() + 3000;
+      let waiting = false;
+      while (Date.now() < deadline) {
+        const row = (
+          await source.pool.query(
+            "select wait_event_type,wait_event from pg_stat_activity where pid=$1",
+            [pid],
+          )
+        ).rows[0];
+        if (row.wait_event_type === "Lock" && row.wait_event === "relation") {
+          waiting = true;
+          break;
+        }
+      }
+      assert.equal(
+        waiting,
+        true,
+        "pruning must be blocked in the journal scan",
+      );
+      await writer.query("begin");
+      await writer.query(
+        "select head from recovery_state where singleton for update nowait",
+      );
+      await writer.query("rollback");
+      await blocker.query("rollback");
+      await pruning;
+      assert.equal(
+        (await source.pool.query("select floor::text from recovery_state"))
+          .rows[0].floor,
+        "0",
+      );
+    } finally {
+      await writer.query("rollback");
+      await blocker.query("rollback");
+      if (pruning) await pruning;
+      blocker.release();
+      pruner.release();
+      writer.release();
+    }
+  }));
+
+test("journal replay restores restrictions across a larger synthetic inventory", async () =>
+  exercise(async (source, target, objects, restored, root) => {
+    await seed(source, objects);
+    await source.pool.query(`insert into "user"(id,name,email)
+      select 'synthetic-' || n,'Synthetic Member','synthetic-' || n || '@example.test'
+      from generate_series(1,1000) n`);
+    await source.pool.query(`insert into user_policy(user_id,admitted)
+      select 'synthetic-' || n,true from generate_series(1,1000) n`);
+    const backup = await captureBackup(source.pool, objects);
+    await source.pool
+      .query(`select recovery_record('user_suspend','synthetic-' || (1+(n%1000)))
+      from generate_series(1,12000) n`);
+    const file = join(root, "copies", "large.enc"),
+      anchors = join(root, "anchors"),
+      key = randomBytes(32);
+    await copyJournal(source.pool, backup, file, anchors, key);
+    await restoreJournal(target.pool, restored, backup, file, anchors, key);
+    assert.equal(
+      (
+        await target.pool.query(
+          "select count(*)::int n from user_policy where status='suspended' and not admitted",
+        )
+      ).rows[0].n,
+      1000,
+    );
+    assert.equal(
+      (await target.pool.query("select count(*)::int n from session")).rows[0]
+        .n,
+      0,
     );
   }));
