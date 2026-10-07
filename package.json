@@ -39,7 +39,11 @@
     "accounts:ops": "tsx server/src/ops/accounts.ts",
     "accounts:cleanup": "tsx server/src/ops/cleanup.ts",
     "media:maintenance": "tsx server/src/ops/media.ts",
-    "data:maintenance": "tsx server/src/ops/data.ts"
+    "data:maintenance": "tsx server/src/ops/data.ts",
+    "candidate:verify": "node scripts/candidate.mjs",
+    "candidate:load": "node scripts/load-candidate.mjs",
+    "recovery:local": "tsx server/src/ops/recovery-cli.ts",
+    "recovery:rehearse": "tsx --test server/tests/recovery.test.ts"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",

@@ -6,6 +6,10 @@ on:
         description: ID du run CI réussi contenant le candidat testé
         required: true
         type: string
+      candidate_sha:
+        description: SHA exact du candidat attendu (40 caractères)
+        required: true
+        type: string
       target:
         description: Environnement futur
         required: true
@@ -19,11 +23,18 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
       - name: Validate candidate source and download exact artifact
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
           CANDIDATE_RUN: ${{ inputs.candidate_run }}
+          CANDIDATE_SHA: ${{ inputs.candidate_sha }}
           TARGET: ${{ inputs.target }}
         run: |
           [[ "$CANDIDATE_RUN" =~ ^[0-9]+$ ]] || exit 1
@@ -37,8 +48,6 @@ jobs:
           sha=$(jq -r .head_sha run.json)
           [[ "$sha" =~ ^[a-f0-9]{40}$ ]] || exit 1
           gh run download "$CANDIDATE_RUN" -n "candidate-$sha" -D candidate
-          test "$(cat candidate/commit.txt)" = "$sha"
-          cd candidate
-          sha256sum -c SHA256SUMS
+          node scripts/candidate.mjs candidate run.json "$TARGET" "$CANDIDATE_SHA"
           printf 'Candidat vérifié : %s pour %s.\n\n' "$sha" "$TARGET" >> "$GITHUB_STEP_SUMMARY"
           printf 'Aucun déploiement exécuté. Infrastructure, secrets, migrations verrouillées, contrôles de santé et reprise restent à configurer au lot livraison.\n' >> "$GITHUB_STEP_SUMMARY"
