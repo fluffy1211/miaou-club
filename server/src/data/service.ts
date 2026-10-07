@@ -501,9 +501,9 @@ export class DataManagement {
       // Explicit column projections: authentication material must never enter archives.
       const selections: Record<string, string> = {
         friends:
-          "select f.handle as peer_handle,case when s.sender_id=$1 then 'sent' else 'received' end as request_direction,s.created_at,s.accepted_at from friendship s left join profile f on f.user_id=case when s.low_id=$1 then s.high_id else s.low_id end where (s.low_id=$1 or s.high_id=$1) and s.state='accepted' order by s.id",
+          "select case when p.status='active' and p.admitted and p.accepted_at is not null and p.terms_version is not null and a.active then f.handle else null end as peer_handle,case when s.sender_id=$1 then 'sent' else 'received' end as request_direction,s.created_at,s.accepted_at from friendship s left join \"user\" u on u.id=case when s.low_id=$1 then s.high_id else s.low_id end left join profile f on f.user_id=u.id left join user_policy p on p.user_id=u.id left join admission a on a.email=lower(u.email) where (s.low_id=$1 or s.high_id=$1) and s.state='accepted' order by s.id",
         friend_requests:
-          "select f.handle as peer_handle,case when s.sender_id=$1 then 'sent' else 'received' end as direction,s.created_at from friendship s left join profile f on f.user_id=case when s.low_id=$1 then s.high_id else s.low_id end where (s.low_id=$1 or s.high_id=$1) and s.state='pending' order by s.id",
+          "select case when p.status='active' and p.admitted and p.accepted_at is not null and p.terms_version is not null and a.active then f.handle else null end as peer_handle,case when s.sender_id=$1 then 'sent' else 'received' end as direction,s.created_at from friendship s left join \"user\" u on u.id=case when s.low_id=$1 then s.high_id else s.low_id end left join profile f on f.user_id=u.id left join user_policy p on p.user_id=u.id left join admission a on a.email=lower(u.email) where (s.low_id=$1 or s.high_id=$1) and s.state='pending' order by s.id",
         friend_attempts:
           "select created_at from friend_attempt where owner_id=$1 order by created_at",
 

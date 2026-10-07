@@ -595,6 +595,69 @@ test("friend lists and people searches paginate without duplicates, cursor looku
       400,
     );
   }));
+test("friend exports mask unavailable peers in JSON and CSV while retaining directions and dates", async () => {
+  for (const unavailable of [
+    "suspended",
+    "withdrawn",
+    "unadmitted",
+    "terms",
+    "acceptance",
+  ]) {
+    await isolated(async (h) => {
+      const owner = await h.member("owner"),
+        accepted = await h.member("acceptedpeer"),
+        sent = await h.member("sentpeer"),
+        received = await h.member("receivedpeer");
+      const request = await h.friends.request(owner.i, accepted.handle);
+      await h.friends.act(accepted.i, request.id, "accept");
+      await h.friends.request(owner.i, sent.handle);
+      await h.friends.request(received.i, owner.handle);
+      for (const peer of [accepted, sent, received]) {
+        if (unavailable === "withdrawn")
+          await h.pool.query(
+            "update admission set active=false where email=$1",
+            [peer.handle + "@example.test"],
+          );
+        else {
+          const update = {
+            suspended: "status='suspended'",
+            unadmitted: "admitted=false",
+            terms: "terms_version=null",
+            acceptance: "accepted_at=null",
+          }[unavailable]!;
+          await h.pool.query(
+            `update user_policy set ${update} where user_id=$1`,
+            [peer.id],
+          );
+        }
+      }
+      const job = await h.data.requestExport(owner.i);
+      await h.data.maintenance();
+      const files = unzip(await h.data.download(owner.i, job.id));
+      const exported = JSON.parse(files.get("data.json")!.toString()).data;
+      assert.equal(exported.friends.length, 1);
+      assert.equal(exported.friend_requests.length, 2);
+      assert.equal(exported.friends[0].peer_handle, null, unavailable);
+      assert.equal(exported.friends[0].request_direction, "sent");
+      assert.ok(exported.friends[0].accepted_at);
+      assert.deepEqual(
+        exported.friend_requests
+          .map((row: { direction: string }) => row.direction)
+          .sort(),
+        ["received", "sent"],
+      );
+      for (const kind of ["friends", "friend_requests"]) {
+        for (const row of exported[kind]) {
+          assert.equal(row.peer_handle, null, unavailable);
+          assert.ok(row.created_at);
+        }
+        const csv = files.get("tables/" + kind + ".csv")!.toString();
+        for (const peer of [accepted, sent, received])
+          assert.ok(!csv.includes(peer.handle), unavailable + " CSV");
+      }
+    });
+  }
+});
 test("friend data enters JSON/CSV export with minimal peer handles and no third-party graph, then account deletion purges links and own counters", () =>
   isolated(async (h) => {
     const a = await h.member("alice"),
