@@ -1,6 +1,7 @@
 import { lt } from "drizzle-orm";
 import type { Database } from "../infrastructure/db/client.js";
 import {
+  friendAttempt,
   session,
   verification,
   authLimit,
@@ -11,6 +12,9 @@ export async function cleanupAccounts(db: Database, now = new Date()) {
   const sixMonths = new Date(now);
   sixMonths.setUTCMonth(sixMonths.getUTCMonth() - 6);
   await db.transaction(async (tx) => {
+    await tx
+      .delete(friendAttempt)
+      .where(lt(friendAttempt.createdAt, new Date(now.getTime() - 86400000)));
     await tx.delete(session).where(lt(session.expiresAt, now));
     await tx.delete(verification).where(lt(verification.expiresAt, now));
     await tx.delete(authLimit).where(lt(authLimit.expiresAt, now));

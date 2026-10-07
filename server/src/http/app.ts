@@ -14,10 +14,14 @@ import { dataHTTP } from "../data/http.js";
 import type { DataManagement } from "../data/service.js";
 import { accountsHTTP } from "../accounts/http.js";
 
+import { friendsHTTP } from "../friends/http.js";
+import type { Friends } from "../friends/service.js";
+
 export const Services = Context.GenericTag<{
   db: Database;
   pool: Pool;
   auth: Auth;
+  friends?: Friends;
   encounters?: Encounters;
   dataManagement?: DataManagement;
 }>("miaou/Services");
@@ -32,7 +36,8 @@ const json = (body: AccessResponse | ApiError | HealthResponse, status = 200) =>
 
 export const app = Effect.gen(function* () {
   const request = yield* HttpServerRequest.HttpServerRequest;
-  const { db, pool, auth, encounters, dataManagement } = yield* Services;
+  const { db, pool, auth, encounters, dataManagement, friends } =
+    yield* Services;
   const webRequest = yield* HttpServerRequest.toWeb(request);
   const path = new URL(webRequest.url).pathname;
   if (path === "/api/health" && request.method === "GET")
@@ -41,6 +46,10 @@ export const app = Effect.gen(function* () {
     yield* external(() => pool.query("select 1"));
     return json({ status: "ready" });
   }
+  const friendsResponse = friends
+    ? yield* external(() => friendsHTTP(webRequest, db, auth, friends))
+    : null;
+  if (friendsResponse) return HttpServerResponse.fromWeb(friendsResponse);
   const dataResponse = dataManagement
     ? yield* external(() => dataHTTP(webRequest, db, auth, dataManagement))
     : null;

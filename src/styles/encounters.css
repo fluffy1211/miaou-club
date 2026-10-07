@@ -486,3 +486,102 @@ body > .skip-link:focus {
   stroke: currentColor;
   stroke-width: 1.5;
 }
+
+.friends-panel {
+  max-width: 720px;
+  margin: auto;
+}
+.friends-panel > p {
+  margin: 16px 0;
+}
+.friend-search {
+  margin: 28px 0 0;
+  display: grid;
+  gap: 8px;
+}
+.friend-search > div {
+  display: flex;
+  gap: 10px;
+}
+.friend-search input {
+  min-width: 0;
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+  background: white;
+}
+.friend-search small,
+.friend-person small {
+  color: var(--muted);
+}
+.friend-section {
+  margin-top: 30px;
+  padding: 24px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.friend-section h2 {
+  margin: 0 0 18px;
+}
+.friend-section ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.friend-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+}
+.friend-initial {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--lilac);
+}
+.friend-person {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.friend-person a {
+  font-weight: 600;
+  text-decoration: underline;
+}
+.friend-person small {
+  display: block;
+}
+.friend-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.friend-text-action {
+  background: transparent;
+  border: 0;
+  text-decoration: underline;
+  min-height: 44px;
+  padding: 8px;
+}
+.friend-message {
+  min-height: 24px;
+}
+@media (max-width: 600px) {
+  .friend-section {
+    padding: 18px;
+  }
+  .friend-row {
+    flex-wrap: wrap;
+  }
+  .friend-actions {
+    margin-left: 54px;
+    flex-basis: calc(100% - 54px);
+  }
+}

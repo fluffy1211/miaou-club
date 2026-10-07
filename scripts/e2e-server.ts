@@ -36,6 +36,10 @@ try {
   for (const [role, admitted, status] of [
     ["member", true, "active"],
     ["reader", true, "active"],
+    ["friend-a-chromium-mobile", true, "active"],
+    ["friend-b-chromium-mobile", true, "active"],
+    ["friend-a-webkit-mobile", true, "active"],
+    ["friend-b-webkit-mobile", true, "active"],
     ["admin", true, "active"],
     ["data-chromium-mobile", true, "active"],
     ["data-webkit-mobile", true, "active"],
@@ -67,6 +71,15 @@ try {
       "insert into profile (user_id,display_name) values ($1,$2)",
       [body.user.id, "Synthetic fixture"],
     );
+    if (role.startsWith("friend-"))
+      await pool.query(
+        "update profile set handle=$1,display_name=$2 where user_id=$3",
+        [
+          role.replaceAll("-", "_"),
+          role.includes("-a-") ? "Camille synthétique" : "Lou synthétique",
+          body.user.id,
+        ],
+      );
     if (role === "reader")
       await pool.query(
         "update profile set handle='synthetic_reader',color='corail',avatar='cat',bio='Profil synthétique du club.' where user_id=$1",

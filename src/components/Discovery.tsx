@@ -173,6 +173,12 @@ export function Discovery({
       </h1>
       {profile && (
         <div className={"public-profile account-color-" + profile.color}>
+          <a
+            className="text-link"
+            href={"/amis?q=" + encodeURIComponent(profile.handle)}
+          >
+            Retrouver ce membre dans mes amis
+          </a>
           <div className="profile-initial" aria-hidden="true">
             {profile.avatar === "cat" ? (
               <svg viewBox="0 0 24 24">
