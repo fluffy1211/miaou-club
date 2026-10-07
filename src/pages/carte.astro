@@ -1,0 +1,17 @@
+---
+import EncounterLayout from "../layouts/EncounterLayout.astro";
+import { Discovery } from "../components/Discovery";
+---
+
+<EncounterLayout title="Découvrir">
+  <Discovery
+    client:load
+    mode="map"
+    providerKey={
+      import.meta.env.PUBLIC_MIAOU_MAPTILER_APPROVED === "1"
+        ? import.meta.env.PUBLIC_MIAOU_MAPTILER_KEY
+        : undefined
+    }
+    choose={Astro.url.searchParams.get("choisir") === "1"}
+  />
+</EncounterLayout>

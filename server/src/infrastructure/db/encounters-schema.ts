@@ -7,6 +7,7 @@ import {
   timestamp,
   date,
   boolean,
+  jsonb,
   check,
   index,
   unique,
@@ -69,6 +70,10 @@ export const encounter = pgTable(
     visibility: text("visibility").notNull().default("public"),
     hidden: boolean("hidden").notNull().default(false),
     hiddenReason: text("hidden_reason"),
+    locationContext: jsonb("location_context"),
+    locationSize: integer("location_size"),
+    locationX: integer("location_x"),
+    locationY: integer("location_y"),
     revision: integer("revision").notNull().default(1),
     publishedAt: timestamp("published_at", { withTimezone: true })
       .notNull()
@@ -88,7 +93,21 @@ export const encounter = pgTable(
     check("encounter_title", sql`length(trim(${t.title})) between 1 and 120`),
     check("encounter_description", sql`length(${t.description}) <= 2000`),
     check("encounter_visibility", sql`${t.visibility} in ('public','private')`),
+    check(
+      "encounter_location",
+      sql`(${t.locationSize} is null and ${t.locationX} is null and ${t.locationY} is null) or (${t.locationSize} is not null and ${t.locationX} is not null and ${t.locationY} is not null and ${t.locationSize} in (500,1000,2000) and ${t.locationX} between 0 and 2600 and ${t.locationY} between 3000 and 14500)`,
+    ),
     index("encounter_notebook").on(t.ownerId, t.publishedAt),
+    index("encounter_feed")
+      .on(t.publishedAt, t.id)
+      .where(
+        sql`${t.visibility} = 'public' and not ${t.hidden} and ${t.deletedAt} is null`,
+      ),
+    index("encounter_map")
+      .on(t.publishedAt, t.id)
+      .where(
+        sql`${t.visibility} = 'public' and not ${t.hidden} and ${t.deletedAt} is null and ${t.locationSize} is not null`,
+      ),
   ],
 );
 export const uploadAttempt = pgTable(

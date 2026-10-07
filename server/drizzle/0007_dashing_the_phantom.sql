@@ -1,0 +1,2 @@
+CREATE INDEX "encounter_feed" ON "encounter" USING btree ("published_at","id") WHERE "encounter"."visibility" = 'public' and not "encounter"."hidden" and "encounter"."deleted_at" is null;--> statement-breakpoint
+CREATE INDEX "encounter_map" ON "encounter" USING btree ("published_at","id") WHERE "encounter"."visibility" = 'public' and not "encounter"."hidden" and "encounter"."deleted_at" is null and "encounter"."location_size" is not null;

@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import {
   mkdtemp,
   rm,
@@ -26,7 +26,220 @@ import {
   objectKeys,
 } from "../src/encounters/storage.js";
 import { optimize, InvalidPhoto } from "../src/encounters/pipeline.js";
+import {
+  fromPosition,
+  enlarge,
+  contains,
+  forward,
+  inverse,
+  onMainland,
+  cell,
+} from "../src/encounters/location.js";
 const origin = "http://localhost:43991";
+test("Lambert-93 fixed grid, mainland perimeter, accuracy and nested enlargement", () => {
+  const p = forward(3, 46.5);
+  assert.ok(Math.abs(p[0] - 700000) < 0.01);
+  assert.ok(Math.abs(p[1] - 6600000) < 0.01);
+  const c = fromPosition(2.3, 48.8, 500);
+  assert.ok(contains(c, enlarge(c, 1000)));
+  assert.ok(contains(c, enlarge(c, 2000)));
+  assert.ok(!contains(enlarge(c, 2000), c));
+  assert.ok(!contains(c, { ...c, x: c.x + 1 }));
+  assert.ok(!contains(null, c));
+  for (const [lon, lat] of [
+    [8.74, 41.92],
+    [-61.5, 16.2],
+    [4.35, 50.85],
+    [-0.1, 51.5],
+    [2.1, 41.4],
+  ])
+    assert.equal(onMainland(lon, lat), false);
+  for (const [lon, lat] of [
+    [2.3, 48.8],
+    [-4.49, 48.39],
+    [7.75, 48.58],
+    [-1.56, 43.48],
+  ])
+    assert.equal(onMainland(lon, lat), true);
+  assert.throws(() => fromPosition(2.3, 48.8, 1000, 800));
+  assert.throws(() => cell({ ...c, latitude: 48.8 }));
+  assert.throws(() => cell({ ...c, x: NaN }));
+  const q = inverse(p[0], p[1]);
+  assert.ok(Math.abs(q[0] - 3) < 1e-8);
+});
+test("discovery, profiles and map revoke shared content while owner notebook stays available; no precise coordinates accepted", async () => {
+  await isolated(async (h) => {
+    const a = await h.member("discover-author@example.test"),
+      b = await h.member("discover-reader@example.test");
+    for (const handle of ["%ZZ", "%E0%A4%A", "%2F"]) {
+      assert.equal(
+        (await h.call(b.cookies, "/api/v1/profiles/" + handle + "/encounters"))
+          .status,
+        400,
+      );
+      const profile = await accountsHTTP(
+        new Request(origin + "/api/v1/profiles/" + handle, {
+          headers: { cookie: b.cookies },
+        }),
+        h.db,
+        h.auth,
+      );
+      assert.equal(profile.status, 400);
+    }
+    await h.pool.query(
+      "update profile set handle='synthetic_author' where user_id=$1",
+      [a.id],
+    );
+    const location = fromPosition(2.3, 48.8);
+    const id = await h.ready(a.cookies);
+    const published = await h.call(
+      a.cookies,
+      "/api/v1/encounters",
+      { ...input(id), location, locationMethod: "position" },
+      "POST",
+      randomUUID(),
+    );
+    assert.equal(published.status, 201);
+    const entry = (await published.json()).encounter;
+    const routes = [
+      "/api/v1/encounters",
+      "/api/v1/map",
+      "/api/v1/profiles/synthetic_author/encounters",
+    ];
+    const contours = await h.call(b.cookies, "/api/v1/map/contours");
+    assert.equal(contours.status, 200);
+    const data = await contours.json();
+    assert.equal(data.features.length, 12);
+    assert.equal(data.type, "FeatureCollection");
+    assert.ok(data.license.includes("odbl"));
+    assert.equal((await h.call("", "/api/v1/map/contours")).status, 401);
+    for (const path of routes) {
+      assert.equal((await h.call("", path)).status, 401);
+      const r = await h.call(b.cookies, path);
+      assert.equal(r.status, 200);
+      assert.equal(r.headers.get("cache-control"), "no-store");
+      const data = await r.json();
+      assert.equal(data.encounters[0].id, entry.id);
+      assert.equal(data.encounters[0].authorHandle, "synthetic_author");
+      assert.deepEqual(
+        data.encounters[0].location,
+        path === "/api/v1/map" ? location : null,
+      );
+      assert.equal(JSON.stringify(data).includes("example.test"), false);
+    }
+    const smaller = await h.call(
+      a.cookies,
+      "/api/v1/encounters/" + entry.id,
+      {
+        ...input(id),
+        mediaId: undefined,
+        location: fromPosition(2.3, 48.8, 500),
+        revision: 1,
+      },
+      "PATCH",
+    );
+    assert.equal(smaller.status, 409);
+    const moved = await h.call(
+      a.cookies,
+      "/api/v1/encounters/" + entry.id,
+      {
+        ...input(id),
+        mediaId: undefined,
+        location: { ...location, x: location.x + 1 },
+        revision: 1,
+      },
+      "PATCH",
+    );
+    assert.equal(moved.status, 409);
+    const widened = await h.call(
+      a.cookies,
+      "/api/v1/encounters/" + entry.id,
+      {
+        ...input(id),
+        mediaId: undefined,
+        location: enlarge(location, 2000),
+        revision: 1,
+      },
+      "PATCH",
+    );
+    assert.equal(widened.status, 200);
+    const invalid = await h.call(
+      a.cookies,
+      "/api/v1/encounters",
+      {
+        ...input(await h.ready(a.cookies)),
+        location: { ...location, longitude: 2.3 },
+      },
+      "POST",
+      randomUUID(),
+    );
+    assert.equal(invalid.status, 400);
+    for (const update of [
+      "hidden=true",
+      "visibility='private'",
+      "deleted_at=now()",
+    ]) {
+      await h.pool.query(`update encounter set ${update} where id=$1`, [
+        entry.id,
+      ]);
+      for (const path of routes)
+        assert.equal(
+          (await (await h.call(b.cookies, path)).json()).encounters.length,
+          0,
+        );
+      assert.equal((await h.call(b.cookies, entry.image)).status, 404);
+      await h.pool.query(
+        "update encounter set hidden=false,visibility='public',deleted_at=null where id=$1",
+        [entry.id],
+      );
+    }
+    for (const update of ["status='suspended'", "admitted=false"]) {
+      await h.pool.query(`update user_policy set ${update} where user_id=$1`, [
+        a.id,
+      ]);
+      for (const path of routes)
+        assert.equal(
+          (await (await h.call(b.cookies, path)).json()).encounters.length,
+          0,
+        );
+      assert.equal((await h.call(b.cookies, entry.image)).status, 404);
+      assert.equal(
+        (await h.call(a.cookies, "/api/v1/me/encounters")).status,
+        200,
+      );
+      await h.pool.query(
+        "update user_policy set status='active',admitted=true where user_id=$1",
+        [a.id],
+      );
+    }
+    await h.pool.query(
+      "update admission set active=false where email='discover-author@example.test'",
+    );
+    for (const path of routes)
+      assert.equal((await h.call(a.cookies, path)).status, 403);
+    assert.equal((await h.call(a.cookies, "/api/v1/map/contours")).status, 403);
+    assert.equal((await h.call(b.cookies, entry.image)).status, 404);
+    await h.pool.query(
+      "update admission set active=true where email='discover-author@example.test'",
+    );
+    const noPlace = await h.call(
+      a.cookies,
+      "/api/v1/encounters/" + entry.id,
+      { ...input(id), mediaId: undefined, location: null, revision: 2 },
+      "PATCH",
+    );
+    assert.equal(noPlace.status, 200);
+    assert.equal(
+      (await (await h.call(b.cookies, "/api/v1/map")).json()).encounters.length,
+      0,
+    );
+    assert.equal(
+      (await (await h.call(b.cookies, "/api/v1/encounters")).json()).encounters
+        .length,
+      1,
+    );
+  });
+});
 const databaseURL =
   process.env.TEST_DATABASE_URL ??
   "postgresql://miaou_test:local-test-only@127.0.0.1:54330/miaou_test";
@@ -195,6 +408,167 @@ async function setup(url: string) {
     publish,
   };
 }
+test("shared pagination is stable at equal publication times, bounded and cannot use private cursors", async () =>
+  isolated(async (h) => {
+    const a = await h.member("pagination@example.test"),
+      b = await h.member("page-reader@example.test");
+    const real = await h.publish(a.cookies, await h.ready(a.cookies));
+    const stored = (
+      await h.pool.query("select * from encounter where id=$1", [real.id])
+    ).rows[0];
+    const legacyBody = input(stored.media_id);
+    const { mediaId, ...legacyFields } = legacyBody;
+    const legacyHash = createHash("sha256")
+      .update(JSON.stringify({ ...legacyFields, mediaId }))
+      .digest("hex");
+    await h.pool.query("update encounter set fingerprint=$2 where id=$1", [
+      real.id,
+      legacyHash,
+    ]);
+    const replay = await h.call(
+      a.cookies,
+      "/api/v1/encounters",
+      legacyBody,
+      "POST",
+      stored.request_key,
+    );
+    assert.equal(replay.status, 201);
+    assert.equal((await replay.json()).encounter.id, real.id);
+    for (let n = 0; n < 32; n++) {
+      const mediaId = randomUUID();
+      await h.pool.query(
+        "insert into media(id,owner_id,state,bytes,width,height,expires_at) values($1,$2,'ready',100,160,80,now()+interval '1 day')",
+        [mediaId, a.id],
+      );
+      h.storage.objects.set(
+        mediaId + "/image.webp",
+        await h.storage.get(stored.media_id + "/image.webp"),
+      );
+      h.storage.objects.set(
+        mediaId + "/thumb.webp",
+        await h.storage.get(stored.media_id + "/thumb.webp"),
+      );
+      await h.pool.query(
+        "insert into encounter(id,owner_id,media_id,request_key,fingerprint,title,encounter_date,published_at) values($1,$2,$3,$4,'synthetic','Pagination fixture','2026-10-03',$5)",
+        [randomUUID(), a.id, mediaId, randomUUID(), stored.published_at],
+      );
+    }
+    await h.pool.query(
+      "update encounter set published_at='2026-10-06T14:30:00.123456Z' where owner_id=$1",
+      [a.id],
+    );
+    const first = await (await h.call(b.cookies, "/api/v1/encounters")).json();
+    assert.equal(first.encounters.length, 30);
+    assert.ok(first.next);
+    const last = await (
+      await h.call(b.cookies, "/api/v1/encounters?after=" + first.next)
+    ).json();
+    assert.equal(last.encounters.length, 3);
+    assert.equal(last.next, null);
+    assert.equal(
+      new Set([...first.encounters, ...last.encounters].map((e) => e.id)).size,
+      33,
+    );
+    const anchor = JSON.parse(
+      Buffer.from(first.next, "base64url").toString(),
+    )[1];
+    await h.pool.query(
+      "update encounter set visibility='private' where id=$1",
+      [anchor],
+    );
+    const afterWithdrawal = await (
+      await h.call(b.cookies, "/api/v1/encounters?after=" + first.next)
+    ).json();
+    assert.equal(afterWithdrawal.encounters.length, 3);
+    await h.pool.query(
+      "update encounter set visibility='private' where id=$1",
+      [real.id],
+    );
+    assert.equal(
+      (await h.call(b.cookies, "/api/v1/encounters?after=" + real.id)).status,
+      400,
+    );
+    assert.equal(
+      (await h.call(b.cookies, "/api/v1/encounters?after=malformed")).status,
+      400,
+    );
+  }));
+test("global feed indexes serve ordered pages without sorting the whole synthetic population", async () =>
+  isolated(async (h) => {
+    const a = await h.member("feed-plan@example.test"),
+      b = await h.member("feed-reader@example.test");
+    const sample = await h.ready(a.cookies);
+    // Query-only bulk fixture, using real processed synthetic photo variants.
+    const mediaRows = await h.pool.query(
+      "insert into media(id,owner_id,state,bytes,width,height,original_present,expires_at) select md5('feed-media-'||n)::uuid::text,$1,'ready',100,80,160,false,now()+interval '1 day' from generate_series(1,5000) n returning id",
+      [a.id],
+    );
+    for (const { id } of mediaRows.rows) {
+      h.storage.objects.set(
+        id + "/image.webp",
+        await h.storage.get(sample + "/image.webp"),
+      );
+      h.storage.objects.set(
+        id + "/thumb.webp",
+        await h.storage.get(sample + "/thumb.webp"),
+      );
+    }
+    await h.pool.query(
+      "insert into encounter(id,owner_id,media_id,request_key,fingerprint,title,encounter_date,visibility,published_at,location_size,location_x,location_y) select md5('feed-encounter-'||n)::uuid::text,$1,md5('feed-media-'||n)::uuid::text,md5('feed-request-'||n)::uuid::text,'synthetic','Feed fixture','2026-10-06',case when n%7=0 then 'private' else 'public' end,now()-n*interval '1 second',case when n%10=0 then 1000 end,case when n%10=0 then 648 end,case when n%10=0 then 6855 end from generate_series(1,5000) n",
+      [a.id],
+    );
+    for (const table of [
+      "encounter",
+      "media",
+      "profile",
+      "user_policy",
+      "admission",
+      '"user"',
+    ])
+      await h.pool.query("analyze " + table);
+    const original = h.pool.query.bind(h.pool);
+    for (const [path, index] of [
+      ["/api/v1/encounters", "encounter_feed"],
+      ["/api/v1/map", "encounter_map"],
+    ]) {
+      let plan: Record<string, unknown> | undefined;
+      h.pool.query = (async (text: string, values?: unknown[]) => {
+        if (typeof text === "string" && text.startsWith("select e.*"))
+          plan = (
+            await original("explain (analyze,format json) " + text, values)
+          ).rows[0]["QUERY PLAN"][0].Plan;
+        return original(text, values);
+      }) as typeof h.pool.query;
+      try {
+        const response = await h.call(b.cookies, path);
+        assert.equal(response.status, 200);
+        assert.equal((await response.json()).encounters.length, 30);
+        const nodes: Record<string, unknown>[] = [];
+        function visit(p: Record<string, unknown>) {
+          nodes.push(p);
+          for (const child of (p.Plans ?? []) as Record<string, unknown>[])
+            visit(child);
+        }
+        assert.ok(plan);
+        visit(plan);
+        assert.ok(
+          nodes.some((n) => n["Index Name"] === index),
+          JSON.stringify(
+            nodes.map((n) => ({
+              type: n["Node Type"],
+              index: n["Index Name"],
+            })),
+          ),
+        );
+        assert.equal(
+          nodes.some((n) => n["Node Type"] === "Sort"),
+          false,
+        );
+      } finally {
+        h.pool.query = original;
+      }
+    }
+  }));
 test("pipeline decodes real pixels, corrects orientation, strips metadata and rejects unsupported/oversized input", async () => {
   const result = await optimize(await photo());
   assert.equal(result.width, 80);
@@ -754,51 +1128,74 @@ test("local adapter persists across instances; Supabase adapter refuses public b
     globalThis.fetch = native;
   }
 });
-test("additive migration upgrades previous lot without changing existing accounts", async () => {
-  const admin = createDatabase(databaseURL);
-  const name = "migration_" + randomUUID().replaceAll("-", "") + "_test";
-  await admin.pool.query(`create database "${name}"`);
-  const url = new URL(databaseURL);
-  url.pathname = name;
-  const { pool, db } = createDatabase(url.href);
-  const dir = await mkdtemp(join(tmpdir(), "miaou-previous-"));
-  try {
-    await mkdir(join(dir, "meta"));
-    const journal = JSON.parse(
-      await readFile("server/drizzle/meta/_journal.json", "utf8"),
-    );
-    journal.entries = journal.entries.filter((x: { idx: number }) => x.idx < 3);
-    await writeFile(join(dir, "meta/_journal.json"), JSON.stringify(journal));
-    for (const e of journal.entries)
-      await copyFile(
-        "server/drizzle/" + e.tag + ".sql",
-        join(dir, e.tag + ".sql"),
+for (const cutoff of [5, 7]) {
+  test(`additive migration upgrades snapshot ${cutoff} without changing existing accounts`, async () => {
+    const admin = createDatabase(databaseURL);
+    const name = "migration_" + randomUUID().replaceAll("-", "") + "_test";
+    await admin.pool.query(`create database "${name}"`);
+    const url = new URL(databaseURL);
+    url.pathname = name;
+    const { pool, db } = createDatabase(url.href);
+    const dir = await mkdtemp(join(tmpdir(), "miaou-previous-"));
+    try {
+      await mkdir(join(dir, "meta"));
+      const journal = JSON.parse(
+        await readFile("server/drizzle/meta/_journal.json", "utf8"),
       );
-    await migrate(db, { migrationsFolder: dir });
-    await pool.query(
-      'insert into "user"(id,name,email,email_verified,created_at,updated_at) values($1,$2,$3,false,now(),now())',
-      ["synthetic-upgrade", "Fixture", "upgrade@example.test"],
-    );
-    await migrate(db, { migrationsFolder: "server/drizzle" });
-    assert.equal(
-      (
-        await pool.query('select count(*) from "user" where id=$1', [
-          "synthetic-upgrade",
-        ])
-      ).rows[0].count,
-      "1",
-    );
-    assert.equal(
-      (await pool.query("select count(*) from media")).rows[0].count,
-      "0",
-    );
-  } finally {
-    await closePool(pool);
-    await admin.pool.query(`drop database "${name}" with(force)`);
-    await closePool(admin.pool);
-    await rm(dir, { recursive: true, force: true });
-  }
-});
+      journal.entries = journal.entries.filter(
+        (x: { idx: number }) => x.idx < cutoff,
+      );
+      await writeFile(join(dir, "meta/_journal.json"), JSON.stringify(journal));
+      for (const e of journal.entries)
+        await copyFile(
+          "server/drizzle/" + e.tag + ".sql",
+          join(dir, e.tag + ".sql"),
+        );
+      await migrate(db, { migrationsFolder: dir });
+      await pool.query(
+        'insert into "user"(id,name,email,email_verified,created_at,updated_at) values($1,$2,$3,false,now(),now())',
+        ["synthetic-upgrade", "Fixture", "upgrade@example.test"],
+      );
+      const mediaId = randomUUID(),
+        entryId = randomUUID();
+      await pool.query(
+        "insert into media(id,owner_id,state,bytes,width,height,expires_at) values($1,'synthetic-upgrade','ready',100,160,80,now()+interval '1 day')",
+        [mediaId],
+      );
+      await pool.query(
+        "insert into encounter(id,owner_id,media_id,request_key,fingerprint,title,encounter_date) values($1,'synthetic-upgrade',$2,$3,'synthetic','Existing memory','2026-10-03')",
+        [entryId, mediaId, randomUUID()],
+      );
+      await migrate(db, { migrationsFolder: "server/drizzle" });
+      assert.equal(
+        (
+          await pool.query('select count(*) from "user" where id=$1', [
+            "synthetic-upgrade",
+          ])
+        ).rows[0].count,
+        "1",
+      );
+      assert.equal(
+        (await pool.query("select count(*) from media")).rows[0].count,
+        "1",
+      );
+      const upgraded = (
+        await pool.query(
+          "select title,location_size,location_context from encounter where id=$1",
+          [entryId],
+        )
+      ).rows[0];
+      assert.equal(upgraded.title, "Existing memory");
+      assert.equal(upgraded.location_size, null);
+      assert.equal(upgraded.location_context, null);
+    } finally {
+      await closePool(pool);
+      await admin.pool.query(`drop database "${name}" with(force)`);
+      await closePool(admin.pool);
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+}
 
 test("publication daily quota counts deleted entries and an idempotent retry does not consume a slot", async () =>
   isolated(async (h) => {

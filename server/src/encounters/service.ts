@@ -1,3 +1,4 @@
+import { cell, contains, type Cell } from "./location.js";
 import { randomUUID, createHash } from "node:crypto";
 import type { Pool, PoolClient, QueryResultRow } from "pg";
 import type { Identity } from "../accounts/security.js";
@@ -22,6 +23,8 @@ export type Draft = {
   description: string;
   encounterDate: string;
   visibility: "public" | "private";
+  location?: Cell | null;
+  locationMethod?: "position" | "map" | null;
 };
 export function draft(body: Record<string, unknown>): Draft {
   const {
@@ -48,7 +51,19 @@ export function draft(body: Record<string, unknown>): Draft {
     description: description.trim(),
     encounterDate,
     visibility: visibility as Draft["visibility"],
+    location: parseLocation(body.location),
+    locationMethod:
+      body.locationMethod === "position" || body.locationMethod === "map"
+        ? body.locationMethod
+        : null,
   };
+}
+function parseLocation(value: unknown) {
+  try {
+    return cell(value);
+  } catch {
+    return fail("invalid_location");
+  }
 }
 export const uuid = (x: unknown): x is string =>
   typeof x === "string" &&
@@ -66,6 +81,7 @@ function project(row: QueryResultRow, ownerId: string) {
     revision: row.revision,
     owned: row.owner_id === ownerId,
     author: row.display_name ?? "Membre",
+    authorHandle: row.handle ?? null,
     image: `/media/${row.media_id}/image`,
     thumbnail: `/media/${row.media_id}/thumb`,
     width: row.width,
@@ -73,7 +89,9 @@ function project(row: QueryResultRow, ownerId: string) {
     ...(row.owner_id === ownerId
       ? { hidden: row.hidden, hiddenReason: row.hidden_reason }
       : {}),
-    location: null,
+    location: row.location_size
+      ? { size: row.location_size, x: row.location_x, y: row.location_y }
+      : null,
   };
 }
 export class Encounters {
@@ -295,7 +313,7 @@ export class Encounters {
   async list(i: Identity, after?: string) {
     const cursor = after && uuid(after) ? after : null;
     const r = await this.pool.query(
-      `select e.*,e.encounter_date::text as encounter_date,m.width,m.height,f.display_name ${joined} where ${permitted} and e.owner_id=$1 and ($3::text is null or (e.published_at,e.id)<(select published_at,id from encounter where id=$3 and owner_id=$1)) order by e.published_at desc,e.id desc limit 31`,
+      `select e.*,e.encounter_date::text as encounter_date,m.width,m.height,f.display_name,f.handle ${joined} where ${permitted} and e.owner_id=$1 and ($3::text is null or (e.published_at,e.id)<(select published_at,id from encounter where id=$3 and owner_id=$1)) order by e.published_at desc,e.id desc limit 31`,
       [i.user.id, groupAllowed(i), cursor],
     );
     return {
@@ -303,9 +321,59 @@ export class Encounters {
       next: r.rows.length > 30 ? r.rows[29].id : null,
     };
   }
+  async discover(
+    i: Identity,
+    options: { after?: string; handle?: string; map?: boolean } = {},
+  ) {
+    if (!groupAllowed(i)) fail("forbidden", 403);
+    let afterTime: string | null = null,
+      afterId: string | null = null;
+    if (options.after) {
+      try {
+        if (options.after.length > 200) throw new Error();
+        const decoded = JSON.parse(
+          Buffer.from(options.after, "base64url").toString(),
+        );
+        if (
+          !Array.isArray(decoded) ||
+          decoded.length !== 2 ||
+          !uuid(decoded[1]) ||
+          typeof decoded[0] !== "string" ||
+          !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/.test(decoded[0]) ||
+          !Number.isFinite(Date.parse(decoded[0]))
+        )
+          throw new Error();
+        afterTime = decoded[0];
+        afterId = decoded[1];
+      } catch {
+        fail("invalid_request");
+      }
+    }
+    const r = await this.pool.query(
+      `select e.*,to_char(e.published_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as cursor_time,e.encounter_date::text as encounter_date,m.width,m.height,f.display_name,f.handle ${joined}
+       where $1::text is not null and e.deleted_at is null and m.state='ready' and e.visibility='public' and not e.hidden
+       and p.status='active' and p.admitted and p.accepted_at is not null and p.terms_version is not null and a.active
+       and ($2::text is null or f.handle=$2) and (not $3::boolean or e.location_size is not null)
+       and ($4::timestamptz is null or (e.published_at,e.id)<($4::timestamptz,$5::text))
+       order by e.published_at desc,e.id desc limit 31`,
+      [i.user.id, options.handle ?? null, !!options.map, afterTime, afterId],
+    );
+    return {
+      encounters: r.rows.slice(0, 30).map((r) => {
+        const view = project(r, i.user.id);
+        return options.map ? view : { ...view, location: null };
+      }),
+      next:
+        r.rows.length > 30
+          ? Buffer.from(
+              JSON.stringify([r.rows[29].cursor_time, r.rows[29].id]),
+            ).toString("base64url")
+          : null,
+    };
+  }
   async detail(i: Identity, id: string) {
     const r = await this.pool.query(
-      `select e.*,e.encounter_date::text as encounter_date,m.width,m.height,f.display_name ${joined} where ${permitted} and e.id=$3`,
+      `select e.*,e.encounter_date::text as encounter_date,m.width,m.height,f.display_name,f.handle ${joined} where ${permitted} and e.id=$3`,
       [i.user.id, groupAllowed(i), id],
     );
     if (!r.rowCount) return fail("not_found", 404);
@@ -338,14 +406,28 @@ export class Encounters {
             "description",
             "encounterDate",
             "visibility",
+            "location",
+            "locationMethod",
           ].includes(k),
       )
     )
       return fail("invalid_request");
-    const d = draft(body),
-      hash = createHash("sha256")
-        .update(JSON.stringify({ ...d, mediaId: body.mediaId }))
-        .digest("hex");
+    if (
+      body.location &&
+      !["position", "map"].includes(String(body.locationMethod))
+    )
+      return fail("invalid_location");
+    const d = draft(body);
+    const { location, locationMethod, ...fields } = d;
+    const hash = createHash("sha256")
+      .update(
+        JSON.stringify({
+          ...fields,
+          ...(location ? { location, locationMethod } : {}),
+          mediaId: body.mediaId,
+        }),
+      )
+      .digest("hex");
     const c = await this.pool.connect();
     let id: string;
     try {
@@ -394,7 +476,7 @@ export class Encounters {
         await this.storage.get(String(body.mediaId) + "/thumb.webp");
         id = randomUUID();
         await c.query(
-          "insert into encounter(id,owner_id,media_id,request_key,fingerprint,title,description,encounter_date,visibility) values($1,$2,$3,$4,$5,$6,$7,$8,$9)",
+          "insert into encounter(id,owner_id,media_id,request_key,fingerprint,title,description,encounter_date,visibility,location_size,location_x,location_y,location_context) values($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)",
           [
             id,
             i.user.id,
@@ -405,6 +487,16 @@ export class Encounters {
             d.description,
             d.encounterDate,
             d.visibility,
+            d.location?.size ?? null,
+            d.location?.x ?? null,
+            d.location?.y ?? null,
+            d.location
+              ? JSON.stringify({
+                  method: d.locationMethod,
+                  informationVersion: "location-v1",
+                  receivedAt: new Date().toISOString(),
+                })
+              : null,
           ],
         );
       }
@@ -426,6 +518,8 @@ export class Encounters {
             "description",
             "encounterDate",
             "visibility",
+            "location",
+            "locationMethod",
             "revision",
           ].includes(k),
       ) ||
@@ -437,8 +531,26 @@ export class Encounters {
     try {
       await c.query("begin");
       await this.active(c, i);
+      const old = (
+        await c.query(
+          "select location_size,location_x,location_y from encounter where id=$1 and owner_id=$2 and deleted_at is null and revision=$3 for update",
+          [id, i.user.id, body.revision],
+        )
+      ).rows[0];
+      if (!old) fail("edit_conflict", 409);
+      const previous = old.location_size
+        ? ({
+            size: old.location_size,
+            x: old.location_x,
+            y: old.location_y,
+          } as Cell)
+        : null;
+      const location = Object.hasOwn(body, "location")
+        ? (d.location ?? null)
+        : previous;
+      if (!contains(previous, location)) fail("location_cannot_reduce", 409);
       const r = await c.query(
-        "update encounter set title=$3,description=$4,encounter_date=$5,visibility=$6,revision=revision+1,updated_at=now() where id=$1 and owner_id=$2 and deleted_at is null and revision=$7 returning id",
+        "update encounter set title=$3,description=$4,encounter_date=$5,visibility=$6,revision=revision+1,updated_at=now(),location_size=$8,location_x=$9,location_y=$10,location_context=case when $8::integer is null then null else location_context end where id=$1 and owner_id=$2 and deleted_at is null and revision=$7 returning id",
         [
           id,
           i.user.id,
@@ -447,6 +559,9 @@ export class Encounters {
           d.encounterDate,
           d.visibility,
           body.revision,
+          location?.size ?? null,
+          location?.x ?? null,
+          location?.y ?? null,
         ],
       );
       if (!r.rowCount) fail("edit_conflict", 409);
@@ -464,7 +579,7 @@ export class Encounters {
     try {
       await c.query("begin");
       const r = await c.query(
-        "update encounter set deleted_at=coalesce(deleted_at,now()),title='Souvenir supprimé',description='',hidden_reason=null,encounter_date=current_date where id=$1 and owner_id=$2 returning media_id",
+        "update encounter set deleted_at=coalesce(deleted_at,now()),title='Souvenir supprimé',description='',hidden_reason=null,location_size=null,location_x=null,location_y=null,location_context=null,encounter_date=current_date where id=$1 and owner_id=$2 returning media_id",
         [id, i.user.id],
       );
       if (!r.rowCount) fail("not_found", 404);

@@ -26,6 +26,10 @@ const messages: Record<string, string> = {
   unavailable: "Le club est temporairement indisponible. Réessaie.",
   retry_unavailable:
     "Le traitement ne peut plus être repris. Choisis à nouveau une photo.",
+  invalid_location:
+    "Choisis une zone en France continentale ou publie sans lieu.",
+  location_cannot_reduce:
+    "Après publication, la zone peut seulement être agrandie ou retirée.",
   invalid_request: "Vérifie le titre, la date et les informations saisies.",
   upload_timeout: "L’envoi a pris trop de temps. Choisis à nouveau ta photo.",
   unauthenticated: "Connecte-toi pour retrouver ton carnet.",

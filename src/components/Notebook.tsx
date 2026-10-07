@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { EncounterDraft, EncounterView } from "@miaou/contracts";
+import { locationLabel } from "./LocationFields";
 import { Polaroid } from "./Polaroid";
 import { EncounterFields } from "./EncounterFields";
 import { encounterAPI, jsonRequest, frenchDate } from "./encounter-api";
@@ -85,6 +86,7 @@ export function Notebook({ id }: { id?: string }) {
             description: draft.description,
             encounterDate: draft.encounterDate,
             visibility: draft.visibility,
+            location: draft.location ?? null,
             revision: entry.revision,
           },
           "PATCH",
@@ -206,7 +208,11 @@ export function Notebook({ id }: { id?: string }) {
                     }}
                   >
                     <fieldset disabled={busy}>
-                      <EncounterFields value={draft} onChange={setDraft} />
+                      <EncounterFields
+                        value={draft}
+                        onChange={setDraft}
+                        originalLocation={entry.location}
+                      />
                     </fieldset>
                     <div className="encounter-actions">
                       <button className="encounter-button" disabled={busy}>
@@ -245,7 +251,17 @@ export function Notebook({ id }: { id?: string }) {
                         ? "Privé · toi uniquement"
                         : "Public · membres du club"}
                       <br />
-                      Sans lieu partagé.
+                      {locationLabel(entry.location)}
+                      {entry.location && group && (
+                        <a
+                          href={
+                            "/carte?zone=" +
+                            encodeURIComponent(JSON.stringify(entry.location))
+                          }
+                        >
+                          Voir la zone sur la carte
+                        </a>
+                      )}
                     </p>
                     {entry.hidden && (
                       <p className="encounter-privacy">

@@ -1,4 +1,5 @@
 import { and, eq, ne, sql, isNotNull } from "drizzle-orm";
+import { decodeHandle } from "../http/path.js";
 import type { Database } from "../infrastructure/db/client.js";
 import type { Auth } from "../infrastructure/auth/auth.js";
 import {
@@ -307,7 +308,8 @@ async function accountsHTTPInternal(
     }
     if (path.startsWith("/api/v1/profiles/") && request.method === "GET") {
       if (!groupAllowed(i)) return deny();
-      const handle = decodeURIComponent(path.slice("/api/v1/profiles/".length));
+      const handle = decodeHandle(path.slice("/api/v1/profiles/".length));
+      if (handle === null) return reply({ code: "invalid_request" }, 400);
       const [p] = await db
         .select({
           handle: profile.handle,

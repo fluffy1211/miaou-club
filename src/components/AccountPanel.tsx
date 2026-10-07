@@ -178,6 +178,15 @@ export function AccountPanel({
               <p>
                 <a href="/photo">Photographier un chat</a> ·{" "}
                 <a href="/carnet">Mon carnet</a>
+                {me.profile?.handle && (
+                  <>
+                    {" "}
+                    ·{" "}
+                    <a href={"/profil/" + me.profile.handle}>
+                      Voir mon profil public
+                    </a>
+                  </>
+                )}
               </p>
               <a href="/races">Découvrir le catalogue</a>
               <form

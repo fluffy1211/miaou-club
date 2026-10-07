@@ -1,7 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
-import { createDatabase } from "../dist/backend/infrastructure/db/client.js";
+import {
+  createDatabase,
+  closePool,
+} from "../dist/backend/infrastructure/db/client.js";
 const testURL = new URL(
   process.env.TEST_DATABASE_URL ??
     "postgresql://miaou_test:local-test-only@127.0.0.1:54330/miaou_test",
@@ -95,7 +98,7 @@ try {
   } catch {
     /* container never started */
   }
-  if (database) await database.pool.end();
+  if (database) await closePool(database.pool);
   await admin.pool.query(`drop database if exists "${name}" with (force)`);
-  await admin.pool.end();
+  await closePool(admin.pool);
 }

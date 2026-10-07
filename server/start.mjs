@@ -2,6 +2,7 @@
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
 import { writeResponse } from "astro/app/node";
+import { decodePath } from "../dist/backend/http/path.js";
 process.env.ASTRO_NODE_AUTOSTART = "disabled";
 const { handler } = await import("../dist/server/entry.mjs");
 const { handleRequest, dispose } =
@@ -27,7 +28,15 @@ const server = createServer(async (req, res) => {
     ),
   );
   try {
-    const path = decodeURIComponent(new URL(req.url ?? "/", baseURL).pathname);
+    const path = decodePath(new URL(req.url ?? "/", baseURL).pathname);
+    if (path === null) {
+      res.writeHead(400, {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store",
+      });
+      res.end(JSON.stringify({ code: "invalid_request" }));
+      return;
+    }
     if (
       path === "/_image" ||
       /\.(?:avif|webp|jpe?g|png|gif|svg|heic)$/i.test(path)

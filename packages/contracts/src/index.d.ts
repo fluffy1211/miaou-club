@@ -1,3 +1,4 @@
+export type LocationCell = { size: 500 | 1000 | 2000; x: number; y: number };
 export type AccessResponse = { status: "authorized" };
 export type ApiError = {
   code:
@@ -15,6 +16,8 @@ export type EncounterDraft = {
   description: string;
   encounterDate: string;
   visibility: "public" | "private";
+  location?: LocationCell | null;
+  locationMethod?: "position" | "map" | null;
 };
 export type EncounterView = EncounterDraft & {
   id: string;
@@ -22,13 +25,14 @@ export type EncounterView = EncounterDraft & {
   revision: number;
   owned: boolean;
   author: string;
+  authorHandle: string | null;
   image: string;
   thumbnail: string;
   width: number;
   height: number;
   hidden?: boolean;
   hiddenReason?: string | null;
-  location: null;
+  location: LocationCell | null;
 };
 export type MediaView = {
   id: string;

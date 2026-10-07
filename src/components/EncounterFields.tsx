@@ -1,9 +1,13 @@
 import type { EncounterDraft } from "@miaou/contracts";
+import { LocationFields } from "./LocationFields";
+import type { LocationCell } from "@miaou/contracts";
 export function EncounterFields({
   value,
   onChange,
+  originalLocation,
 }: {
   value: EncounterDraft;
+  originalLocation?: LocationCell | null;
   onChange: (d: EncounterDraft) => void;
 }) {
   return (
@@ -58,9 +62,20 @@ export function EncounterFields({
           <option value="private">Privé · moi uniquement</option>
         </select>
       </label>
+      <LocationFields
+        value={value.location}
+        original={originalLocation}
+        onChange={(location, method) =>
+          onChange({
+            ...value,
+            location,
+            locationMethod: location ? (method ?? value.locationMethod) : null,
+          })
+        }
+      />
       <p className="encounter-privacy">
-        Sans lieu partagé. Vérifie aussi que ta photo et ton texte ne révèlent
-        pas d’adresse ou de personne identifiable.
+        Vérifie aussi que ta photo et ton texte ne révèlent pas d’adresse ou de
+        personne identifiable.
       </p>
     </>
   );

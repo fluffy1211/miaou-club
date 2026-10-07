@@ -16,6 +16,16 @@ test("anonymous catalogue is closed and public Astro/React notice renders", asyn
   expect((await request.get("/api/v1/access")).status()).toBe(401);
   expect((await request.get("/api/ready")).status()).toBe(200);
   for (const path of [
+    "/api/v1/profiles/%ZZ/encounters",
+    "/api/v1/profiles/%E0%A4%A",
+    "/media/%ZZ/image",
+  ]) {
+    const response = await request.get(path);
+    expect(response.status()).toBe(400);
+    expect(await response.json()).toEqual({ code: "invalid_request" });
+    expect(response.headers()["cache-control"]).toBe("no-store");
+  }
+  for (const path of [
     "/_astro/e2e-fixture.svg",
     "/_astro/e2e-fixture.%73vg",
     "/_image?href=anything",

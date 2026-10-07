@@ -1,0 +1,8 @@
+---
+import EncounterLayout from "../../layouts/EncounterLayout.astro";
+import { Discovery } from "../../components/Discovery";
+---
+
+<EncounterLayout title="Profil du club">
+  <Discovery client:load mode="profile" handle={Astro.params.handle} />
+</EncounterLayout>
