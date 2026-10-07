@@ -437,6 +437,7 @@ export class DataManagement {
     await this.pool.query(
       "delete from account_deletion where completed_at<now()-interval '30 days'",
     );
+    await this.pool.query("select recovery_prune()");
     const jobs = (
       await this.pool.query(
         "select id,owner_id from data_export where state='pending' and next_attempt_at<=now() order by created_at limit 5",

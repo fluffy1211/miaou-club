@@ -3,6 +3,7 @@ import { readFile, writeFile, lstat, realpath } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createDatabase, closePool } from "../infrastructure/db/client.js";
 import { LocalStorage } from "../encounters/storage.js";
+import { copyJournal, restoreJournal } from "./decision-journal.js";
 import {
   assertLocalTestDatabase,
   captureBackup,
@@ -29,7 +30,9 @@ async function main() {
   const [action, backupFile, decisionsFile] = process.argv.slice(2);
   if (
     !backupFile ||
-    !["backup", "decisions", "restore"].includes(action) ||
+    !["backup", "decisions", "restore", "journal", "restore-journal"].includes(
+      action,
+    ) ||
     process.env.MIAOU_SYNTHETIC_RECOVERY !== "1"
   )
     throw new Error("Explicit synthetic recovery command required");
@@ -69,7 +72,35 @@ async function main() {
     if (decisionsKey.equals(backupKey))
       throw new Error("Independent keys required");
     const backup = unseal<Backup>(await readFile(backupFile), backupKey);
-    if (action === "decisions") {
+    if (action === "journal" || action === "restore-journal") {
+      const anchors = process.env.MIAOU_JOURNAL_ANCHOR_DIR;
+      if (!anchors)
+        throw new Error("Separate journal anchor directory required");
+      const result =
+        action === "journal"
+          ? await copyJournal(
+              pool,
+              backup,
+              decisionsFile,
+              anchors,
+              decisionsKey,
+            )
+          : await restoreJournal(
+              pool,
+              new RecoveryStorage(root),
+              backup,
+              decisionsFile,
+              anchors,
+              decisionsKey,
+            );
+      console.log(
+        JSON.stringify({
+          component: "recovery",
+          code: action === "journal" ? "journal_copied" : "restored_closed",
+          ...result,
+        }),
+      );
+    } else if (action === "decisions") {
       const decisions = await captureDecisions(pool, backup);
       await writeFile(decisionsFile, seal(decisions, decisionsKey), {
         flag: "wx",
