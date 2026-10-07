@@ -30,6 +30,12 @@ URL malformée reproduite avec `503` ; décodage contrôlé commun au runtime et
 
 Le premier push des correctifs a été bloqué par le test Google préexistant de fraîcheur à cinq minutes (`Missing expected rejection`). PostgreSQL mesuré environ 1 ms en avance sur Node, cohérent avec la frontière : les trois fixtures concernées utilisent désormais `Date.now() - 300000`, comme le contrôle applicatif. Seuil et assertions inchangés, aucun réessai configuré. Tests ciblés sessions/Google réussis ; hook complet à réexécuter avant livraison.
 
+### Index du flux et nettoyage CI — 7 octobre 2026
+
+Remarque Copilot vérifiée sur la sélection globale : plan avec balayage/tri sur 5 000 rencontres synthétiques. Migration additive `0007`, index partiels flux/carte suivant le tri date/ID ; sélection média/auteur/admission inchangée. Régression exécutant les vraies requêtes du service via EXPLAIN : index utilisés et absence de tri global. Upgrades depuis les schémas lots 3 et 4, données existantes conservées. `verify:full` réussi : 13 tests catalogue/navigation, 31 tests serveur, 26 E2E, contrôles statiques/builds/audit/Gitleaks/actionlint ; aucune migration de développement.
+
+CI `37580357665` sur `4b603b6` : tests/build/image réussis, puis échec après les assertions du smoke (`terminating connection due to administrator command`) pendant la suppression de la base jetable. `scripts/smoke-image.mjs` utilise maintenant le helper `closePool` existant pour attendre les sockets, avant DROP ; erreur non ignorée, aucun réessai ajouté. Image reconstruite, smoke/nettoyage et Trivy HIGH/CRITICAL réussis localement. Nouvelle CI et review du SHA final à obtenir avant fusion.
+
 ## Lot 3 — Polaroid local
 
 Upload → traitement → aperçu → publication durable → carnet, édition sous révision et suppression. Sharp, passerelle sans cache, adaptateur Supabase privé et stockage local de test, migrations additives avec ownership/photo unique, compteurs PostgreSQL, idempotence et tâches de reprise/purge. Parcours mobile crème/violet/corail conforme à la direction des maquettes ; localisation absente dans cette tranche. Brouillon dans l'onglet explicitement annoncé, effaçable/expirant ; aucune image binaire ni coordonnée dans le brouillon persisté. Détails techniques dans ARCHITECTURE, exploitation dans DEVELOPPEMENT.

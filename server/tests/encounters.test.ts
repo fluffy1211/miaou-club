@@ -493,6 +493,82 @@ test("shared pagination is stable at equal publication times, bounded and cannot
       400,
     );
   }));
+test("global feed indexes serve ordered pages without sorting the whole synthetic population", async () =>
+  isolated(async (h) => {
+    const a = await h.member("feed-plan@example.test"),
+      b = await h.member("feed-reader@example.test");
+    const sample = await h.ready(a.cookies);
+    // Query-only bulk fixture, using real processed synthetic photo variants.
+    const mediaRows = await h.pool.query(
+      "insert into media(id,owner_id,state,bytes,width,height,original_present,expires_at) select md5('feed-media-'||n)::uuid::text,$1,'ready',100,80,160,false,now()+interval '1 day' from generate_series(1,5000) n returning id",
+      [a.id],
+    );
+    for (const { id } of mediaRows.rows) {
+      h.storage.objects.set(
+        id + "/image.webp",
+        await h.storage.get(sample + "/image.webp"),
+      );
+      h.storage.objects.set(
+        id + "/thumb.webp",
+        await h.storage.get(sample + "/thumb.webp"),
+      );
+    }
+    await h.pool.query(
+      "insert into encounter(id,owner_id,media_id,request_key,fingerprint,title,encounter_date,visibility,published_at,location_size,location_x,location_y) select md5('feed-encounter-'||n)::uuid::text,$1,md5('feed-media-'||n)::uuid::text,md5('feed-request-'||n)::uuid::text,'synthetic','Feed fixture','2026-10-06',case when n%7=0 then 'private' else 'public' end,now()-n*interval '1 second',case when n%10=0 then 1000 end,case when n%10=0 then 648 end,case when n%10=0 then 6855 end from generate_series(1,5000) n",
+      [a.id],
+    );
+    for (const table of [
+      "encounter",
+      "media",
+      "profile",
+      "user_policy",
+      "admission",
+      '"user"',
+    ])
+      await h.pool.query("analyze " + table);
+    const original = h.pool.query.bind(h.pool);
+    for (const [path, index] of [
+      ["/api/v1/encounters", "encounter_feed"],
+      ["/api/v1/map", "encounter_map"],
+    ]) {
+      let plan: Record<string, unknown> | undefined;
+      h.pool.query = (async (text: string, values?: unknown[]) => {
+        if (typeof text === "string" && text.startsWith("select e.*"))
+          plan = (
+            await original("explain (analyze,format json) " + text, values)
+          ).rows[0]["QUERY PLAN"][0].Plan;
+        return original(text, values);
+      }) as typeof h.pool.query;
+      try {
+        const response = await h.call(b.cookies, path);
+        assert.equal(response.status, 200);
+        assert.equal((await response.json()).encounters.length, 30);
+        const nodes: Record<string, unknown>[] = [];
+        function visit(p: Record<string, unknown>) {
+          nodes.push(p);
+          for (const child of (p.Plans ?? []) as Record<string, unknown>[])
+            visit(child);
+        }
+        assert.ok(plan);
+        visit(plan);
+        assert.ok(
+          nodes.some((n) => n["Index Name"] === index),
+          JSON.stringify(
+            nodes.map((n) => ({
+              type: n["Node Type"],
+              index: n["Index Name"],
+            })),
+          ),
+        );
+        assert.equal(
+          nodes.some((n) => n["Node Type"] === "Sort"),
+          false,
+        );
+      } finally {
+        h.pool.query = original;
+      }
+    }
+  }));
 test("pipeline decodes real pixels, corrects orientation, strips metadata and rejects unsupported/oversized input", async () => {
   const result = await optimize(await photo());
   assert.equal(result.width, 80);
@@ -1052,70 +1128,74 @@ test("local adapter persists across instances; Supabase adapter refuses public b
     globalThis.fetch = native;
   }
 });
-test("additive migration upgrades previous lot without changing existing accounts", async () => {
-  const admin = createDatabase(databaseURL);
-  const name = "migration_" + randomUUID().replaceAll("-", "") + "_test";
-  await admin.pool.query(`create database "${name}"`);
-  const url = new URL(databaseURL);
-  url.pathname = name;
-  const { pool, db } = createDatabase(url.href);
-  const dir = await mkdtemp(join(tmpdir(), "miaou-previous-"));
-  try {
-    await mkdir(join(dir, "meta"));
-    const journal = JSON.parse(
-      await readFile("server/drizzle/meta/_journal.json", "utf8"),
-    );
-    journal.entries = journal.entries.filter((x: { idx: number }) => x.idx < 5);
-    await writeFile(join(dir, "meta/_journal.json"), JSON.stringify(journal));
-    for (const e of journal.entries)
-      await copyFile(
-        "server/drizzle/" + e.tag + ".sql",
-        join(dir, e.tag + ".sql"),
+for (const cutoff of [5, 7]) {
+  test(`additive migration upgrades snapshot ${cutoff} without changing existing accounts`, async () => {
+    const admin = createDatabase(databaseURL);
+    const name = "migration_" + randomUUID().replaceAll("-", "") + "_test";
+    await admin.pool.query(`create database "${name}"`);
+    const url = new URL(databaseURL);
+    url.pathname = name;
+    const { pool, db } = createDatabase(url.href);
+    const dir = await mkdtemp(join(tmpdir(), "miaou-previous-"));
+    try {
+      await mkdir(join(dir, "meta"));
+      const journal = JSON.parse(
+        await readFile("server/drizzle/meta/_journal.json", "utf8"),
       );
-    await migrate(db, { migrationsFolder: dir });
-    await pool.query(
-      'insert into "user"(id,name,email,email_verified,created_at,updated_at) values($1,$2,$3,false,now(),now())',
-      ["synthetic-upgrade", "Fixture", "upgrade@example.test"],
-    );
-    const mediaId = randomUUID(),
-      entryId = randomUUID();
-    await pool.query(
-      "insert into media(id,owner_id,state,bytes,width,height,expires_at) values($1,'synthetic-upgrade','ready',100,160,80,now()+interval '1 day')",
-      [mediaId],
-    );
-    await pool.query(
-      "insert into encounter(id,owner_id,media_id,request_key,fingerprint,title,encounter_date) values($1,'synthetic-upgrade',$2,$3,'synthetic','Existing memory','2026-10-03')",
-      [entryId, mediaId, randomUUID()],
-    );
-    await migrate(db, { migrationsFolder: "server/drizzle" });
-    assert.equal(
-      (
-        await pool.query('select count(*) from "user" where id=$1', [
-          "synthetic-upgrade",
-        ])
-      ).rows[0].count,
-      "1",
-    );
-    assert.equal(
-      (await pool.query("select count(*) from media")).rows[0].count,
-      "1",
-    );
-    const upgraded = (
+      journal.entries = journal.entries.filter(
+        (x: { idx: number }) => x.idx < cutoff,
+      );
+      await writeFile(join(dir, "meta/_journal.json"), JSON.stringify(journal));
+      for (const e of journal.entries)
+        await copyFile(
+          "server/drizzle/" + e.tag + ".sql",
+          join(dir, e.tag + ".sql"),
+        );
+      await migrate(db, { migrationsFolder: dir });
       await pool.query(
-        "select title,location_size,location_context from encounter where id=$1",
-        [entryId],
-      )
-    ).rows[0];
-    assert.equal(upgraded.title, "Existing memory");
-    assert.equal(upgraded.location_size, null);
-    assert.equal(upgraded.location_context, null);
-  } finally {
-    await closePool(pool);
-    await admin.pool.query(`drop database "${name}" with(force)`);
-    await closePool(admin.pool);
-    await rm(dir, { recursive: true, force: true });
-  }
-});
+        'insert into "user"(id,name,email,email_verified,created_at,updated_at) values($1,$2,$3,false,now(),now())',
+        ["synthetic-upgrade", "Fixture", "upgrade@example.test"],
+      );
+      const mediaId = randomUUID(),
+        entryId = randomUUID();
+      await pool.query(
+        "insert into media(id,owner_id,state,bytes,width,height,expires_at) values($1,'synthetic-upgrade','ready',100,160,80,now()+interval '1 day')",
+        [mediaId],
+      );
+      await pool.query(
+        "insert into encounter(id,owner_id,media_id,request_key,fingerprint,title,encounter_date) values($1,'synthetic-upgrade',$2,$3,'synthetic','Existing memory','2026-10-03')",
+        [entryId, mediaId, randomUUID()],
+      );
+      await migrate(db, { migrationsFolder: "server/drizzle" });
+      assert.equal(
+        (
+          await pool.query('select count(*) from "user" where id=$1', [
+            "synthetic-upgrade",
+          ])
+        ).rows[0].count,
+        "1",
+      );
+      assert.equal(
+        (await pool.query("select count(*) from media")).rows[0].count,
+        "1",
+      );
+      const upgraded = (
+        await pool.query(
+          "select title,location_size,location_context from encounter where id=$1",
+          [entryId],
+        )
+      ).rows[0];
+      assert.equal(upgraded.title, "Existing memory");
+      assert.equal(upgraded.location_size, null);
+      assert.equal(upgraded.location_context, null);
+    } finally {
+      await closePool(pool);
+      await admin.pool.query(`drop database "${name}" with(force)`);
+      await closePool(admin.pool);
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+}
 
 test("publication daily quota counts deleted entries and an idempotent retry does not consume a slot", async () =>
   isolated(async (h) => {
