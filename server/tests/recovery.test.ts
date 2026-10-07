@@ -958,7 +958,10 @@ test("independent journal survives actual source DB and file loss; replay preser
   }));
 
 test("journal upgrade from delivered schema keeps content; pruning rejects backups below the retained floor", async () => {
-  const previous = await mkdtemp("/private/tmp/miaou-journal-upgrade-");
+  await mkdir(".cache", { recursive: true, mode: 0o700 });
+  const previous = await mkdtemp(
+    join(process.cwd(), ".cache", "miaou-journal-upgrade-"),
+  );
   try {
     await cp("server/drizzle", previous, { recursive: true });
     await rm(join(previous, "0012_strong_golden_guardian.sql"));
