@@ -248,6 +248,14 @@ test("refusal cancellation and removal delete social rows immediately; immediate
       reject("forbidden", 403),
     );
     await h.friends.act(a.i, third.id, "remove");
+    assert.deepEqual(
+      (
+        await h.pool.query(
+          "select subject from recovery_decision where code='friendship_remove' order by seq",
+        )
+      ).rows.map((r) => r.subject),
+      [first.id, second.id, third.id],
+    );
     assert.equal(
       (await h.pool.query("select count(*)::int n from friendship")).rows[0].n,
       0,

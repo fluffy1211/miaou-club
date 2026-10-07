@@ -96,6 +96,7 @@ export type Backup = {
   sourceDatabase: string;
   capturedAt: string;
   schema: string;
+  journal: { sourceId: string; head: string };
   tables: Record<string, Row[]>;
   objects: Record<string, string>;
 };
@@ -125,7 +126,7 @@ export function assertLocalTestDatabase(url: string) {
   )
     throw new Error("Local synthetic test database required");
 }
-async function local(pool: Pool) {
+export async function local(pool: Pool) {
   const connectionString = pool.options.connectionString;
   if (!connectionString) throw new Error("Explicit test connection required");
   assertLocalTestDatabase(connectionString);
@@ -170,7 +171,10 @@ async function signature(c: PoolClient) {
     )
   ).rows;
   const names = [...new Set(columns.map((r) => r.table_name as string))].sort();
-  if (JSON.stringify(names) !== JSON.stringify([...tables].sort()))
+  if (
+    JSON.stringify(names) !==
+    JSON.stringify([...tables, "recovery_state", "recovery_decision"].sort())
+  )
     throw new Error("Recovery inventory does not match schema");
   const constraints = (
     await c.query(
@@ -184,13 +188,16 @@ async function signature(c: PoolClient) {
     .update(JSON.stringify({ columns, constraints, migrations }))
     .digest("hex");
 }
-async function locked<T>(pool: Pool, run: (c: PoolClient) => Promise<T>) {
+export async function locked<T>(
+  pool: Pool,
+  run: (c: PoolClient) => Promise<T>,
+) {
   const c = await pool.connect();
   try {
     await c.query("begin isolation level repeatable read");
     await c.query("set local lock_timeout='3s'");
     await c.query(
-      `lock table ${tables.map((t) => '"' + t + '"').join(",")} in exclusive mode`,
+      `lock table ${[...tables, "recovery_state", "recovery_decision"].map((t) => '"' + t + '"').join(",")} in exclusive mode`,
     );
     const value = await run(c);
     await c.query("commit");
@@ -215,6 +222,7 @@ export async function captureBackup(
       sourceDatabase,
       capturedAt: new Date().toISOString(),
       schema: await signature(c),
+      journal: await journalWatermark(c),
       tables: {},
       objects: {},
     };
@@ -249,7 +257,7 @@ export async function captureBackup(
     return backup;
   });
 }
-function backupInput(input: unknown): Backup {
+export function backupInput(input: unknown): Backup {
   const b = input as Backup;
   if (
     !b ||
@@ -258,6 +266,9 @@ function backupInput(input: unknown): Backup {
     !/^[a-f0-9-]{36}$/.test(b.id) ||
     !b.tables ||
     !b.objects ||
+    !b.journal ||
+    !/^[a-f0-9-]{36}$/.test(b.journal.sourceId) ||
+    !/^(0|[1-9][0-9]*)$/.test(b.journal.head) ||
     !Number.isFinite(Date.parse(b.capturedAt)) ||
     JSON.stringify(Object.keys(b.tables).sort()) !==
       JSON.stringify([...tables].sort()) ||
@@ -272,6 +283,15 @@ function backupInput(input: unknown): Backup {
     throw new Error("Invalid backup object");
   return b;
 }
+async function journalWatermark(c: PoolClient) {
+  const state = (
+    await c.query(
+      "select source_id,head::text from recovery_state where singleton",
+    )
+  ).rows[0];
+  if (!state) throw new Error("Recovery state missing");
+  return { sourceId: String(state.source_id), head: String(state.head) };
+}
 export async function captureDecisions(
   pool: Pool,
   input: unknown,
@@ -281,6 +301,8 @@ export async function captureDecisions(
   if (b.sourceDatabase !== sourceDatabase)
     throw new Error("Decision source mismatch");
   return locked(pool, async (c) => {
+    if ((await journalWatermark(c)).sourceId !== b.journal.sourceId)
+      throw new Error("Decision source instance mismatch");
     const users = new Set(
       (await c.query('select id from "user"')).rows.map((r) => r.id),
     );
@@ -483,6 +505,12 @@ export async function restoreBackup(
       await storage.assertEmpty();
       if ((await signature(c)) !== b.schema)
         throw new Error("Recovery schema mismatch");
+      if (
+        (await journalWatermark(c)).head !== "0" ||
+        (await c.query("select count(*)::int n from recovery_decision")).rows[0]
+          .n
+      )
+        throw new Error("Empty target journal required");
       for (const table of tables)
         if (
           (await c.query(`select exists(select 1 from "${table}") occupied`))

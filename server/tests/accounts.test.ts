@@ -292,6 +292,14 @@ test("withdrawal and suspension preserve personal portal and fresh rights gates"
     await operate(h.db, h.auth, "synthetic-operator", "reactivate", a.email);
     assert.equal((await a.call("/api/v1/access")).status, 200);
     await operate(h.db, h.auth, "synthetic-operator", "withdraw", a.email);
+    const restrictions = (
+      await h.pool.query(
+        "select code from recovery_decision where subject=$1 order by seq",
+        [a.id],
+      )
+    ).rows.map((r) => r.code);
+    assert.ok(restrictions.includes("user_suspend"));
+    assert.ok(restrictions.includes("user_withdraw"));
     assert.equal((await a.call("/api/v1/access")).status, 403);
     assert.equal((await a.call("/api/v1/me")).status, 200);
     assert.equal((await a.call("/api/auth/sign-out", {})).status, 200);
@@ -321,6 +329,9 @@ test("password reset: one-time concurrent consumption, expiry, session revocatio
       200,
     );
     assert.equal(h.sent.length, 1);
+    const journalBeforeReset = (
+      await h.pool.query("select head::text from recovery_state")
+    ).rows[0].head;
     const token = resetToken(h.sent[0].url);
     const results = await Promise.all([
       anon.call("/api/auth/reset-password", {
@@ -333,6 +344,15 @@ test("password reset: one-time concurrent consumption, expiry, session revocatio
       }),
     ]);
     assert.deepEqual(results.map((r) => r.status).sort(), [200, 400]);
+    assert.deepEqual(
+      (
+        await h.pool.query(
+          "select code,subject from recovery_decision where seq>$1 order by seq",
+          [journalBeforeReset],
+        )
+      ).rows,
+      [{ code: "credentials_revoke", subject: a.id }],
+    );
     assert.equal((await a.call("/api/v1/me")).status, 401);
     assert.equal((await second.call("/api/v1/me")).status, 401);
     assert.equal((await anon.call("/api/v1/me")).status, 401);
@@ -498,10 +518,21 @@ test("admin MFA: credential and OAuth-like ordinary session both require session
     const a = await h.member("admin@example.test");
     await operate(h.db, h.auth, "synthetic-operator", "admin", a.email);
     assert.equal((await a.call("/api/v1/admin/access")).status, 403);
+    const beforeMFA = (
+      await h.pool.query("select head::text from recovery_state")
+    ).rows[0].head;
     const enabled = await a.call("/api/auth/two-factor/enable", {
       password: "synthetic-password-long",
     });
     assert.equal(enabled.status, 200);
+    assert.ok(
+      (
+        await h.pool.query(
+          "select code from recovery_decision where seq>$1 and subject=$2",
+          [beforeMFA, a.id],
+        )
+      ).rows.some((r) => r.code === "credentials_revoke"),
+    );
     const setup = await enabled.json();
     const seed = new URL(setup.totpURI).searchParams.get("secret")!;
     const code = await otp(seed).totp();
