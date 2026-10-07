@@ -338,6 +338,10 @@ export function AccountPanel({
             >
               Déconnecter les autres sessions
             </button>
+            <a href="/donnees">Mes données et suppression du compte</a>
+            {me.role === "admin" && me.mfaValid && (
+              <a href="/administration">Administration et signalements</a>
+            )}
             {me.role === "admin" && (
               <>
                 {me.mfaValid && (

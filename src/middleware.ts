@@ -11,6 +11,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     [
       "/acces",
       "/profil",
+      "/donnees",
       "/compte",
       "/mot-de-passe-oublie",
       "/reinitialisation",

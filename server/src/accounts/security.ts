@@ -7,6 +7,7 @@ import {
   sessionSecurity,
   session,
   securityAudit,
+  accountActivity,
 } from "../infrastructure/db/schema.js";
 type SessionReader = {
   api: {
@@ -129,6 +130,13 @@ export async function identity(
     .update(sessionSecurity)
     .set({ usedAt: now })
     .where(eq(sessionSecurity.sessionId, current.session.id));
+  await db
+    .insert(accountActivity)
+    .values({ ownerId: current.user.id, lastUsedAt: now })
+    .onConflictDoUpdate({
+      target: accountActivity.ownerId,
+      set: { lastUsedAt: now, warnedAt: null },
+    });
   const [policy] = await db
     .select()
     .from(userPolicy)

@@ -13,6 +13,7 @@ export function Notebook({ id }: { id?: string }) {
     [group, setGroup] = useState(false);
   const [busy, setBusy] = useState(true),
     [message, setMessage] = useState("");
+  const [reportReason, setReportReason] = useState("");
   const dialog = useRef<HTMLDialogElement>(null),
     deleteButton = useRef<HTMLButtonElement>(null),
     editHeading = useRef<HTMLHeadingElement>(null);
@@ -268,6 +269,42 @@ export function Notebook({ id }: { id?: string }) {
                         Ce souvenir est masqué pour les autres membres.{" "}
                         {entry.hiddenReason}
                       </p>
+                    )}
+                    {!entry.owned && group && (
+                      <form
+                        onSubmit={(e) => {
+                          e.preventDefault();
+                          setBusy(true);
+                          void encounterAPI(
+                            `/api/v1/encounters/${entry.id}/report`,
+                            jsonRequest({ reason: reportReason }),
+                          )
+                            .then(() => {
+                              setReportReason("");
+                              setMessage(
+                                "Signalement enregistré. Il sera examiné par Gabriel.",
+                              );
+                            })
+                            .catch((e) => setMessage(e.message))
+                            .finally(() => setBusy(false));
+                        }}
+                      >
+                        <label>
+                          Motif du signalement
+                          <textarea
+                            value={reportReason}
+                            onChange={(e) => setReportReason(e.target.value)}
+                            required
+                            maxLength={1000}
+                          />
+                        </label>
+                        <button
+                          className="encounter-button secondary"
+                          disabled={busy}
+                        >
+                          Signaler ce souvenir
+                        </button>
+                      </form>
                     )}
                     {entry.owned && (
                       <div className="encounter-actions">

@@ -381,15 +381,6 @@ async function accountsHTTPInternal(
       }
       return reply({ code: "method_not_allowed" }, 405);
     }
-    // Full exports, deletion and moderation arrive in lot 5. Their permission
-    // boundary is executable now, without pretending a ZIP or purge exists.
-    if (
-      ["/api/v1/me/export", "/api/v1/me/deletion"].includes(path) &&
-      request.method === "POST"
-    ) {
-      if (!sensitiveAllowed(i)) return deny();
-      return reply({ code: "not_implemented" }, 501);
-    }
     if (path === "/api/v1/me/revoke-others" && request.method === "POST") {
       if (!sensitiveAllowed(i)) return deny();
       await db

@@ -1,0 +1,1 @@
+ALTER TABLE "account_activity" ADD COLUMN "next_warning_at" timestamp with time zone DEFAULT now() NOT NULL;

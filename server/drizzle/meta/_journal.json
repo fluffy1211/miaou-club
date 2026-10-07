@@ -57,6 +57,27 @@
       "when": 1791353975716,
       "tag": "0007_dashing_the_phantom",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1791356790032,
+      "tag": "0008_glorious_namorita",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1791358101781,
+      "tag": "0009_eminent_catseye",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1791358532949,
+      "tag": "0010_overconfident_phantom_reporter",
+      "breakpoints": true
     }
   ]
 }

@@ -1,3 +1,4 @@
+import { accountActivity } from "../db/data-schema.js";
 import { betterAuth, type BetterAuthOptions } from "better-auth";
 import { createAuthMiddleware, APIError } from "better-auth/api";
 import type { GoogleOptions } from "better-auth/social-providers";
@@ -170,6 +171,13 @@ export function createAuth(
                 )[0]
               : null;
             const now = new Date();
+            await db
+              .insert(accountActivity)
+              .values({ ownerId: s.userId, lastUsedAt: now })
+              .onConflictDoUpdate({
+                target: accountActivity.ownerId,
+                set: { lastUsedAt: now, warnedAt: null },
+              });
             await db.insert(sessionSecurity).values({
               sessionId: s.id,
               authenticatedAt: old?.authenticatedAt ?? now,
