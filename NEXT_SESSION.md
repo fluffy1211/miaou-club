@@ -28,3 +28,11 @@ Gabriel demande « push » : branche `feat/local-recovery-orchestration` depuis 
 ## Correctifs de review PR #14 — 8 octobre 2026
 
 PR #14 sur `49af5f2`, première CI `37754665761` entièrement réussie ; Greptile terminé sur ce SHA, deux défauts confirmés. Régressions rouges exécutées : statut d’archive absente ENOENT, réessai d’archive partielle bloqué par digest mismatch. Correction : résolution des seules intentions non publiées sans copie/empreinte avant rotation, aucun écrasement d’archive retenue ; statut interrupted pour intention non publiée. Huit tests ciblés orchestration réussis, corruption retenue toujours refusée et paire existante préservée. Revue du diff ciblé sans autre défaut démontré ; hook complet et CI/review dernier SHA requis avant fusion.
+## Optimisation CI Playwright — 8 octobre 2026
+
+Livraison vers develop autorisée par Gabriel. Branche isolée `chore/ci-playwright-image` depuis `2f811c4` ; aucun fichier concurrent du checkout principal inclus. E2E dans l’image officielle Playwright Noble correspondant à la version installée, avec Node du runner ; toutes les commandes de `verify:full` conservées en étapes nommées. Pic APT de 6 min 51 s confirmé dans la CI `37691534731`. Vérifications préalables : YAML/actionlint/diff, builds et 26 E2E sur copie Linux du précédent HEAD. Le hook complet du develop actuel et la CI/review du dernier SHA restent à obtenir avant fusion. Gain distant à mesurer ; aucun déploiement.
+
+
+## Intégration du develop concurrent — 8 octobre 2026
+
+CI `37756395363` sur `9a5dacc` entièrement réussie (attempt 2) ; attempt 1 annulée après diagnostic de téléchargements Ubuntu Azure très lents avant les tests, aucun contrôle modifié. Greptile 5/5 terminé sur `9a5dacc`, deux discussions résolues, aucun nouveau défaut actionnable. Develop a avancé à `c967e45` (PR #16, optimisation CI Playwright) : fusion de cette base, seul conflit documentaire NEXT_SESSION résolu en conservant les deux reprises. Aucun changement applicatif induit ; hook et nouvelle CI/review sur le SHA de fusion à obtenir avant fusion de PR #14.
