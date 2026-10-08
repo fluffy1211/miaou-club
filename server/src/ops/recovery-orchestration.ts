@@ -367,22 +367,30 @@ export async function runRecovery(
     await syncDirectory(root);
     catalog.last = { id: randomUUID(), action, code: "started" };
     await save();
+    if (action === "backup") {
+      for (const b of [...catalog.backups]) {
+        if (b.phase !== "backup_pending" || b.pendingCopy || b.latest) continue;
+        const exists = (await readdir(archives)).includes(b.id + ".enc");
+        if (exists && hash(await readPrivate(backupPath(b))) === b.digest)
+          continue;
+        // Only an unpublished intent with no journal artifacts can be dropped.
+        // A partial exclusive write after process loss never became usable.
+        if (
+          [...(await readdir(copies)), ...(await readdir(anchors))].some(
+            (name) => name.startsWith(b.id + "."),
+          )
+        )
+          throw new Error("Unexpected unpublished journal artifacts");
+        await remove(backupPath(b));
+        await syncDirectory(archives);
+        catalog.backups = catalog.backups.filter((e) => e.id !== b.id);
+        await save();
+      }
+    }
     if (action !== "status") await rotate();
     if (action === "backup") {
-      // Incomplete backups must be resolved before another snapshot is created.
-      for (const b of [...catalog.backups]) {
-        if (
-          b.phase === "backup_pending" &&
-          !b.pendingCopy &&
-          !b.latest &&
-          !(await readdir(archives)).includes(b.id + ".enc")
-        ) {
-          // No archive was published; retry is a new snapshot, not an extension
-          // of the retention of any existing archive.
-          catalog.backups = catalog.backups.filter((e) => e.id !== b.id);
-          await save();
-        } else await copy(b);
-      }
+      // Complete published archives resume copying; no existing archive is overwritten.
+      for (const b of catalog.backups) await copy(b);
       const value = await captureBackup(pool, storage),
         bytes = seal(value, options.backupKey);
       const b: Entry = {
@@ -412,6 +420,8 @@ export async function runRecovery(
         Date.now() - Date.parse(b.capturedAt) >= lifetime
       )
         code = "expired";
+      else if (b.phase === "backup_pending" && !b.pendingCopy && !b.latest)
+        code = "interrupted";
       else {
         const value = await backup(b);
         if (b.pendingCopy || b.phase === "backup_pending") code = "interrupted";

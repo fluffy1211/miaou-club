@@ -1337,6 +1337,14 @@ test("managed backup and copy I/O failures retry without overwrite; unconfirmed 
       }),
     );
     assert.equal((await readdir(join(options.root, "backups"))).length, 0);
+    const interrupted = await runRecovery(
+      source.pool,
+      objects,
+      "status",
+      options,
+    );
+    assert.equal(interrupted.code, "recovery_attention");
+    assert.equal(interrupted.backups[0].code, "interrupted");
     assert.equal(
       (await runRecovery(source.pool, objects, "backup", options)).code,
       "recovery_current",
@@ -1769,5 +1777,76 @@ test("managed rotation records deletion failure and resumes interrupted expiry w
     assert.equal(
       (await runRecovery(source.pool, objects, "status", options)).code,
       "recovery_attention",
+    );
+  }));
+
+test("managed backup resumes a partial unpublished archive without losing retained pairs", async () =>
+  exercise(async (source, _target, objects, _restored, root) => {
+    const { runRecovery } =
+      await import("../src/ops/recovery-orchestration.js");
+    const { readdir } = await import("node:fs/promises");
+    await seed(source, objects);
+    const options = {
+      root: join(root, "managed"),
+      anchors: join(root, "anchors"),
+      backupKey: randomBytes(32),
+      journalKey: randomBytes(32),
+    };
+    await runRecovery(source.pool, objects, "backup", options);
+    const retained = readRecoveryState(
+      await readFile(join(options.root, "state.enc")),
+      options.backupKey,
+    ).backups[0];
+    const archive = join(options.root, "backups", retained.id + ".enc");
+    const before = await readFile(archive);
+    await assert.rejects(
+      runRecovery(source.pool, objects, "backup", {
+        ...options,
+        write: async (path, bytes) => {
+          if (path.includes("/backups/")) {
+            // Same persisted state as SIGKILL between exclusive open and write completion.
+            await writeFile(path, bytes.subarray(0, 16), {
+              flag: "wx",
+              mode: 0o600,
+            });
+            throw new Error("synthetic process loss during archive write");
+          }
+          await writeJournalFile(path, bytes);
+        },
+      }),
+    );
+    const failed = readRecoveryState(
+      await readFile(join(options.root, "state.enc")),
+      options.backupKey,
+    );
+    const pending = failed.backups.find((b) => b.phase === "backup_pending")!;
+    assert.ok(pending);
+    assert.equal(
+      (await readFile(join(options.root, "backups", pending.id + ".enc")))
+        .length,
+      16,
+    );
+    const status = await runRecovery(source.pool, objects, "status", options);
+    assert.equal(status.code, "recovery_attention");
+    assert.equal(
+      status.backups.find((b) => b.id === pending.id)!.code,
+      "interrupted",
+    );
+    assert.equal(
+      (await runRecovery(source.pool, objects, "backup", options)).code,
+      "recovery_current",
+    );
+    assert.deepEqual(await readFile(archive), before);
+    assert.equal((await readdir(join(options.root, "backups"))).length, 2);
+    assert.ok(
+      !(await readdir(join(options.root, "backups"))).includes(
+        pending.id + ".enc",
+      ),
+    );
+    // Corruption of an already retained archive remains a blocking error.
+    await writeFile(archive, before.subarray(0, 16));
+    await assert.rejects(
+      runRecovery(source.pool, objects, "backup", options),
+      /digest mismatch/,
     );
   }));

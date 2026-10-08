@@ -23,3 +23,8 @@ Revue finale selon miaou-review : base/merge-base/HEAD `2f811c4`, index vide ; d
 ## Livraison autorisée — 8 octobre 2026
 
 Gabriel demande « push » : branche `feat/local-recovery-orchestration` depuis develop `2f811c4`, commit/push et PR vers develop, suivi CI/Greptile puis fusion selon DEVELOPPEMENT#review. Aucun déploiement ni activation fournisseur. Validation complète ci-dessus ; hook normal conservé.
+
+
+## Correctifs de review PR #14 — 8 octobre 2026
+
+PR #14 sur `49af5f2`, première CI `37754665761` entièrement réussie ; Greptile terminé sur ce SHA, deux défauts confirmés. Régressions rouges exécutées : statut d’archive absente ENOENT, réessai d’archive partielle bloqué par digest mismatch. Correction : résolution des seules intentions non publiées sans copie/empreinte avant rotation, aucun écrasement d’archive retenue ; statut interrupted pour intention non publiée. Huit tests ciblés orchestration réussis, corruption retenue toujours refusée et paire existante préservée. Revue du diff ciblé sans autre défaut démontré ; hook complet et CI/review dernier SHA requis avant fusion.
