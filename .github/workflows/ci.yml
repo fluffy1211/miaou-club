@@ -38,8 +38,30 @@ jobs:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium webkit
-      - run: npm run verify:full
+      - name: Resolve Playwright image
+        id: playwright
+        run: |
+          version=$(node -p "require('@playwright/test/package.json').version")
+          echo "image=mcr.microsoft.com/playwright:v${version}-noble" >> "$GITHUB_OUTPUT"
+      - name: Verify source and builds
+        run: npm run verify
+      - name: Test server
+        run: npm run test:server
+      # Browsers and OS dependencies are preinstalled: no apt mirror on the critical path.
+      # Keep the runner's Node version and Linux node_modules in the test container.
+      - name: Test Chromium and WebKit
+        env:
+          PLAYWRIGHT_IMAGE: ${{ steps.playwright.outputs.image }}
+        run: |
+          docker run --rm --init --ipc=host --network host \
+            --user "$(id -u):$(id -g)" \
+            --volume "$PWD:/work" --workdir /work \
+            --volume "$(command -v node):/usr/local/bin/node:ro" \
+            --env CI=true --env MIAOU_OFFLINE_CATALOG \
+            --env TEST_DATABASE_URL --env STORYBOOK_DISABLE_TELEMETRY \
+            "$PLAYWRIGHT_IMAGE" npm run test:e2e
+      - name: Audit dependencies, secrets and workflows
+        run: npm run security:audit && npm run security:secrets && npm run security:workflows
       - run: docker build --target runtime -t "miaou-candidate:${GITHUB_SHA}" .
       - name: Test runtime candidate
         run: MIAOU_IMAGE="miaou-candidate:${GITHUB_SHA}" npm run test:image
