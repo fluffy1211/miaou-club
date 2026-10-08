@@ -4,8 +4,7 @@ import type {
   EncounterView,
   MediaView,
 } from "@miaou/contracts";
-import { cell } from "../../server/src/encounters/location";
-import { ZoneMap } from "./ZoneMap";
+import { LazyZoneMap } from "./LazyZoneMap";
 import { locationLabel } from "./LocationFields";
 import { Polaroid } from "./Polaroid";
 import { EncounterFields } from "./EncounterFields";
@@ -87,6 +86,9 @@ export function PhotoFlow() {
               "miaou-selected-cell-" + me.user.id,
             );
             if (selected) {
+              const { cell } =
+                await import("../../server/src/encounters/location");
+              if (!alive) return;
               const location = cell(JSON.parse(selected));
               setDraft((old) => ({ ...old, location, locationMethod: "map" }));
               if (sessionStorage.getItem("miaou-draft-" + me.user.id))
@@ -449,7 +451,7 @@ export function PhotoFlow() {
                 <br />
                 {locationLabel(draft.location)}
               </p>
-              {draft.location && <ZoneMap selected={draft.location} />}
+              {draft.location && <LazyZoneMap selected={draft.location} />}
               <div className="encounter-actions">
                 <button
                   className="encounter-button"

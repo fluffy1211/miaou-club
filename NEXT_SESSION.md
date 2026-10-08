@@ -13,3 +13,12 @@ Auto-revue miaou-review : base/merge-base/HEAD `847ade3`, index vide, diff local
 Limite essentielle : seules les décisions copiées jusqu’à `copiedThrough`/`copiedAt` survivent à la perte de source ; le test démontre explicitement qu’une décision ultérieure non copiée peut manquer (`uncopiedAfterCut: "unknown"`). Clés/empreintes intactes requises, rollback simultané copie/empreinte indétectable localement. Anciens backups sans watermark non couverts rétroactivement. Rotation/scheduler/alertes, RPO/RTO, reprise fournisseurs, isolement distant, proxy/secrets, vrais mobiles/PWA, contrats/textes/conformité restent hors preuves ; lot 6 opérationnel et pilote non complets.
 
 Prochaine action : créer la PR vers develop avec le hook normal hors sandbox, puis vérifier CI/Greptile sur le SHA publié. Besoins opérationnels restants à traiter dans un périmètre explicite ; aucun déploiement induit. Conserver le checkout isolé.
+
+
+## Chargement géographique différé — 8 octobre 2026
+
+Tranche autorisée par Gabriel, reportée dans le worktree isolé `lazy-geography` sur `fix/lazy-geographic-loading` depuis develop `2f811c4`. Création de PR vers develop demandée ; aucun déploiement. Les changements/configurations/maquettes du checkout principal restent préservés.
+
+Carte et géographie chargées à la demande : accueil/carnet/formulaire sans lieu sans JavaScript géographique ; aperçu, GPS et reprise manuelle conservent les validations existantes. Imports indisponibles : message lisible, publication sans lieu possible et retrait disponible. Aucune modification backend, migration ou seuil d’avertissement. Les chunks géographiques et MapLibre restent lourds mais différés ; aucun gain de latence mesuré.
+
+Auto-revue miaou-review : base/HEAD `2f811c4`, quatre composants modifiés, nouveau wrapper et régressions E2E relus ; travaux antérieurs exclus. Vérifications complètes sur cette base réussies : 14 tests catalogue/outillage, 76 tests serveur, 36 E2E Chromium/WebKit, format/lint/types et builds application/backend/Storybook, audit high, Gitleaks/actionlint. Le nouveau test utilise une fixture amie distincte par navigateur après avoir reproduit un dépassement du quota du compte reader partagé ; aucune limite/assertion affaiblie. Verdict : prêt pour push sous autorisation, auto-revue uniquement. Prochaine action : publier la PR après hook réussi, puis vérifier CI/Greptile sur son SHA. Aucun fournisseur activé ni ouverture pilote.

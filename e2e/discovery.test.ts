@@ -160,7 +160,14 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
     };
   });
   const foreign: string[] = [];
+  const geographicResources: string[] = [];
   page.on("request", (r) => {
+    if (
+      /\/_astro\/(?:location\.|ZoneMap\.|maplibre-gl).*\.js$/.test(
+        new URL(r.url()).pathname,
+      )
+    )
+      geographicResources.push(r.url());
     if (!new URL(r.url()).hostname.match(/^(localhost|127\.0\.0\.1)$/))
       foreign.push(r.url());
   });
@@ -179,6 +186,7 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
       () => (window as unknown as { geoCalls: number }).geoCalls,
     ),
   ).toBe(0);
+  expect(geographicResources).toEqual([]);
   await page.getByLabel("Taille proposée").selectOption("500");
   await page
     .getByRole("button", { name: "Utiliser ma position actuelle" })
@@ -188,6 +196,13 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
       "Zone proposée. Vérifie qu’elle correspond à cette rencontre.",
     ),
   ).toBeVisible();
+  await expect(page.locator(".zone-map")).toHaveAttribute("data-ready", "true");
+  expect(geographicResources.some((url) => /\/location\./.test(url))).toBe(
+    true,
+  );
+  expect(geographicResources.some((url) => /\/maplibre-gl\./.test(url))).toBe(
+    true,
+  );
   expect(
     await page.evaluate(
       () => (window as unknown as { geoCalls: number }).geoCalls,
@@ -290,6 +305,67 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
   await page.getByRole("button", { name: "Supprimer ma rencontre" }).click();
   await page.getByRole("button", { name: "Confirmer la suppression" }).click();
 });
+test("home and notebook avoid geographic JavaScript; a failed geographic import leaves the photo flow usable", async ({
+  page,
+  context,
+}, info) => {
+  await login(context, "friend-b-" + info.project.name);
+  await context.setGeolocation({
+    longitude: 2.301234,
+    latitude: 48.801234,
+    accuracy: 10,
+  });
+  await context.grantPermissions(["geolocation"]);
+  const geographicResources: string[] = [];
+  page.on("request", (r) => {
+    if (
+      /\/_astro\/(?:location\.|ZoneMap\.|maplibre-gl).*\.js$/.test(
+        new URL(r.url()).pathname,
+      )
+    )
+      geographicResources.push(r.url());
+  });
+  await page.goto("/");
+  await expect(
+    page.getByRole("heading", { name: "Les derniers mignons." }),
+  ).toBeVisible();
+  await page.goto("/carnet");
+  await expect(
+    page.getByRole("link", { name: "Ajouter une rencontre" }).first(),
+  ).toBeVisible();
+  expect(geographicResources).toEqual([]);
+  await page.route("**/_astro/location.*.js", (route) => route.abort());
+  await page.goto("/photo");
+  await expect(
+    page.getByRole("button", { name: "Choisir dans la galerie", exact: true }),
+  ).toBeEnabled();
+  await page
+    .getByLabel("Choisir une photo dans la galerie")
+    .setInputFiles(".cache/e2e-photo.png");
+  await page
+    .getByLabel("Un petit titre")
+    .fill("Import indisponible synthétique");
+  expect(geographicResources).toEqual([]);
+  await page
+    .getByRole("button", { name: "Utiliser ma position actuelle" })
+    .click();
+  await expect(
+    page.getByText(
+      "La localisation est indisponible. Tu peux publier sans lieu.",
+    ),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Utiliser ma position actuelle" }),
+  ).toBeEnabled();
+  await expect(page.locator(".zone-map")).toHaveCount(0);
+  await page.getByRole("button", { name: "Voir l’aperçu" }).click();
+  await expect(page.getByText("Sans lieu partagé.")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Publier la rencontre" }),
+  ).toBeEnabled();
+  await page.getByRole("button", { name: "Effacer le brouillon" }).click();
+});
+
 test("denied geolocation permits publication without place and restricted discovery APIs refuse access", async ({
   page,
   context,

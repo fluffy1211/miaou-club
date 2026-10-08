@@ -2,9 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import type { EncounterView, LocationCell } from "@miaou/contracts";
 import { encounterAPI, frenchDate } from "./encounter-api";
 import { Polaroid } from "./Polaroid";
-import { ZoneMap } from "./ZoneMap";
+import { LazyZoneMap } from "./LazyZoneMap";
 import { searchPlaces, type SearchPlace } from "../lib/map-provider";
-import { cell, onMainland } from "../../server/src/encounters/location";
 import { locationLabel } from "./LocationFields";
 type Page = { encounters: EncounterView[]; next: string | null };
 type Profile = {
@@ -53,6 +52,8 @@ export function Discovery({
     setMessage("");
     try {
       const results = await searchPlaces(query, providerKey, controller.signal);
+      const { onMainland } =
+        await import("../../server/src/encounters/location");
       if (!controller.signal.aborted) {
         const allowed = results.filter((p) =>
           onMainland(p.center[0], p.center[1]),
@@ -107,6 +108,9 @@ export function Discovery({
           const params = new URLSearchParams(window.location.search);
           if (params.has("zone")) {
             try {
+              const { cell } =
+                await import("../../server/src/encounters/location");
+              if (!alive) return;
               setFocus(cell(JSON.parse(params.get("zone")!)));
             } catch {
               setMessage("Cette zone est invalide.");
@@ -248,7 +252,7 @@ export function Discovery({
               ))}
             </ul>
           )}
-          <ZoneMap
+          <LazyZoneMap
             providerKey={providerKey}
             navigationCenter={navigationCenter}
             entries={entries}
