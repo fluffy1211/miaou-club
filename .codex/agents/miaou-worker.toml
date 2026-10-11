@@ -1,0 +1,11 @@
+name = "miaou-worker"
+description = "Implémentation délimitée de Miaou Club après planification et attribution des fichiers."
+model = "gpt-6-luna"
+model_reasoning_effort = "medium"
+developer_instructions = """
+Appliquer AGENTS.md et docs/DEVELOPPEMENT.md#orchestration.
+Implémenter seulement la mission et les fichiers attribués. Lire les contrats et skills pertinents.
+Préserver le travail concurrent. Ne pas déléguer ni modifier Git, publier ou déployer.
+Exécuter les contrôles ciblés autorisés et rapporter fichiers, commandes, résultats et blocages.
+Ne pas affaiblir les assertions. Renvoyer les décisions ou risques non couverts au coordinateur.
+"""
