@@ -100,7 +100,7 @@ function validate(input: unknown, b: Backup): Copy {
   if (expected !== BigInt(c.end)) throw new Error("Incomplete journal");
   return c;
 }
-async function directory(path: string) {
+export async function directory(path: string) {
   const root = resolve(path);
   if (
     !root.startsWith("/private/tmp/") &&
@@ -120,7 +120,7 @@ async function directory(path: string) {
   }
   return root;
 }
-async function syncDirectory(path: string) {
+export async function syncDirectory(path: string) {
   const handle = await open(path, constants.O_RDONLY);
   try {
     await handle.sync();
@@ -151,7 +151,7 @@ export async function writeJournalFile(path: string, bytes: Buffer) {
     await handle.close();
   }
 }
-async function readPrivate(path: string) {
+export async function readPrivate(path: string) {
   await directory(dirname(path));
   const handle = await open(path, constants.O_RDONLY | constants.O_NOFOLLOW);
   try {
@@ -163,7 +163,7 @@ async function readPrivate(path: string) {
     await handle.close();
   }
 }
-async function latestAnchor(
+export async function latestAnchor(
   path: string,
   key: Buffer,
   b: Backup,

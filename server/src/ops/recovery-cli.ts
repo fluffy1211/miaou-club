@@ -3,6 +3,7 @@ import { readFile, writeFile, lstat, realpath } from "node:fs/promises";
 import { resolve } from "node:path";
 import { createDatabase, closePool } from "../infrastructure/db/client.js";
 import { LocalStorage } from "../encounters/storage.js";
+import { runRecovery, type Action } from "./recovery-orchestration.js";
 import { copyJournal, restoreJournal } from "./decision-journal.js";
 import {
   assertLocalTestDatabase,
@@ -30,9 +31,17 @@ async function main() {
   const [action, backupFile, decisionsFile] = process.argv.slice(2);
   if (
     !backupFile ||
-    !["backup", "decisions", "restore", "journal", "restore-journal"].includes(
-      action,
-    ) ||
+    ![
+      "backup",
+      "decisions",
+      "restore",
+      "journal",
+      "restore-journal",
+      "manage-backup",
+      "manage-copy",
+      "manage-status",
+      "manage-rotate",
+    ].includes(action) ||
     process.env.MIAOU_SYNTHETIC_RECOVERY !== "1"
   )
     throw new Error("Explicit synthetic recovery command required");
@@ -50,6 +59,27 @@ async function main() {
     throw new Error("Local media path required");
   const { pool } = createDatabase(url);
   try {
+    if (action.startsWith("manage-")) {
+      const anchors = process.env.MIAOU_JOURNAL_ANCHOR_DIR;
+      if (!anchors)
+        throw new Error("Separate journal anchor directory required");
+      if ((await realpath(root)) !== root)
+        throw new Error("Storage symlinks forbidden");
+      const result = await runRecovery(
+        pool,
+        new LocalStorage(root),
+        action.slice(7) as Action,
+        {
+          root: backupFile,
+          anchors,
+          backupKey,
+          journalKey: await key("MIAOU_DECISIONS_KEY_FILE"),
+        },
+      );
+      console.log(JSON.stringify({ component: "recovery", ...result }));
+      if (result.code === "recovery_attention") process.exitCode = 1;
+      return;
+    }
     if (action === "backup") {
       if ((await realpath(root)) !== root)
         throw new Error("Storage symlinks forbidden");
