@@ -33,7 +33,7 @@ export function PhotoFlow() {
   const [media, setMedia] = useState<MediaView | null>(null);
   const [key, setKey] = useState("");
   const [owner, setOwner] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(true);
   const [message, setMessage] = useState("");
   const camera = useRef<HTMLInputElement>(null),
     gallery = useRef<HTMLInputElement>(null),
@@ -86,13 +86,24 @@ export function PhotoFlow() {
               "miaou-selected-cell-" + me.user.id,
             );
             if (selected) {
-              const { cell } =
-                await import("../../server/src/encounters/location");
-              if (!alive) return;
-              const location = cell(JSON.parse(selected));
-              setDraft((old) => ({ ...old, location, locationMethod: "map" }));
-              if (sessionStorage.getItem("miaou-draft-" + me.user.id))
-                setStep("describe");
+              try {
+                const { cell } =
+                  await import("../../server/src/encounters/location");
+                if (!alive) return;
+                const location = cell(JSON.parse(selected));
+                setDraft((old) => ({
+                  ...old,
+                  location,
+                  locationMethod: "map",
+                }));
+                if (sessionStorage.getItem("miaou-draft-" + me.user.id))
+                  setStep("describe");
+              } catch {
+                if (!alive) return;
+                setMessage(
+                  "La zone choisie n’a pas pu être chargée. Le lieu précédent est conservé. Choisis à nouveau une zone sur la carte.",
+                );
+              }
               sessionStorage.removeItem("miaou-selected-cell-" + me.user.id);
             }
           } catch {
@@ -103,6 +114,9 @@ export function PhotoFlow() {
       })
       .catch((e) => {
         if (alive) setMessage(e.message);
+      })
+      .finally(() => {
+        if (alive) setBusy(false);
       });
     return () => {
       alive = false;

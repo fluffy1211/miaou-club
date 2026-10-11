@@ -461,3 +461,131 @@ test("manual map selection preserves the draft and publishes only the selected c
   await page.getByRole("button", { name: "Supprimer ma rencontre" }).click();
   await page.getByRole("button", { name: "Confirmer la suppression" }).click();
 });
+
+for (const download of ["delayed", "failed"] as const) {
+  test(`restored photo protects its location when the selected-zone download is ${download}`, async ({
+    page,
+    context,
+  }, info) => {
+    await login(context, "friend-a-" + info.project.name);
+    await context.setGeolocation({
+      longitude: 2.301234,
+      latitude: 48.801234,
+      accuracy: 10,
+    });
+    await context.grantPermissions(["geolocation"]);
+    // Disable the browser cache before the first geographic download so the
+    // return journey exercises an actual module request on both engines.
+    await page.route("**/*", (route) => route.continue());
+    await page.goto("/photo");
+    await expect(
+      page.getByRole("button", {
+        name: "Choisir dans la galerie",
+        exact: true,
+      }),
+    ).toBeEnabled();
+    await page
+      .getByLabel("Choisir une photo dans la galerie")
+      .setInputFiles(".cache/e2e-photo.png");
+    await page
+      .getByLabel("Un petit titre")
+      .fill("Reprise synthétique " + download);
+    await page
+      .getByRole("button", { name: "Utiliser ma position actuelle" })
+      .click();
+    await expect(
+      page.getByText(
+        "Zone proposée. Vérifie qu’elle correspond à cette rencontre.",
+      ),
+    ).toBeVisible();
+    const savedLocation = await page.evaluate(() => {
+      const key = Object.keys(sessionStorage).find((key) =>
+        key.startsWith("miaou-draft-"),
+      )!;
+      return JSON.parse(sessionStorage.getItem(key)!).draft.location;
+    });
+    await page
+      .getByRole("link", { name: "Choisir une zone sur la carte" })
+      .click();
+    await expect(page.locator(".zone-map")).toHaveAttribute(
+      "data-ready",
+      "true",
+    );
+    await page
+      .getByRole("button", { name: "Choisir la zone au centre" })
+      .click();
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let requested!: () => void;
+    const started = new Promise<void>((resolve) => {
+      requested = resolve;
+    });
+    await page.route("**/_astro/location.*.js", async (route) => {
+      requested();
+      if (download === "failed") await route.abort();
+      else {
+        await gate;
+        await route.continue();
+      }
+    });
+    try {
+      await page.getByRole("button", { name: "Utiliser cette zone" }).click();
+      await started;
+      await expect(page.getByLabel("Un petit titre")).toHaveValue(
+        "Reprise synthétique " + download,
+      );
+      if (download === "delayed") {
+        await expect(
+          page.getByRole("button", { name: "Retirer le lieu" }),
+        ).toBeDisabled();
+        await expect(
+          page.getByRole("button", { name: "Voir l’aperçu" }),
+        ).toBeDisabled();
+        release();
+        await expect(
+          page.getByRole("button", { name: "Retirer le lieu" }),
+        ).toBeEnabled();
+        await page.getByRole("button", { name: "Retirer le lieu" }).click();
+        await page.getByRole("button", { name: "Voir l’aperçu" }).click();
+        await expect(page.getByText("Sans lieu partagé.")).toBeVisible();
+      } else {
+        await expect(
+          page.getByText(
+            "La zone choisie n’a pas pu être chargée. Le lieu précédent est conservé. Choisis à nouveau une zone sur la carte.",
+          ),
+        ).toBeVisible();
+        expect(
+          await page.evaluate(() =>
+            Object.keys(sessionStorage).some((key) =>
+              key.startsWith("miaou-selected-cell-"),
+            ),
+          ),
+        ).toBe(false);
+        const restoredLocation = await page.evaluate(() => {
+          const key = Object.keys(sessionStorage).find((key) =>
+            key.startsWith("miaou-draft-"),
+          )!;
+          return JSON.parse(sessionStorage.getItem(key)!).draft.location;
+        });
+        expect(restoredLocation).toEqual(savedLocation);
+        await page.unroute("**/_astro/location.*.js");
+        await page.reload();
+        await expect(
+          page.getByRole("button", { name: "Voir l’aperçu" }),
+        ).toBeEnabled();
+        const reloadedLocation = await page.evaluate(() => {
+          const key = Object.keys(sessionStorage).find((key) =>
+            key.startsWith("miaou-draft-"),
+          )!;
+          return JSON.parse(sessionStorage.getItem(key)!).draft.location;
+        });
+        expect(reloadedLocation).toEqual(savedLocation);
+      }
+      await page.getByRole("button", { name: "Effacer le brouillon" }).click();
+    } finally {
+      release();
+    }
+  });
+}

@@ -1196,3 +1196,657 @@ test("journal replay restores restrictions across a larger synthetic inventory",
       0,
     );
   }));
+
+function readRecoveryState(bytes: Buffer, key: Buffer) {
+  return unseal<import("../src/ops/recovery-orchestration.js").Catalog>(
+    bytes,
+    key,
+  );
+}
+
+test("managed backups detect lag, keep usable cuts on failure, resume and restore after source loss", async () =>
+  exercise(async (source, target, objects, restored, root) => {
+    const { runRecovery } =
+      await import("../src/ops/recovery-orchestration.js");
+    const { readdir } = await import("node:fs/promises");
+    const { ids } = await seed(source, objects);
+    const options = {
+      root: join(root, "managed"),
+      anchors: join(root, "managed-anchors"),
+      backupKey: randomBytes(32),
+      journalKey: randomBytes(32),
+    };
+    assert.equal(
+      (await runRecovery(source.pool, objects, "status", options)).code,
+      "recovery_attention",
+    );
+    const created = await runRecovery(source.pool, objects, "backup", options);
+    assert.equal(created.code, "recovery_current");
+    const id = created.backups[0].id;
+    const first = (await readdir(join(options.root, "copies")))[0];
+    const initial = await readFile(join(options.root, "copies", first));
+    await source.pool.query("update encounter set hidden=true where id=$1", [
+      ids[0],
+    ]);
+    const behind = await runRecovery(source.pool, objects, "status", options);
+    assert.equal(behind.code, "recovery_attention");
+    assert.equal(behind.backups[0].code, "journal_behind");
+    // Actual copy publication succeeds, anchor write fails. Previous cut stays usable.
+    await assert.rejects(
+      runRecovery(source.pool, objects, "copy", {
+        ...options,
+        write: async (path, bytes) => {
+          if (path.endsWith(".anchor"))
+            throw new Error("synthetic anchor failure");
+          await writeJournalFile(path, bytes);
+        },
+      }),
+    );
+    assert.deepEqual(
+      await readFile(join(options.root, "copies", first)),
+      initial,
+    );
+    assert.equal(
+      readRecoveryState(
+        await readFile(join(options.root, "state.enc")),
+        options.backupKey,
+      ).last!.code,
+      "failed",
+    );
+    assert.equal(
+      (await runRecovery(source.pool, objects, "copy", options)).code,
+      "recovery_current",
+    );
+    assert.equal((await readdir(join(options.root, "copies"))).length, 1);
+    assert.equal((await readdir(options.anchors)).length, 1);
+    const after = await readFile(join(options.root, "state.enc"));
+    await runRecovery(source.pool, objects, "copy", options);
+    assert.equal((await readdir(join(options.root, "copies"))).length, 1); // no rewrite with no new decisions
+    const catalog = readRecoveryState(after, options.backupKey);
+    const value = unseal<import("../src/ops/recovery.js").Backup>(
+      await readFile(join(options.root, "backups", id + ".enc")),
+      options.backupKey,
+    );
+    const copy = join(
+      options.root,
+      "copies",
+      id + "." + catalog.backups[0].latest!.id + ".enc",
+    );
+    await closePool(source.pool);
+    const admin = createDatabase(url);
+    try {
+      await admin.pool.query(
+        `drop database "${value.sourceDatabase}" with(force)`,
+      );
+    } finally {
+      await closePool(admin.pool);
+    }
+    await rm(join(root, "source"), { recursive: true, force: true });
+    await restoreJournal(
+      target.pool,
+      restored,
+      value,
+      copy,
+      options.anchors,
+      options.journalKey,
+    );
+    assert.equal(
+      (
+        await target.pool.query("select hidden from encounter where id=$1", [
+          ids[0],
+        ])
+      ).rows[0].hidden,
+      true,
+    );
+    assert.equal(
+      (
+        await target.pool.query(
+          "select count(*)::int n from user_policy where admitted",
+        )
+      ).rows[0].n,
+      0,
+    );
+    for (const table of ["session", "verification", "data_export"])
+      assert.equal(
+        (await target.pool.query(`select count(*)::int n from ${table}`))
+          .rows[0].n,
+        0,
+      );
+  }));
+
+test("managed backup and copy I/O failures retry without overwrite; unconfirmed orphan is recovered", async () =>
+  exercise(async (source, _target, objects, _restored, root) => {
+    const { runRecovery } =
+      await import("../src/ops/recovery-orchestration.js");
+    const { readdir } = await import("node:fs/promises");
+    await seed(source, objects);
+    const options = {
+      root: join(root, "managed"),
+      anchors: join(root, "managed-anchors"),
+      backupKey: randomBytes(32),
+      journalKey: randomBytes(32),
+    };
+    await assert.rejects(
+      runRecovery(source.pool, objects, "backup", {
+        ...options,
+        write: async (path, bytes) => {
+          if (path.includes("/backups/"))
+            throw new Error("synthetic backup write failure");
+          await writeJournalFile(path, bytes);
+        },
+      }),
+    );
+    assert.equal((await readdir(join(options.root, "backups"))).length, 0);
+    const interrupted = await runRecovery(
+      source.pool,
+      objects,
+      "status",
+      options,
+    );
+    assert.equal(interrupted.code, "recovery_attention");
+    assert.equal(interrupted.backups[0].code, "interrupted");
+    assert.equal(
+      (await runRecovery(source.pool, objects, "backup", options)).code,
+      "recovery_current",
+    );
+    const backupFiles = await readdir(join(options.root, "backups"));
+    const before = await readFile(
+      join(options.root, "backups", backupFiles[0]),
+    );
+    await source.pool.query(
+      "update user_policy set status='suspended' where user_id='alice'",
+    );
+    // Simulate process loss between copy publication and anchor publication:
+    // the writer leaves an orphan copy; existing anchor is unchanged.
+    await assert.rejects(
+      runRecovery(source.pool, objects, "copy", {
+        ...options,
+        write: async (path, bytes) => {
+          if (path.includes("/copies/")) {
+            await writeJournalFile(path, bytes);
+            throw new Error("synthetic interruption");
+          }
+          await writeJournalFile(path, bytes);
+        },
+      }),
+    );
+    assert.equal((await readdir(join(options.root, "copies"))).length, 2);
+    assert.equal(
+      (await runRecovery(source.pool, objects, "status", options)).backups[0]
+        .code,
+      "interrupted",
+    );
+    assert.equal(
+      (await runRecovery(source.pool, objects, "copy", options)).code,
+      "recovery_current",
+    );
+    assert.equal((await readdir(join(options.root, "copies"))).length, 1);
+    assert.deepEqual(
+      await readFile(join(options.root, "backups", backupFiles[0])),
+      before,
+    );
+    await assert.rejects(
+      writeJournalFile(
+        join(options.root, "backups", backupFiles[0]),
+        Buffer.from("replace"),
+      ),
+    );
+  }));
+
+test("managed operations reject concurrent runs, missing copies and inconsistent state", async () =>
+  exercise(async (source, _target, objects, _restored, root) => {
+    const { runRecovery } =
+      await import("../src/ops/recovery-orchestration.js");
+    const { readdir, unlink } = await import("node:fs/promises");
+    await seed(source, objects);
+    const options = {
+      root: join(root, "managed"),
+      anchors: join(root, "managed-anchors"),
+      backupKey: randomBytes(32),
+      journalKey: randomBytes(32),
+    };
+    let release!: () => void, entered!: () => void;
+    const gate = new Promise<void>((r) => {
+      release = r;
+    });
+    const ready = new Promise<void>((r) => {
+      entered = r;
+    });
+    const running = runRecovery(source.pool, objects, "backup", {
+      ...options,
+      write: async (path, bytes) => {
+        if (path.includes("/backups/")) {
+          entered();
+          await gate;
+        }
+        await writeJournalFile(path, bytes);
+      },
+    });
+    try {
+      await ready;
+      await assert.rejects(
+        runRecovery(source.pool, objects, "rotate", options),
+        /busy/,
+      );
+    } finally {
+      release();
+    }
+    assert.equal((await running).code, "recovery_current");
+    await assert.rejects(
+      runRecovery(source.pool, objects, "rotate", {
+        ...options,
+        anchors: join(root, "other-anchors"),
+      }),
+      /mismatch/,
+    );
+    await assert.rejects(
+      runRecovery(source.pool, objects, "status", {
+        ...options,
+        journalKey: randomBytes(32),
+      }),
+      /mismatch/,
+    );
+    assert.equal((await readdir(options.anchors)).length, 1);
+    const latest = (await readdir(join(options.root, "copies")))[0];
+    await unlink(join(options.root, "copies", latest));
+    assert.equal(
+      (await runRecovery(source.pool, objects, "status", options)).backups[0]
+        .code,
+      "journal_missing",
+    );
+    await assert.rejects(runRecovery(source.pool, objects, "copy", options));
+    assert.equal(
+      readRecoveryState(
+        await readFile(join(options.root, "state.enc")),
+        options.backupKey,
+      ).last!.code,
+      "failed",
+    );
+    await writeFile(
+      join(options.root, "state.enc"),
+      JSON.stringify({ version: 1, backups: [] }),
+    );
+    await assert.rejects(runRecovery(source.pool, objects, "rotate", options));
+    assert.equal((await readdir(join(options.root, "backups"))).length, 1);
+  }));
+
+test("managed rotation uses original backup age and preserves retained backup/copy pairs", async (t) =>
+  exercise(async (source, target, objects, restored, root) => {
+    const { runRecovery } =
+      await import("../src/ops/recovery-orchestration.js");
+    const { readdir } = await import("node:fs/promises");
+    await seed(source, objects);
+    const options = {
+      root: join(root, "managed"),
+      anchors: join(root, "managed-anchors"),
+      backupKey: randomBytes(32),
+      journalKey: randomBytes(32),
+    };
+    const first = (await runRecovery(source.pool, objects, "backup", options))
+      .backups[0];
+    await runRecovery(source.pool, objects, "backup", options);
+    // Prepared synthetic retained archive, captured 29 days earlier, with a
+    // recent copy. This fixture proves copying does not reset the expiry.
+    const statePath = join(options.root, "state.enc");
+    const state = readRecoveryState(
+      await readFile(statePath),
+      options.backupKey,
+    );
+    const b = state.backups.find(
+      (entry: { id: string }) => entry.id === first.id,
+    );
+    assert.ok(b);
+    const archivePath = join(options.root, "backups", b.id + ".enc");
+    const value = unseal<import("../src/ops/recovery.js").Backup>(
+      await readFile(archivePath),
+      options.backupKey,
+    );
+    const captured = Date.now() - 29 * 86400000;
+    value.capturedAt = b.capturedAt = new Date(captured).toISOString();
+    const bytes = seal(value, options.backupKey);
+    b.digest = createHash("sha256").update(bytes).digest("hex");
+    await writeFile(archivePath, bytes);
+    await writeFile(statePath, seal(state, options.backupKey));
+    assert.equal(
+      (await runRecovery(source.pool, objects, "status", options)).code,
+      "recovery_current",
+    );
+    t.mock.timers.enable({ apis: ["Date"], now: captured + 30 * 86400000 - 1 });
+    await runRecovery(source.pool, objects, "rotate", options);
+    assert.equal((await readdir(join(options.root, "backups"))).length, 2);
+    t.mock.timers.tick(1);
+    await runRecovery(source.pool, objects, "rotate", options);
+    assert.equal((await readdir(join(options.root, "backups"))).length, 1);
+    assert.equal((await readdir(join(options.root, "copies"))).length, 1);
+    assert.equal((await readdir(options.anchors)).length, 1);
+    const remaining = readRecoveryState(
+      await readFile(statePath),
+      options.backupKey,
+    ).backups[0];
+    const retained = unseal<import("../src/ops/recovery.js").Backup>(
+      await readFile(join(options.root, "backups", remaining.id + ".enc")),
+      options.backupKey,
+    );
+    await restoreJournal(
+      target.pool,
+      restored,
+      retained,
+      join(
+        options.root,
+        "copies",
+        remaining.id + "." + remaining.latest!.id + ".enc",
+      ),
+      options.anchors,
+      options.journalKey,
+    );
+    assert.equal(
+      (await target.pool.query('select count(*)::int n from "user"')).rows[0].n,
+      2,
+    );
+    assert.equal(
+      (
+        await target.pool.query(
+          "select count(*)::int n from user_policy where admitted",
+        )
+      ).rows[0].n,
+      0,
+    );
+  }));
+
+test("managed journal resumes after actual process loss following anchor publication", async () =>
+  exercise(async (source, _target, objects, _restored, root) => {
+    const { runRecovery } =
+      await import("../src/ops/recovery-orchestration.js");
+    const { pathToFileURL } = await import("node:url");
+    const { readdir } = await import("node:fs/promises");
+    await seed(source, objects);
+    const options = {
+      root: join(root, "managed"),
+      anchors: join(root, "managed-anchors"),
+      backupKey: randomBytes(32),
+      journalKey: randomBytes(32),
+    };
+    await runRecovery(source.pool, objects, "backup", options);
+    await source.pool.query(
+      "update user_policy set status='withdrawn' where user_id='alice'",
+    );
+    const script = join(root, "interrupt.mts"),
+      keys = join(root, "keys");
+    await writeFile(
+      keys,
+      Buffer.concat([options.backupKey, options.journalKey]),
+      { mode: 0o600 },
+    );
+    const moduleUrl = (path: string) =>
+      JSON.stringify(pathToFileURL(join(process.cwd(), path)).href);
+    await writeFile(
+      script,
+      `
+      import {readFile} from 'node:fs/promises';
+      import {createDatabase} from ${moduleUrl("server/src/infrastructure/db/client.ts")};
+      import {LocalStorage} from ${moduleUrl("server/src/encounters/storage.ts")};
+      import {runRecovery} from ${moduleUrl("server/src/ops/recovery-orchestration.ts")};
+      import {writeJournalFile} from ${moduleUrl("server/src/ops/decision-journal.ts")};
+      const [root, anchors, media, keysPath] = process.argv.slice(2);
+      const keys = await readFile(keysPath);
+      const {pool} = createDatabase(process.env.TEST_DATABASE_URL!);
+      await runRecovery(pool, new LocalStorage(media), 'copy', {
+        root, anchors, backupKey:keys.subarray(0,32),journalKey:keys.subarray(32),
+        write: async (path, bytes) => {
+          await writeJournalFile(path, bytes);
+          if(path.endsWith('.anchor')) process.kill(process.pid, 'SIGKILL');
+        }
+      });
+    `,
+    );
+    await assert.rejects(
+      promisify(execFile)(
+        process.execPath,
+        [
+          "--import",
+          "tsx",
+          script,
+          options.root,
+          options.anchors,
+          join(root, "source"),
+          keys,
+        ],
+        {
+          env: {
+            ...process.env,
+            TEST_DATABASE_URL: source.pool.options.connectionString,
+          },
+        },
+      ),
+      (error: unknown) => (error as { signal: string }).signal === "SIGKILL",
+    );
+    const interrupted = readRecoveryState(
+      await readFile(join(options.root, "state.enc")),
+      options.backupKey,
+    );
+    assert.equal(interrupted.last!.code, "started");
+    assert.ok(interrupted.backups[0].pendingCopy);
+    assert.equal((await readdir(join(options.root, "copies"))).length, 2);
+    assert.equal(
+      (await runRecovery(source.pool, objects, "copy", options)).code,
+      "recovery_current",
+    );
+    assert.equal((await readdir(join(options.root, "copies"))).length, 1);
+    assert.equal((await readdir(options.anchors)).length, 1);
+  }));
+
+test("managed CLI reports safe technical status and requires explicit synthetic operation", async () =>
+  exercise(async (source, _target, objects, _restored, root) => {
+    await seed(source, objects);
+    const backupKey = join(root, "backup-key"),
+      journalKey = join(root, "journal-key");
+    await writeFile(backupKey, randomBytes(32), { mode: 0o600 });
+    await writeFile(journalKey, randomBytes(32), { mode: 0o600 });
+    const env = {
+      ...process.env,
+      TEST_DATABASE_URL: source.pool.options.connectionString,
+      MIAOU_SYNTHETIC_RECOVERY: "1",
+      MIAOU_LOCAL_MEDIA_DIR: join(root, "source"),
+      MIAOU_RECOVERY_KEY_FILE: backupKey,
+      MIAOU_DECISIONS_KEY_FILE: journalKey,
+      MIAOU_JOURNAL_ANCHOR_DIR: join(root, "anchors"),
+    };
+    const command = (action: string, overrides = {}) =>
+      promisify(execFile)(
+        process.execPath,
+        [
+          "--import",
+          "tsx",
+          "server/src/ops/recovery-cli.ts",
+          action,
+          join(root, "managed"),
+        ],
+        { env: { ...env, ...overrides } },
+      );
+    const created = JSON.parse((await command("manage-backup")).stdout);
+    assert.equal(created.code, "recovery_current");
+    assert.equal(created.backups[0].uncopiedAfterCut, "unknown");
+    const output = (await command("manage-status")).stdout;
+    for (const privateValue of [
+      "Synthetic",
+      "alice",
+      "bob",
+      "example.test",
+      "image.webp",
+      "miaou_test",
+      root,
+    ])
+      assert.ok(!output.includes(privateValue));
+    await source.pool.query(
+      "update user_policy set status='suspended' where user_id='alice'",
+    );
+    await assert.rejects(command("manage-status"), (error: unknown) => {
+      const failure = error as { code: number; stdout: string };
+      assert.equal(failure.code, 1);
+      assert.equal(
+        JSON.parse(failure.stdout).backups[0].code,
+        "journal_behind",
+      );
+      return true;
+    });
+    assert.equal(
+      JSON.parse((await command("manage-copy")).stdout).code,
+      "recovery_current",
+    );
+    await assert.rejects(
+      command("manage-backup", { MIAOU_SYNTHETIC_RECOVERY: "0" }),
+    );
+    await assert.rejects(
+      command("manage-backup", {
+        TEST_DATABASE_URL: "postgresql://x:x@localhost/miaou_dev",
+      }),
+    );
+  }));
+
+test("managed rotation records deletion failure and resumes interrupted expiry without extending retention", async () =>
+  exercise(async (source, _target, objects, _restored, root) => {
+    const { runRecovery } =
+      await import("../src/ops/recovery-orchestration.js");
+    const { chmod, readdir } = await import("node:fs/promises");
+    await seed(source, objects);
+    const options = {
+      root: join(root, "managed"),
+      anchors: join(root, "anchors"),
+      backupKey: randomBytes(32),
+      journalKey: randomBytes(32),
+    };
+    await runRecovery(source.pool, objects, "backup", options);
+    const statePath = join(options.root, "state.enc");
+    const state = readRecoveryState(
+      await readFile(statePath),
+      options.backupKey,
+    );
+    state.backups[0].capturedAt = new Date(
+      Date.now() - 31 * 86400000,
+    ).toISOString();
+    const archivePath = join(
+      options.root,
+      "backups",
+      state.backups[0].id + ".enc",
+    );
+    const value = unseal<import("../src/ops/recovery.js").Backup>(
+      await readFile(archivePath),
+      options.backupKey,
+    );
+    // A valid but inconsistent catalog must not expire a younger archive.
+    await writeFile(statePath, seal(state, options.backupKey));
+    await assert.rejects(
+      runRecovery(source.pool, objects, "rotate", options),
+      /catalog mismatch/,
+    );
+    value.capturedAt = state.backups[0].capturedAt;
+    const encrypted = seal(value, options.backupKey);
+    state.backups[0].digest = createHash("sha256")
+      .update(encrypted)
+      .digest("hex");
+    await writeFile(archivePath, encrypted);
+    await writeFile(statePath, seal(state, options.backupKey));
+    const archives = join(options.root, "backups");
+    await chmod(archives, 0o500);
+    try {
+      await assert.rejects(
+        runRecovery(source.pool, objects, "rotate", options),
+      );
+    } finally {
+      await chmod(archives, 0o700);
+    }
+    const failed = readRecoveryState(
+      await readFile(statePath),
+      options.backupKey,
+    );
+    assert.equal(failed.last!.code, "failed");
+    assert.equal(failed.backups[0].phase, "deleting");
+    assert.equal((await readdir(join(options.root, "copies"))).length, 1);
+    // Process loss after unlinking an archive is idempotently recoverable.
+    await rm(join(archives, failed.backups[0].id + ".enc"));
+    assert.equal(
+      (await runRecovery(source.pool, objects, "rotate", options)).code,
+      "rotation_completed",
+    );
+    for (const path of [
+      archives,
+      join(options.root, "copies"),
+      options.anchors,
+    ])
+      assert.equal((await readdir(path)).length, 0);
+    assert.equal(
+      (await runRecovery(source.pool, objects, "status", options)).code,
+      "recovery_attention",
+    );
+  }));
+
+test("managed backup resumes a partial unpublished archive without losing retained pairs", async () =>
+  exercise(async (source, _target, objects, _restored, root) => {
+    const { runRecovery } =
+      await import("../src/ops/recovery-orchestration.js");
+    const { readdir } = await import("node:fs/promises");
+    await seed(source, objects);
+    const options = {
+      root: join(root, "managed"),
+      anchors: join(root, "anchors"),
+      backupKey: randomBytes(32),
+      journalKey: randomBytes(32),
+    };
+    await runRecovery(source.pool, objects, "backup", options);
+    const retained = readRecoveryState(
+      await readFile(join(options.root, "state.enc")),
+      options.backupKey,
+    ).backups[0];
+    const archive = join(options.root, "backups", retained.id + ".enc");
+    const before = await readFile(archive);
+    await assert.rejects(
+      runRecovery(source.pool, objects, "backup", {
+        ...options,
+        write: async (path, bytes) => {
+          if (path.includes("/backups/")) {
+            // Same persisted state as SIGKILL between exclusive open and write completion.
+            await writeFile(path, bytes.subarray(0, 16), {
+              flag: "wx",
+              mode: 0o600,
+            });
+            throw new Error("synthetic process loss during archive write");
+          }
+          await writeJournalFile(path, bytes);
+        },
+      }),
+    );
+    const failed = readRecoveryState(
+      await readFile(join(options.root, "state.enc")),
+      options.backupKey,
+    );
+    const pending = failed.backups.find((b) => b.phase === "backup_pending")!;
+    assert.ok(pending);
+    assert.equal(
+      (await readFile(join(options.root, "backups", pending.id + ".enc")))
+        .length,
+      16,
+    );
+    const status = await runRecovery(source.pool, objects, "status", options);
+    assert.equal(status.code, "recovery_attention");
+    assert.equal(
+      status.backups.find((b) => b.id === pending.id)!.code,
+      "interrupted",
+    );
+    assert.equal(
+      (await runRecovery(source.pool, objects, "backup", options)).code,
+      "recovery_current",
+    );
+    assert.deepEqual(await readFile(archive), before);
+    assert.equal((await readdir(join(options.root, "backups"))).length, 2);
+    assert.ok(
+      !(await readdir(join(options.root, "backups"))).includes(
+        pending.id + ".enc",
+      ),
+    );
+    // Corruption of an already retained archive remains a blocking error.
+    await writeFile(archive, before.subarray(0, 16));
+    await assert.rejects(
+      runRecovery(source.pool, objects, "backup", options),
+      /digest mismatch/,
+    );
+  }));
