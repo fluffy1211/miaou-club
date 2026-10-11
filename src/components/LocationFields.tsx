@@ -1,7 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import type { LocationCell } from "@miaou/contracts";
-import { ZoneMap } from "./ZoneMap";
-import { fromPosition, enlarge } from "../../server/src/encounters/location";
+import { LazyZoneMap } from "./LazyZoneMap";
 export const locationLabel = (c?: LocationCell | null) =>
   c
     ? `Zone de ${c.size === 500 ? "500 m" : c.size === 1000 ? "1 km" : "2 km"} de côté · cellule ${c.x}/${c.y}`
@@ -18,7 +17,29 @@ export function LocationFields({
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [size, setSize] = useState<LocationCell["size"]>(1000);
+  const [geography, setGeography] = useState<
+    typeof import("../../server/src/encounters/location") | null
+  >(null);
   const generation = useRef(0);
+  const hasLocation = !!value;
+  useEffect(() => {
+    if (!hasLocation) return;
+    let alive = true;
+    void import("../../server/src/encounters/location").then(
+      (module) => {
+        if (alive) setGeography(module);
+      },
+      () => {
+        if (alive)
+          setMessage(
+            "Les calculs de zone sont indisponibles. Tu peux conserver ou retirer le lieu.",
+          );
+      },
+    );
+    return () => {
+      alive = false;
+    };
+  }, [hasLocation]);
   useEffect(
     () => () => {
       generation.current++;
@@ -37,11 +58,24 @@ export function LocationFields({
     setMessage("");
     const attempt = ++generation.current;
     navigator.geolocation.getCurrentPosition(
-      (p) => {
+      async (p) => {
         if (attempt !== generation.current) return;
+        let module: typeof import("../../server/src/encounters/location");
+        try {
+          module = await import("../../server/src/encounters/location");
+        } catch {
+          if (attempt !== generation.current) return;
+          setBusy(false);
+          setMessage(
+            "La localisation est indisponible. Tu peux publier sans lieu.",
+          );
+          return;
+        }
+        if (attempt !== generation.current) return;
+        setGeography(module);
         try {
           onChange(
-            fromPosition(
+            module.fromPosition(
               p.coords.longitude,
               p.coords.latitude,
               size,
@@ -111,17 +145,19 @@ export function LocationFields({
         </>
       )}
       <p>{locationLabel(value)}</p>
-      {value && <ZoneMap selected={value} />}
+      {value && <LazyZoneMap selected={value} />}
       {value && (
         <>
           <label>
             Taille de la zone
             <select
               value={value.size}
+              disabled={!geography}
               onChange={(e) => {
+                if (!geography) return;
                 try {
                   onChange(
-                    enlarge(
+                    geography.enlarge(
                       value,
                       Number(e.target.value) as LocationCell["size"],
                     ),

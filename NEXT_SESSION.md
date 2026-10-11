@@ -36,3 +36,17 @@ Livraison vers develop autorisée par Gabriel. Branche isolée `chore/ci-playwri
 ## Intégration du develop concurrent — 8 octobre 2026
 
 CI `37756395363` sur `9a5dacc` entièrement réussie (attempt 2) ; attempt 1 annulée après diagnostic de téléchargements Ubuntu Azure très lents avant les tests, aucun contrôle modifié. Greptile 5/5 terminé sur `9a5dacc`, deux discussions résolues, aucun nouveau défaut actionnable. Develop a avancé à `c967e45` (PR #16, optimisation CI Playwright) : fusion de cette base, seul conflit documentaire NEXT_SESSION résolu en conservant les deux reprises. Aucun changement applicatif induit ; hook et nouvelle CI/review sur le SHA de fusion à obtenir avant fusion de PR #14.
+
+
+## Chargement géographique différé — 8 octobre 2026
+
+Tranche autorisée par Gabriel, reportée dans le worktree isolé `lazy-geography` sur `fix/lazy-geographic-loading` depuis develop `2f811c4`. Création de PR vers develop demandée ; aucun déploiement. Les changements/configurations/maquettes du checkout principal restent préservés.
+
+Carte et géographie chargées à la demande : accueil/carnet/formulaire sans lieu sans JavaScript géographique ; aperçu, GPS et reprise manuelle conservent les validations existantes. Imports indisponibles : message lisible, publication sans lieu possible et retrait disponible. Aucune modification backend, migration ou seuil d’avertissement. Les chunks géographiques et MapLibre restent lourds mais différés ; aucun gain de latence mesuré.
+
+Auto-revue miaou-review : base/HEAD `2f811c4`, quatre composants modifiés, nouveau wrapper et régressions E2E relus ; travaux antérieurs exclus. Vérifications complètes sur cette base réussies : 14 tests catalogue/outillage, 76 tests serveur, 36 E2E Chromium/WebKit, format/lint/types et builds application/backend/Storybook, audit high, Gitleaks/actionlint. Le nouveau test utilise une fixture amie distincte par navigateur après avoir reproduit un dépassement du quota du compte reader partagé ; aucune limite/assertion affaiblie. Verdict : prêt pour push sous autorisation, auto-revue uniquement. Prochaine action : publier la PR après hook réussi, puis vérifier CI/Greptile sur son SHA. Aucun fournisseur activé ni ouverture pilote.
+
+
+## Reprise de livraison — 11 octobre 2026
+
+PR #14 fusionnée vers develop en `8353b66` après CI complète et Greptile sur `404605f`, deux discussions résolues. CI de fusion `38162858525` en cours. PR #16 déjà fusionnée. PR #15 : intégration de develop `8353b66`, seul conflit documentaire résolu en conservant les reprises. Deux défauts Greptile corrigés : formulaire bloqué pendant la reprise de zone ; échec du téléchargement explicite, lieu précédent conservé et sélection non appliquée supprimée. Quatre régressions ciblées réussies sur Chromium/WebKit après build, cache désactivé dans le test pour exercer la requête réelle. Auto-revue du diff applicatif complet sans autre défaut démontré ; hook complet, CI et nouvelle review du SHA publié restent requis. Aucun déploiement ou service externe activé.
