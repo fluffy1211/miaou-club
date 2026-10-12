@@ -1,4 +1,18 @@
-# Miaou Club — reprise workflow de modèles
+# Miaou Club — reprise
+
+## Préparation locale du lot 6 — 12 octobre 2026
+
+Gabriel autorise cette tranche et sa livraison vers `develop` le 12 octobre (« push ») : commit, hook complet, PR, suivi CI/Greptile puis fusion selon DEVELOPPEMENT#review. Aucun déploiement ni fournisseur activé. Checkout isolé `/Users/gabriel/.codex/worktrees/lot-6-local-preparation/cats`, branche `chore/lot-6-local-preparation`, base `develop` `bcd22495f5ad2f25c2d789daf7880b4131f5599c`. Le checkout partagé et ses changements concurrents sont préservés.
+
+Périmètre : contrôle préalable de promotion. Le CLI `--run-only` vérifie la source CI, son état terminé/réussi, sa branche/cible et le SHA attendu avant le téléchargement. La vérification complète de l’archive reste obligatoire ensuite ; `run_verified` ne signifie pas `candidate_verified`. Le défaut corrigé était un téléchargement inutile avant rejet d’un SHA différent, sans contournement de la validation finale démontré.
+
+Inspection GitHub en lecture seule le 12 octobre : `develop` et `main` renvoient `Branch not protected` ; seul ruleset observé, « Miaou Club — Copilot PR review », désactivé ; seul environnement déclaré, `copilot`, sans règle de protection. Aucune protection de livraison active démontrée. Run de base `38236047728`, tentative 3 : terminé/réussi sur le SHA de base ; ses métadonnées réelles sont acceptées par `--run-only`, sans télécharger l’archive ni charger l’image.
+
+Vérifications finales : `npm test` réussi (20 tests et self-test du benchmark, sans appel de modèle), trois tests de promotion réussis aussi sous Node 24.21.0 dans un conteneur temporaire avec sources en lecture seule ; Prettier des cinq fichiers, ESLint du script/test, actionlint/ShellCheck et `git diff --check` réussis. Le test shell échoue sur une copie temporaire de l’ancien workflow : un SHA différent atteint le faux téléchargement (exit 73) au lieu du refus attendu (exit 1). Il réussit sur le workflow corrigé. Revue indépendante Sol des cinq fichiers et de l’appelant de chargement terminée : aucun défaut bloquant démontré, verdict **prêt pour push sous autorisation** pour cette tranche locale. Le reviewer a aussi exécuté les trois tests sous Node 26.8.1 et 24.21.0, ainsi que format/lint/actionlint/diff check. Aucun build, test serveur, E2E, chargement d’image candidate ni contrôle distant du diff local exécuté : application et schéma inchangés. Le lot 6 global reste incomplet : protections GitHub, environnements préprod/prod, infrastructure, migrations distantes verrouillées, Google/e-mails réels, restauration distante, vrais mobiles/PWA et conditions d’ouverture. Prochaine action : publier cette correction après le hook complet hors sandbox, puis obtenir CI et Greptile sur le dernier SHA avant fusion ; aucune activation externe induite.
+
+## Historique des tranches précédentes
+
+Les notes ci-dessous sont conservées telles qu’elles étaient consignées ; elles ne décrivent pas le checkout actuel. Les livraisons PR #14, #15 et #17 sont présentes dans la base `bcd2249` ; leurs mentions anciennes de travaux en cours restent historiques.
 
 11 octobre 2026. Publication autorisée par Gabriel ; checkout isolé `model-orchestration/cats`, branche `chore/model-orchestration`, base develop `29556d7`. Vérifier branche et status à chaque reprise. Cette tranche ne modifie pas les sources applicatives ni la CI.
 
