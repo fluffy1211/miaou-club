@@ -492,6 +492,16 @@ for (const download of ["delayed", "failed"] as const) {
         }
         await gate;
       }
+      if (/\/_astro\/location\.[^/]+\.js$/.test(path)) {
+        // This regression needs a cold import on return, even though production
+        // hashes are normally served with immutable caching headers.
+        const response = await route.fetch();
+        await route.fulfill({
+          response,
+          headers: { ...response.headers(), "cache-control": "no-store" },
+        });
+        return;
+      }
       await route.continue();
     });
     await page.goto("/photo");
