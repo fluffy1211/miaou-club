@@ -53,20 +53,34 @@ if (
   import.meta.url === pathToFileURL(resolve(process.argv[1])).href
 ) {
   try {
-    const [directory, metadata, target, sha] = process.argv.slice(2);
-    const result = await verifyCandidate(
-      directory,
-      JSON.parse(await readFile(metadata, "utf8")),
-      target,
-      sha,
-    );
-    console.log(
-      JSON.stringify({
-        component: "promotion",
-        code: "candidate_verified",
-        ...result,
-      }),
-    );
+    const args = process.argv.slice(2);
+    if (args[0] === "--run-only") {
+      const [, metadata, target, sha] = args;
+      validateRun(JSON.parse(await readFile(metadata, "utf8")), target, sha);
+      console.log(
+        JSON.stringify({
+          component: "promotion",
+          code: "run_verified",
+          sha,
+          target,
+        }),
+      );
+    } else {
+      const [directory, metadata, target, sha] = args;
+      const result = await verifyCandidate(
+        directory,
+        JSON.parse(await readFile(metadata, "utf8")),
+        target,
+        sha,
+      );
+      console.log(
+        JSON.stringify({
+          component: "promotion",
+          code: "candidate_verified",
+          ...result,
+        }),
+      );
+    }
   } catch {
     console.error(
       JSON.stringify({ component: "promotion", code: "candidate_rejected" }),

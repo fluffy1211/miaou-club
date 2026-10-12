@@ -39,15 +39,8 @@ jobs:
         run: |
           [[ "$CANDIDATE_RUN" =~ ^[0-9]+$ ]] || exit 1
           gh api "repos/$GH_REPO/actions/runs/$CANDIDATE_RUN" > run.json
-          test "$(jq -r .conclusion run.json)" = success
-          test "$(jq -r .event run.json)" = push
-          test "$(jq -r .path run.json)" = .github/workflows/ci.yml
-          expected=develop
-          if [ "$TARGET" = production ]; then expected=main; fi
-          test "$(jq -r .head_branch run.json)" = "$expected"
-          sha=$(jq -r .head_sha run.json)
-          [[ "$sha" =~ ^[a-f0-9]{40}$ ]] || exit 1
-          gh run download "$CANDIDATE_RUN" -n "candidate-$sha" -D candidate
+          node scripts/candidate.mjs --run-only run.json "$TARGET" "$CANDIDATE_SHA"
+          gh run download "$CANDIDATE_RUN" -n "candidate-$CANDIDATE_SHA" -D candidate
           node scripts/candidate.mjs candidate run.json "$TARGET" "$CANDIDATE_SHA"
-          printf 'Candidat vérifié : %s pour %s.\n\n' "$sha" "$TARGET" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Candidat vérifié : %s pour %s.\n\n' "$CANDIDATE_SHA" "$TARGET" >> "$GITHUB_STEP_SUMMARY"
           printf 'Aucun déploiement exécuté. Infrastructure, secrets, migrations verrouillées, contrôles de santé et reprise restent à configurer au lot livraison.\n' >> "$GITHUB_STEP_SUMMARY"
