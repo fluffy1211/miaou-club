@@ -474,8 +474,9 @@ for (const download of ["delayed", "failed"] as const) {
       accuracy: 10,
     });
     await context.grantPermissions(["geolocation"]);
-    // Disable the browser cache before the first geographic download so the
-    // return journey exercises an actual module request on both engines.
+    // A unique import URL avoids WebKit reusing the GPS/map module from memory.
+    const selectedZoneToken = crypto.randomUUID();
+    const selectedZoneQuery = `miaou-selected-zone-download=${selectedZoneToken}`;
     let interceptSelection = false;
     let requested = false;
     let release!: () => void;
@@ -483,23 +484,50 @@ for (const download of ["delayed", "failed"] as const) {
       release = resolve;
     });
     await page.route("**/*", async (route) => {
-      const path = new URL(route.request().url()).pathname;
-      if (interceptSelection && /\/_astro\/location\.[^/]+\.js$/.test(path)) {
+      const url = new URL(route.request().url());
+      if (/\/_astro\/PhotoFlow\.[^/]+\.js$/.test(url.pathname)) {
+        const response = await route.fetch();
+        const source = await response.text();
+        const dynamicImport =
+          /(import\s*\(\s*)(["'`])(\.\/location\.[^"'`]+\.js)\2(\s*\))/g;
+        const matches = [...source.matchAll(dynamicImport)];
+        expect(
+          matches,
+          "PhotoFlow must contain exactly one dynamic location module import",
+        ).toHaveLength(1);
+        let rewrittenImports = 0;
+        const rewritten = source.replace(
+          dynamicImport,
+          (_match, prefix, quote, specifier, suffix) => {
+            rewrittenImports++;
+            return `${prefix}${quote}${specifier}?${selectedZoneQuery}${quote}${suffix}`;
+          },
+        );
+        expect(rewrittenImports).toBe(1);
+        const headers = { ...response.headers() };
+        for (const name of Object.keys(headers)) {
+          if (name.toLowerCase() === "content-length") delete headers[name];
+        }
+        await route.fulfill({ response, body: rewritten, headers });
+        return;
+      }
+      if (
+        url.pathname.startsWith("/_astro/location.") &&
+        url.searchParams.get("miaou-selected-zone-download") ===
+          selectedZoneToken
+      ) {
+        expect(
+          interceptSelection,
+          "selected-zone module request must begin after selection interception is armed",
+        ).toBe(true);
         requested = true;
         if (download === "failed") {
           await route.abort();
           return;
         }
         await gate;
-      }
-      if (/\/_astro\/location\.[^/]+\.js$/.test(path)) {
-        // This regression needs a cold import on return, even though production
-        // hashes are normally served with immutable caching headers.
         const response = await route.fetch();
-        await route.fulfill({
-          response,
-          headers: { ...response.headers(), "cache-control": "no-store" },
-        });
+        await route.fulfill({ response });
         return;
       }
       await route.continue();
