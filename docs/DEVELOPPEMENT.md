@@ -184,6 +184,31 @@ Stockage principal UE, transferts nécessaires encadrés et documentés : orient
 
 Sources datées, quotas, restrictions, attributions carte, comparaison domaine et conditions par fournisseur : [FOURNISSEURS.md](FOURNISSEURS.md). Détail du mécanisme carte/GPS : [ARCHITECTURE.md](ARCHITECTURE.md#carte). Qualification et bases légales : [JURIDIQUE.md](JURIDIQUE.md).
 
+### Préproduction — préparation locale du lot 6, 12 octobre 2026
+
+Cette tranche prépare les fichiers et contrôles, sans activation ni déploiement. Le modèle [Render](../deploy/render-preproduction.yaml.example) décrit un service `runtime: image`, Free, Francfort, sans build, DB Render ni tâche payante. Il reste volontairement incomplet : registre/digest et identifiant de lecture privée à définir sous autorisation. Ne pas le renommer en `render.yaml` ni le synchroniser avant cette étape. L'image publiée devra provenir de l'archive CI validée, Linux/AMD64 ; conserver le SHA source, l'ID Docker, le checksum d'archive et le digest du registre. Ces identifiants sont différents : ne pas recopier `image-id.txt` comme digest de registre.
+
+Le modèle [variables](../deploy/preproduction.env.example) est sans secrets et incomplet. Copier dans un fichier privé `.env.preproduction` ignoré par Git, limiter ses permissions (`chmod 600`), puis renseigner seulement les ressources préprod autorisées. Ne pas charger ce fichier dans le shell ni l'envoyer aux outils. Contrôle local :
+
+```sh
+npm run preproduction:check -- --preproduction-env-file .env.preproduction
+```
+
+Le validateur lit uniquement ce fichier, sans réseau, mutation ou environnement ambiant. Il refuse notamment HTTP, configuration partielle, stockage local, inscriptions ouvertes et activation Google/e-mail/carte dans cette étape ; il n'affiche que des codes et noms de champs. Un résultat réussi établit la cohérence statique, pas la région réelle, les permissions du bucket, l'isolation de la DB, l'absence d'admissions ou le fonctionnement des fournisseurs. La clé MapTiler est intégrée au build : vérifier aussi que la candidate a été construite sans activation du fournisseur ; des variables runtime ne changent pas les assets compilés.
+
+Ordre de la future activation, sous autorisation séparée :
+
+1. Créer des ressources préprod distinctes du pilote : DB neuve, bucket privé, secrets propres et région UE confirmée. Conserver Google, Resend et inscriptions désactivés. Aucune copie de données personnelles ; fixtures synthétiques seulement lorsque leur admission est explicitement autorisée.
+2. Valider le run CI push/develop et l'archive exacte avec `candidate:verify`, puis `candidate:load`, selon les scripts existants. Le téléchargement doit suivre la validation des métadonnées authentifiées. Refaire le smoke sur la candidate seulement si SHA, configuration ou prérequis changent ; les anciennes preuves restent datées.
+3. Avant de créer/activer le service Render, exécuter le migrateur compilé de cette même image depuis un poste/runner autorisé, avec le fichier privé de préprod et une DB cible vérifiée. Le point d'entrée est `node dist/backend/infrastructure/db/migrate.js` ; il détient déjà le verrou PostgreSQL sur la connexion du migrateur. Render Free ne fournit pas `preDeployCommand` : ne pas migrer au démarrage de chaque instance, ni utiliser un hook après activation. Un échec bloque la suite ; aucun rollback SQL destructif automatique.
+4. Sur la DB dédiée après migration, vérifier `SELECT count(*) FROM user_policy WHERE admitted = true;` et `SELECT count(*) FROM admission WHERE active = true;` : résultats attendus zéro pour cette étape fermée. `MIAOU_TERMS_VERSION` vide ferme l'inscription, sans retirer les admissions existantes. Ne pas exécuter cette préparation sur une base partagée.
+5. Publier l'image déjà validée dans un registre privé autorisé, établir la correspondance digest/ID image, puis configurer Render avec ce digest et ses secrets privés. La création du service déclenche un premier déploiement : elle exige donc l'autorisation de déployer. Aucun appel de publication, synchronisation Blueprint ou webhook dans la préparation locale.
+6. Après activation autorisée, vérifier HTTPS et URL Better Auth, `/api/health`, `/api/ready`, rendu et refus anonymes API/images. Readiness contrôle PostgreSQL seulement, pas Supabase : éprouver séparément les opérations sur le bucket privé et la purge. Proxy/IP, OAuth/e-mails réels, mobiles/PWA, sauvegardes/restauration distantes, alertes et préprod automatique restent à finaliser avant ouverture du pilote.
+
+Render n'actualise pas automatiquement les services basés sur une image à chaque nouveau tag ; la promotion devra être orchestrée séparément et viser le digest testé. Une reprise applicative exige la conservation de l'image précédente dans le registre et une vérification de compatibilité du schéma, sans annuler les migrations automatiquement.
+
+Sources officielles consultées le 12 octobre 2026 : [Blueprint](https://render.com/docs/blueprint-spec), [image précompilée](https://render.com/docs/deploying-an-image), [commandes et migrations avant déploiement](https://render.com/docs/deploys). Aucun schéma/API Render ne constitue une preuve d'infrastructure créée.
+
 <a id="securite"></a>
 ## Sécurité et exploitation — principes validés, détails proposés
 

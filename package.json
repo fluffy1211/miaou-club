@@ -41,6 +41,7 @@
     "media:maintenance": "tsx server/src/ops/media.ts",
     "data:maintenance": "tsx server/src/ops/data.ts",
     "candidate:verify": "node scripts/candidate.mjs",
+    "preproduction:check": "node scripts/preproduction-config.mjs",
     "candidate:load": "node scripts/load-candidate.mjs",
     "recovery:local": "tsx server/src/ops/recovery-cli.ts",
     "recovery:rehearse": "tsx --test server/tests/recovery.test.ts",

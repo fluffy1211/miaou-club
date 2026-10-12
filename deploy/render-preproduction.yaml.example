@@ -1,0 +1,47 @@
+# Modèle uniquement : ne pas synchroniser avant autorisation d'activation.
+# Remplacer la référence par le digest REGISTRE de l'image candidate vérifiée.
+# Ce digest n'est ni l'ID Docker image-id.txt ni le checksum de image.tar.
+services:
+  - type: web
+    name: miaou-preproduction
+    runtime: image
+    plan: free
+    region: frankfurt
+    image:
+      url: REGISTRY/NAMESPACE/miaou@sha256:REPLACE_WITH_REGISTRY_DIGEST
+      # Pour une image privée : ajouter creds.fromRegistryCreds après autorisation.
+    healthCheckPath: /api/ready
+    dockerCommand: node server/start.mjs
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: PORT
+        value: "4321"
+      - key: DATABASE_URL
+        sync: false
+      - key: BETTER_AUTH_URL
+        sync: false
+      - key: BETTER_AUTH_SECRET
+        sync: false
+      - key: MIAOU_STORAGE_URL
+        sync: false
+      - key: MIAOU_STORAGE_SECRET
+        sync: false
+      - key: MIAOU_STORAGE_BUCKET
+        sync: false
+      - key: MIAOU_TERMS_VERSION
+        value: ""
+      - key: GOOGLE_CLIENT_ID
+        value: ""
+      - key: GOOGLE_CLIENT_SECRET
+        value: ""
+      - key: RESEND_API_KEY
+        value: ""
+      - key: MIAOU_MAIL_FROM
+        value: ""
+      - key: MIAOU_LOCAL_MEDIA_DIR
+        value: ""
+# Pas de DB Render, disque, tâche cron, pré-deploy payant ou build implicite.
+# Aucun service distant n'est créé par la présence de ce fichier.
