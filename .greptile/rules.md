@@ -1,6 +1,6 @@
 # Review Greptile — Miaou Club
 
-Répondre en français, sans emojis. Rechercher les défauts introduits par le diff et vérifier le contexte utile avant de les signaler. Éviter les commentaires de style déjà couverts par format/lint, les refactorings sans défaut observable et les affirmations spéculatives.
+Respond in English, without emojis. Rechercher les défauts introduits par le diff et vérifier le contexte utile avant de les signaler. Éviter les commentaires de style déjà couverts par format/lint, les refactorings sans défaut observable et les affirmations spéculatives.
 
 Références : `docs/CADRAGE.md` porte les règles produit ; `docs/ARCHITECTURE.md` les mécanismes serveur et données ; `docs/DEVELOPPEMENT.md` le Git flow et les contrôles. Consulter uniquement les sections affectées. `NEXT_SESSION.md` décrit le périmètre réalisé ; ne pas présenter une fonctionnalité d'un lot futur comme une régression. `mockups/rencontres/` définit le rendu approuvé, pas les permissions serveur. `IMPLEMENTATION.md` décrit le catalogue historique ; `docs/archives/` n'est pas une référence courante.
 
