@@ -10,6 +10,12 @@ Gabriel autorise l'orchestration des prochaines tranches demandées et la compar
 
 Revue indépendante : deux défauts des oracles détectés puis corrigés et vérifiés (tri numérique, taille par défaut) ; retour shell du replay corrigé également. Publication autorisée par Gabriel dans ce chat ; worktree isolé `model-orchestration`, branche `chore/model-orchestration`, base develop `29556d7`. Travail applicatif/CI concurrent préservé, aucun déploiement. **Suite :** appliquer le workflow sur la prochaine tranche explicitement demandée, contrôler le code réel et consigner qualité/corrections/usage disponible ; aucun gain global de tokens établi. Les résultats à trois essais restent exploratoires.
 
+### Correctif de vérification — autorisé le 12 octobre 2026
+
+Le premier hook complet avait réussi les contrôles statiques/builds et 84 tests serveur, puis échoué sur un E2E WebKit de reprise de zone (39/40). Reproduction isolée : attente de l’interception après navigation, pas une panne du workflow. Gabriel autorise explicitement la correction de cette fixture et la poursuite de la publication.
+
+Une seule route réseau est maintenant installée avant la première navigation puis armée après sélection ; téléchargement retardé/avorté et assertions de protection inchangés. Quatre régressions Chromium/WebKit réussies sans réessai (24,4 s), ESLint et diff check réussis ; seconde lecture sans défaut démontré. Aucun changement applicatif. Le hook complet, la CI et Greptile sur le prochain SHA restent à exécuter avant fusion.
+
 ## Historique conservé de la tranche précédente
 
 Les notes ci-dessous sont datées et ne décrivent pas le checkout courant.
