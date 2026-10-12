@@ -512,10 +512,14 @@ async function main() {
       .split("\n")
       .filter((line) => line.trim())
       .map((line) => JSON.parse(line));
+    const matchingRows = rows.filter((row) =>
+      selected.some((task) => task.id === row.task),
+    );
+    if (!matchingRows.length)
+      throw Error("No replay records match selected tasks");
     await mkdir(dirname(opts.output), { recursive: true });
-    for (const row of rows) {
+    for (const row of matchingRows) {
       const task = selected.find((task) => task.id === row.task);
-      if (!task) continue;
       const compatible = !row.promptHash || row.promptHash === promptHash(task);
       const usable = row.status === "completed" && row.response && compatible;
       const evaluation = usable ? evaluate(task, row.response) : null;

@@ -16,6 +16,10 @@ Le premier hook complet avait réussi les contrôles statiques/builds et 84 test
 
 Une seule route réseau est maintenant installée avant la première navigation puis armée après sélection ; téléchargement retardé/avorté et assertions de protection inchangés. Quatre régressions Chromium/WebKit réussies sans réessai (24,4 s), ESLint et diff check réussis ; seconde lecture sans défaut démontré. Aucun changement applicatif. La première route stable suffisait aux quatre tests ciblés, mais pas toujours à la batterie complète. La fixture sert désormais le vrai module géographique avec `Cache-Control: no-store` pour exercer le téléchargement à froid ; seuls les headers de cette réponse de test changent. Batterie complète E2E : 40/40 réussis, sans réessai (2,6 min). Seconde lecture du complément sans défaut démontré. Un test journal inchangé avait aussi échoué ponctuellement puis réussi isolément et dans la nouvelle batterie de 84 tests serveur ; sa cause reste non confirmée. Le hook complet du prochain push, la CI et Greptile sur le SHA publié restent requis avant fusion.
 
+### Review Greptile PR #17 — 12 octobre 2026
+
+CI `38232387387` réussie sur `d0bd9c1`, Greptile 4/5 sur ce SHA avec un P2 confirmé : le replay retournait 0 pour une entrée vide ou une tâche sans observation. Le défaut a été reproduit avant correction. Filtre et rejet explicite avant création de sortie ; quatre régressions CLI passent (vide, sous-ensemble absent, succès et échec archivés). Tests sans modèle externe, mesures/réponses conservées ; lint/format/syntaxe et seconde lecture réussis. Nouveau hook, CI et review du prochain SHA requis avant fusion.
+
 ## Historique conservé de la tranche précédente
 
 Les notes ci-dessous sont datées et ne décrivent pas le checkout courant.
