@@ -1,4 +1,30 @@
-# Miaou Club — reprise orchestration locale
+# Miaou Club — reprise workflow de modèles
+
+11 octobre 2026. Publication autorisée par Gabriel ; checkout isolé `model-orchestration/cats`, branche `chore/model-orchestration`, base develop `29556d7`. Vérifier branche et status à chaque reprise. Cette tranche ne modifie pas les sources applicatives ni la CI.
+
+### Workflow de modèles et benchmark — publication autorisée, 11 octobre
+
+Gabriel autorise l'orchestration des prochaines tranches demandées et la comparaison de modèles, y compris plus petits. Routage dans [DEVELOPPEMENT#orchestration](docs/DEVELOPPEMENT.md#orchestration), skill `miaou-orchestrate`, configuration projet et trois rôles TOML : Sol planifie/revoit, Luna implémente les tâches délimitées, GPT-5.6 Luna réservé aux extractions simples vérifiables à titre provisoire. Aucune autorisation de lancer tous les lots ou de publier n'en découle.
+
+27 appels CLI synthétiques (3 modèles × 3 cas × 3 essais), puis réévaluation des réponses avec oracles corrigés sans nouvelle inférence. [Résultats et limites](docs/benchmarks/model-routing.md), données JSONL conservées. Contrôles locaux : syntaxe/lint du script, self-test avec mutants, replay et conservation des mesures, frontmatter YAML et TOML valides. Validation YAML native du skill indisponible avec le Python courant (PyYAML absent), parser YAML du projet utilisé. Le skill apparaît dans le prompt natif ; `codex exec --strict-config` réussit un smoke sans outil. Délégation réelle GPT-5.6 Luna via les outils de ce chat : extraction exacte réussie. Invocation des rôles TOML dans le CLI non confirmée : smoke arrêté après erreurs réseau. Un essai d'extraction CLI supplémentaire n'a pas démarré, revue automatique d'autorisation expirée ; aucun score ni usage inventé.
+
+Revue indépendante : deux défauts des oracles détectés puis corrigés et vérifiés (tri numérique, taille par défaut) ; retour shell du replay corrigé également. Publication autorisée par Gabriel dans ce chat ; worktree isolé `model-orchestration`, branche `chore/model-orchestration`, base develop `29556d7`. Travail applicatif/CI concurrent préservé, aucun déploiement. **Suite :** appliquer le workflow sur la prochaine tranche explicitement demandée, contrôler le code réel et consigner qualité/corrections/usage disponible ; aucun gain global de tokens établi. Les résultats à trois essais restent exploratoires.
+
+### Correctif de vérification — autorisé le 12 octobre 2026
+
+Le premier hook complet avait réussi les contrôles statiques/builds et 84 tests serveur, puis échoué sur un E2E WebKit de reprise de zone (39/40). Reproduction isolée : attente de l’interception après navigation, pas une panne du workflow. Gabriel autorise explicitement la correction de cette fixture et la poursuite de la publication.
+
+Une seule route réseau est maintenant installée avant la première navigation puis armée après sélection ; téléchargement retardé/avorté et assertions de protection inchangés. Quatre régressions Chromium/WebKit réussies sans réessai (24,4 s), ESLint et diff check réussis ; seconde lecture sans défaut démontré. Aucun changement applicatif. La première route stable suffisait aux quatre tests ciblés, mais pas toujours à la batterie complète. La fixture sert désormais le vrai module géographique avec `Cache-Control: no-store` pour exercer le téléchargement à froid ; seuls les headers de cette réponse de test changent. Batterie complète E2E : 40/40 réussis, sans réessai (2,6 min). Seconde lecture du complément sans défaut démontré. Un test journal inchangé avait aussi échoué ponctuellement puis réussi isolément et dans la nouvelle batterie de 84 tests serveur ; sa cause reste non confirmée. Le hook complet du prochain push, la CI et Greptile sur le SHA publié restent requis avant fusion.
+
+### Review Greptile PR #17 — 12 octobre 2026
+
+CI `38232387387` réussie sur `d0bd9c1`, Greptile 4/5 sur ce SHA avec un P2 confirmé : le replay retournait 0 pour une entrée vide ou une tâche sans observation. Le défaut a été reproduit avant correction. Filtre et rejet explicite avant création de sortie ; quatre régressions CLI passent (vide, sous-ensemble absent, succès et échec archivés). Tests sans modèle externe, mesures/réponses conservées ; lint/format/syntaxe et seconde lecture réussis. Nouveau hook, CI et review du prochain SHA requis avant fusion.
+
+## Historique conservé de la tranche précédente
+
+Les notes ci-dessous sont datées et ne décrivent pas le checkout courant.
+
+### Orchestration locale — notes du 8 octobre
 
 8 octobre 2026. Checkout isolé `2c34/cats`, HEAD détachée `2f811c4ef4272a57639404b6ecbc83dc15f3c4cb`, changements locaux non committés. PR #13 fusionnée ; CI post-fusion `37693421976` vérifiée réussie sur ce SHA (verify:full, Docker/smoke/Trivy). Autorisation de cette tranche : code, références affectées, vérification et auto-revue locales uniquement. Autres checkouts/configurations préservés.
 

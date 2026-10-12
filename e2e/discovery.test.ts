@@ -476,7 +476,34 @@ for (const download of ["delayed", "failed"] as const) {
     await context.grantPermissions(["geolocation"]);
     // Disable the browser cache before the first geographic download so the
     // return journey exercises an actual module request on both engines.
-    await page.route("**/*", (route) => route.continue());
+    let interceptSelection = false;
+    let requested = false;
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route("**/*", async (route) => {
+      const path = new URL(route.request().url()).pathname;
+      if (interceptSelection && /\/_astro\/location\.[^/]+\.js$/.test(path)) {
+        requested = true;
+        if (download === "failed") {
+          await route.abort();
+          return;
+        }
+        await gate;
+      }
+      if (/\/_astro\/location\.[^/]+\.js$/.test(path)) {
+        // This regression needs a cold import on return, even though production
+        // hashes are normally served with immutable caching headers.
+        const response = await route.fetch();
+        await route.fulfill({
+          response,
+          headers: { ...response.headers(), "cache-control": "no-store" },
+        });
+        return;
+      }
+      await route.continue();
+    });
     await page.goto("/photo");
     await expect(
       page.getByRole("button", {
@@ -514,25 +541,10 @@ for (const download of ["delayed", "failed"] as const) {
     await page
       .getByRole("button", { name: "Choisir la zone au centre" })
       .click();
-    let release!: () => void;
-    const gate = new Promise<void>((resolve) => {
-      release = resolve;
-    });
-    let requested!: () => void;
-    const started = new Promise<void>((resolve) => {
-      requested = resolve;
-    });
-    await page.route("**/_astro/location.*.js", async (route) => {
-      requested();
-      if (download === "failed") await route.abort();
-      else {
-        await gate;
-        await route.continue();
-      }
-    });
+    interceptSelection = true;
     try {
       await page.getByRole("button", { name: "Utiliser cette zone" }).click();
-      await started;
+      await expect.poll(() => requested).toBe(true);
       await expect(page.getByLabel("Un petit titre")).toHaveValue(
         "Reprise synthétique " + download,
       );
@@ -570,7 +582,7 @@ for (const download of ["delayed", "failed"] as const) {
           return JSON.parse(sessionStorage.getItem(key)!).draft.location;
         });
         expect(restoredLocation).toEqual(savedLocation);
-        await page.unroute("**/_astro/location.*.js");
+        interceptSelection = false;
         await page.reload();
         await expect(
           page.getByRole("button", { name: "Voir l’aperçu" }),
