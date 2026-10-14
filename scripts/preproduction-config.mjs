@@ -3,12 +3,14 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { parseEnv } from "node:util";
+import { createClientIPResolver } from "../server/client-ip.mjs";
 
 const bucketPattern = /^[a-z0-9-]+$/;
 const allowedFields = new Set([
   "NODE_ENV",
   "HOST",
   "PORT",
+  "MIAOU_TRUSTED_PROXY_CIDRS",
   "BETTER_AUTH_URL",
   "BETTER_AUTH_SECRET",
   "DATABASE_URL",
@@ -70,6 +72,11 @@ export function validatePreproductionEnv(env) {
     Object.keys(env).every((key) => allowedFields.has(key)),
     "UNKNOWN_FIELDS",
   );
+  try {
+    createClientIPResolver(env.MIAOU_TRUSTED_PROXY_CIDRS ?? "");
+  } catch {
+    errors.push("MIAOU_TRUSTED_PROXY_CIDRS");
+  }
   check(env.NODE_ENV === "production", "NODE_ENV");
   check(env.HOST === "0.0.0.0", "HOST");
   check(env.PORT === "4321", "PORT");
