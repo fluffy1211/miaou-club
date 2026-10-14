@@ -190,3 +190,28 @@ test("missing explicit file fails with a path-free JSON field code", () => {
   assert.deepEqual(parsed(result), { ok: false, errors: ["ENV_FILE"] });
   assert.equal(result.stdout.includes(missingPath), false);
 });
+
+test("trusted proxy CIDRs are opt-in, validated and never printed", () => {
+  const env = Object.fromEntries(
+    valid
+      .trim()
+      .split("\n")
+      .map((line) => {
+        const at = line.indexOf("=");
+        return [line.slice(0, at), line.slice(at + 1)];
+      }),
+  );
+  assert.deepEqual(
+    validatePreproductionEnv({
+      ...env,
+      MIAOU_TRUSTED_PROXY_CIDRS: "10.20.0.0/16",
+    }),
+    [],
+  );
+  assert.ok(
+    validatePreproductionEnv({
+      ...env,
+      MIAOU_TRUSTED_PROXY_CIDRS: "0.0.0.0/0",
+    }).includes("MIAOU_TRUSTED_PROXY_CIDRS"),
+  );
+});

@@ -1,6 +1,7 @@
 // The Node adapter exposes a standalone handler; guard images before its static server.
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
+import { createClientIPResolver } from "./client-ip.mjs";
 import { writeResponse } from "astro/app/node";
 import { decodePath } from "../dist/backend/http/path.js";
 process.env.ASTRO_NODE_AUTOSTART = "disabled";
@@ -9,10 +10,16 @@ const { handleRequest, dispose } =
   await import("../dist/backend/http/runtime.js");
 const baseURL = process.env.BETTER_AUTH_URL;
 if (!baseURL) throw new Error("BETTER_AUTH_URL is required");
+const resolveClientIP = createClientIPResolver(
+  process.env.MIAOU_TRUSTED_PROXY_CIDRS ?? "",
+);
 const server = createServer(async (req, res) => {
-  // Overwrite any caller-supplied value before Astro forwards this trusted
-  // socket address; proxy deployments must be assessed separately.
-  req.headers["x-miaou-client-ip"] = req.socket.remoteAddress ?? "unknown";
+  // Always replace the caller header at the Node boundary.
+  const clientIP = resolveClientIP(
+    req.socket.remoteAddress,
+    req.headers["x-forwarded-for"],
+  );
+  req.headers["x-miaou-client-ip"] = clientIP ?? "unknown";
   const started = performance.now();
   const requestId = randomUUID();
   res.setHeader("X-Request-Id", requestId);
@@ -29,7 +36,9 @@ const server = createServer(async (req, res) => {
   );
   try {
     const path = decodePath(new URL(req.url ?? "/", baseURL).pathname);
-    if (path === null) {
+    // Fail closed for the endpoint that needs a trustworthy network counter.
+    // Health checks and other routes do not require forwarded client headers.
+    if (path === null || (path === "/api/auth/sign-in/email" && !clientIP)) {
       res.writeHead(400, {
         "Content-Type": "application/json",
         "Cache-Control": "no-store",
