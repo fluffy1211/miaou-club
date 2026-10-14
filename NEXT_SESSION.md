@@ -1,6 +1,14 @@
 # Miaou Club — reprise
 
 
+## Livraison en cours — IP des proxies fiables, 14 octobre 2026
+
+Gabriel autorise la livraison Git sur develop, sans déploiement ni activation distante. Branche isolée `fix/trusted-proxy-client-ip`, base distante `236d22118e1b9c382513646031ac05581ceaaf6b`. CIDR fiables explicites et vides par défaut ; parcours XFF de droite à gauche, IP normalisées, en-tête interne écrasé et connexion refusée si la chaîne fiable ne permet pas d’identifier un client. Readiness disponible sans XFF. Module inclus dans l’image, paramètre contrôlé par `preproduction:check`, tests de résolution et smoke Node/Astro/PostgreSQL pérennisés.
+
+Vérifications locales sur cette base : `verify:full` hors sandbox réussi, 36 tests outillage, 84 serveur, 40 E2E Chromium/WebKit sans réessai et audits ; image locale construite, smoke runtime/proxy réussi (deux compteurs distincts, en-têtes forgés ignorés, deux champs XFF réellement séparés, limite 60/61, readiness). Base de test loopback isolée 54346, services concurrents préservés. Les premiers contrôles démarrés sur une référence locale périmée `1708cdc` ont été interrompus et ne servent pas de preuve finale.
+
+Suite : revue finale et hook normal, PR/CI/review du dernier SHA puis fusion et contrôle post-fusion. La liste CIDR vide conserve le comportement du socket ; chaîne/plages Render non qualifiées et aucune correction distante démontrée. Qualification et déploiement nécessitent leur autorisation propre.
+
 ## Préparation locale de préproduction — 12 octobre 2026
 
 Gabriel autorise cette tranche locale dans une branche isolée, sans activation fournisseur ni déploiement. Worktree `/Users/gabriel/.codex/worktrees/preproduction-local/cats`, branche `chore/preproduction-local`, base/HEAD `62800434380b141d6097bcfca2162270f33761c1` (develop distant vérifié au démarrage ; état fixé, pas promesse de fraîcheur ultérieure). Checkout partagé, configuration Greptile et autres worktrees préservés.
