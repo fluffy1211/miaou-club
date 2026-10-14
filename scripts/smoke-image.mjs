@@ -1,4 +1,4 @@
-import { randomUUID } from "node:crypto";
+import { randomUUID, randomBytes, createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import {
   createDatabase,
@@ -29,10 +29,11 @@ try {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "pipe"],
     });
-  const runInput = (args, input) =>
+  const runInput = (args, input, env = {}) =>
     execFileSync("docker", args, {
       encoding: "utf8",
       input,
+      env: { ...process.env, ...env },
       stdio: ["pipe", "pipe", "pipe"],
     });
   // Exercise the compiled migration entry point of the actual runtime image,
@@ -215,6 +216,109 @@ try {
       ["exec", "-i", container, "node", "--input-type=module"],
       proxyProof,
     ).trim(),
+  );
+  // Diagnostic activation is independent of proxy trust and affects only ready GETs.
+  run(["rm", "-f", container]);
+  const probeToken = randomBytes(32).toString("hex");
+  const probeHash = createHash("sha256").update(probeToken).digest("hex");
+  run([
+    "run",
+    "-d",
+    "--name",
+    container,
+    "--add-host",
+    "host.docker.internal:host-gateway",
+    "-e",
+    `DATABASE_URL=${dockerURL.href}`,
+    "-e",
+    `BETTER_AUTH_SECRET=${authSecret}`,
+    "-e",
+    "BETTER_AUTH_URL=https://localhost",
+    "-e",
+    "MIAOU_TRUSTED_PROXY_CIDRS=",
+    "-e",
+    `MIAOU_PROXY_PROBE_SHA256=${probeHash}`,
+    "-e",
+    `MIAOU_PROXY_PROBE_EXPIRES_AT=${Date.now() + 600000}`,
+    image,
+  ]);
+  const diagnosticProof = String.raw`
+import assert from 'node:assert/strict';
+import { request } from 'node:http';
+import { createHmac } from 'node:crypto';
+const capability = process.env.MIAOU_SMOKE_PROBE_TOKEN;
+const base = 'http://127.0.0.1:4321';
+const deadline = Date.now() + 10000;
+while (true) {
+  try { if ((await fetch(base + '/api/ready')).status === 200) break; } catch {}
+  if (Date.now() >= deadline) throw new Error('diagnostic runtime did not become ready');
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
+const baseline = await fetch(base + '/api/ready');
+const body = await baseline.text();
+const observed = await new Promise((resolve, reject) => {
+  const req = request({ host: '127.0.0.1', port: 4321, path: '/api/ready', headers: [
+    'Host', 'localhost', 'X-Miaou-Proxy-Probe', capability,
+    'X-Forwarded-For', '203.0.113.99', 'X-Forwarded-For', '192.0.2.1',
+  ] }, res => { let body = ''; res.on('data', part => { body += part; });
+    res.on('end', () => resolve({ status: res.statusCode, body, headers: res.headers }));
+  }); req.on('error', reject); req.end();
+});
+assert.equal(observed.status, 200); assert.equal(observed.body, body);
+for (const name of ['cache-control', 'content-type', 'x-content-type-options', 'referrer-policy'])
+  assert.equal(observed.headers[name], baseline.headers.get(name));
+for (const headers of [
+  { 'x-miaou-proxy-probe': '0'.repeat(64) },
+  { 'x-miaou-proxy-probe': capability, cookie: 'synthetic-cookie=not-a-session' },
+]) assert.equal((await fetch(base + '/api/ready', { headers })).status, 200);
+assert.equal((await fetch(base + '/api/ready?probe=synthetic', { headers: { 'x-miaou-proxy-probe': capability } })).status, 200);
+const fingerprint = value => createHmac('sha256', Buffer.from(capability, 'hex')).update('miaou-proxy-probe-v1:' + value).digest('hex');
+console.log(JSON.stringify({ requestId: observed.headers['x-request-id'], fingerprints: ['203.0.113.99', '192.0.2.1'].map(fingerprint) }));
+`;
+  const diagnostic = JSON.parse(
+    runInput(
+      [
+        "exec",
+        "-i",
+        "-e",
+        "MIAOU_SMOKE_PROBE_TOKEN",
+        container,
+        "node",
+        "--input-type=module",
+      ],
+      diagnosticProof,
+      { MIAOU_SMOKE_PROBE_TOKEN: probeToken },
+    ),
+  );
+  const rawLogs = run(["logs", container]);
+  const records = rawLogs.split("\n").flatMap((line) => {
+    try {
+      const record = JSON.parse(line);
+      return record.event === "proxy_probe" ? [record] : [];
+    } catch {
+      return [];
+    }
+  });
+  if (
+    records.length !== 1 ||
+    records[0].requestId !== diagnostic.requestId ||
+    records[0].xffFields !== 2 ||
+    records[0].headerTrust !== "observed_untrusted" ||
+    JSON.stringify(
+      records[0].forwarded.entries.map((entry) => entry.fingerprint),
+    ) !== JSON.stringify(diagnostic.fingerprints)
+  )
+    throw new Error("Diagnostic runtime observation mismatch");
+  for (const value of [
+    probeToken,
+    "synthetic-cookie",
+    "203.0.113.99",
+    "192.0.2.1",
+  ])
+    if (rawLogs.includes(value))
+      throw new Error("Diagnostic runtime sensitive value leak");
+  console.log(
+    "Proxy diagnostic smoke: unchanged real readiness, duplicate XFF pseudonyms, capability/credential/route refusals and no sensitive logs passed",
   );
 } finally {
   try {

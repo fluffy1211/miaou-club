@@ -4,6 +4,7 @@ import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
+import { parseEnv } from "node:util";
 import { validatePreproductionEnv } from "../scripts/preproduction-config.mjs";
 
 const script = join(process.cwd(), "scripts/preproduction-config.mjs");
@@ -213,5 +214,29 @@ test("trusted proxy CIDRs are opt-in, validated and never printed", () => {
       ...env,
       MIAOU_TRUSTED_PROXY_CIDRS: "0.0.0.0/0",
     }).includes("MIAOU_TRUSTED_PROXY_CIDRS"),
+  );
+});
+
+test("preproduction validates the explicit short-lived probe pair without exposing values", () => {
+  const env = parseEnv(valid);
+  const pair = {
+    MIAOU_PROXY_PROBE_SHA256: "a".repeat(64),
+    MIAOU_PROXY_PROBE_EXPIRES_AT: String(Date.now() + 60000),
+  };
+  assert.deepEqual(validatePreproductionEnv({ ...env, ...pair }), []);
+  assert.deepEqual(
+    validatePreproductionEnv({
+      ...env,
+      MIAOU_PROXY_PROBE_SHA256: pair.MIAOU_PROXY_PROBE_SHA256,
+    }),
+    ["MIAOU_PROXY_PROBE"],
+  );
+  assert.deepEqual(
+    validatePreproductionEnv({
+      ...env,
+      ...pair,
+      MIAOU_PROXY_PROBE_EXPIRES_AT: "1",
+    }),
+    ["MIAOU_PROXY_PROBE"],
   );
 });
