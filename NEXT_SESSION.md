@@ -1,13 +1,17 @@
 # Miaou Club — reprise
 
 
-## Livraison en cours — IP des proxies fiables, 14 octobre 2026
+## État actuel — sonde proxy temporaire, 14 octobre 2026
 
-Gabriel autorise la livraison Git sur develop, sans déploiement ni activation distante. Branche isolée `fix/trusted-proxy-client-ip`, base distante `236d22118e1b9c382513646031ac05581ceaaf6b`. CIDR fiables explicites et vides par défaut ; parcours XFF de droite à gauche, IP normalisées, en-tête interne écrasé et connexion refusée si la chaîne fiable ne permet pas d’identifier un client. Readiness disponible sans XFF. Module inclus dans l’image, paramètre contrôlé par `preproduction:check`, tests de résolution et smoke Node/Astro/PostgreSQL pérennisés.
+Gabriel autorise « oui » après proposition de livraison Git puis déploiement temporaire sur la seule préproduction fermée après contrôles, sans activation CIDR. Worktree isolé depuis develop distant relu `ccedfefd712d4592d735e66ff819598e1e8e07b3`, branche `chore/proxy-chain-qualification`. Checkout partagé historique et changements/services concurrents préservés.
 
-Vérifications locales sur cette base : `verify:full` hors sandbox réussi, 36 tests outillage, 84 serveur, 40 E2E Chromium/WebKit sans réessai et audits ; image locale construite, smoke runtime/proxy réussi (deux compteurs distincts, en-têtes forgés ignorés, deux champs XFF réellement séparés, limite 60/61, readiness). Base de test loopback isolée 54346, services concurrents préservés. Les premiers contrôles démarrés sur une référence locale périmée `1708cdc` ont été interrompus et ne servent pas de preuve finale.
+Sonde désactivée par défaut : paire SHA256 du bearer synthétique hex ASCII + échéance absolue millisecondes Unix ≤15 minutes, validée explicitement ; configuration invalide/expirée sans impact readiness. Seul GET readiness exact sans credentials, budget 16 par processus, HMAC des adresses et ordre XFF dans les logs privés ; aucun changement de resolver/auth/DB. CIDR fiables restent vides. Préparation précédente sous `/tmp/miaou-proxy-qualification-ccedfefd`. Sur cette cible isolée : revue Sol sémantique favorable, `verify:full` hors sandbox réussi (46 tests outillage, 84 serveur, 40 E2E sans réessai, contrôles statiques/builds/audits), image complète locale construite, trois branches smoke runtime/proxy/diagnostic réussies et Trivy HIGH/CRITICAL réussi. Base synthétique isolée 54346 ; preuves `/tmp/miaou-probe-delivery`. Hook et preuves Git/CI/candidate/déploiement encore à établir, aucune protection IP distante supplémentaire annoncée.
 
-Suite : revue finale et hook normal, PR/CI/review du dernier SHA puis fusion et contrôle post-fusion. La liste CIDR vide conserve le comportement du socket ; chaîne/plages Render non qualifiées et aucune correction distante démontrée. Qualification et déploiement nécessitent leur autorisation propre.
+Suite autorisée : revue Sol, contrôles complets/hook, PR/CI/Greptile et fusion, post-fusion/candidate exacte, publication privée GHCR puis déploiement temporaire et observations bornées. Retrait des paramètres de sonde à la fin. Support non contacté, aucun achat/changement d'offre/activation CIDR/ouverture du pilote induit.
+
+## Livraison précédente — correctif IP, 14 octobre 2026
+
+PR #23 fusionnée en squash `ccedfefd` vers develop ; CI post-fusion `38579187347` réussie et candidate produite, preuves datées dans la reprise du checkout partagé. Render demeure sur la candidate `236d221` et le digest `8057d54…` lors du début de cette tranche. La nouvelle source rend explicites les CIDR fiables et ignore les en-têtes forgés ; liste vide conserve le socket. Chaîne/plages Render non qualifiées, aucune protection IP distante supplémentaire établie.
 
 ## Préparation locale de préproduction — 12 octobre 2026
 

@@ -1,6 +1,7 @@
 // The Node adapter exposes a standalone handler; guard images before its static server.
 import { createServer } from "node:http";
 import { randomUUID } from "node:crypto";
+import { createProxyProbe, parseProxyProbeEnv } from "./proxy-probe.mjs";
 import { createClientIPResolver } from "./client-ip.mjs";
 import { writeResponse } from "astro/app/node";
 import { decodePath } from "../dist/backend/http/path.js";
@@ -13,6 +14,8 @@ if (!baseURL) throw new Error("BETTER_AUTH_URL is required");
 const resolveClientIP = createClientIPResolver(
   process.env.MIAOU_TRUSTED_PROXY_CIDRS ?? "",
 );
+// Invalid or expired diagnostics stay disabled without interrupting readiness.
+const proxyProbe = createProxyProbe(parseProxyProbeEnv(process.env) ?? {});
 const server = createServer(async (req, res) => {
   // Always replace the caller header at the Node boundary.
   const clientIP = resolveClientIP(
@@ -22,6 +25,11 @@ const server = createServer(async (req, res) => {
   req.headers["x-miaou-client-ip"] = clientIP ?? "unknown";
   const started = performance.now();
   const requestId = randomUUID();
+  try {
+    proxyProbe(req, res, requestId);
+  } catch {
+    /* Preserve normal request handling. */
+  }
   res.setHeader("X-Request-Id", requestId);
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "same-origin");

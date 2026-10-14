@@ -5,12 +5,16 @@ import { pathToFileURL } from "node:url";
 import { parseEnv } from "node:util";
 import { createClientIPResolver } from "../server/client-ip.mjs";
 
+import { parseProxyProbeEnv } from "../server/proxy-probe.mjs";
+
 const bucketPattern = /^[a-z0-9-]+$/;
 const allowedFields = new Set([
   "NODE_ENV",
   "HOST",
   "PORT",
   "MIAOU_TRUSTED_PROXY_CIDRS",
+  "MIAOU_PROXY_PROBE_SHA256",
+  "MIAOU_PROXY_PROBE_EXPIRES_AT",
   "BETTER_AUTH_URL",
   "BETTER_AUTH_SECRET",
   "DATABASE_URL",
@@ -77,6 +81,7 @@ export function validatePreproductionEnv(env) {
   } catch {
     errors.push("MIAOU_TRUSTED_PROXY_CIDRS");
   }
+  check(parseProxyProbeEnv(env) !== null, "MIAOU_PROXY_PROBE");
   check(env.NODE_ENV === "production", "NODE_ENV");
   check(env.HOST === "0.0.0.0", "HOST");
   check(env.PORT === "4321", "PORT");

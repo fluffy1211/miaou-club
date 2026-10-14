@@ -19,7 +19,7 @@ WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=4321
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=production-dependencies --chown=node:node /app/node_modules ./node_modules
-COPY --from=build --chown=node:node /app/server/start.mjs /app/server/client-ip.mjs ./server/
+COPY --from=build --chown=node:node /app/server/start.mjs /app/server/client-ip.mjs /app/server/proxy-probe.mjs ./server/
 COPY --from=build --chown=node:node /app/packages/contracts ./packages/contracts
 COPY --from=build --chown=node:node /app/package.json ./package.json
 RUN rm -rf /usr/local/lib/node_modules/npm /opt/yarn* /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/yarn*
