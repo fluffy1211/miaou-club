@@ -53,7 +53,18 @@ export async function encounterAPI<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
-  const response = await fetch(path, init);
+  const method = (init?.method ?? "GET").toUpperCase();
+  const headers = new Headers(init?.headers);
+  // Bodyless API mutations must reach the server's origin and permission gates
+  // when Astro receives the request behind an HTTPS terminating proxy.
+  if (
+    !["GET", "HEAD", "OPTIONS"].includes(method) &&
+    init?.body == null &&
+    !headers.has("content-type")
+  ) {
+    headers.set("content-type", "application/json");
+  }
+  const response = await fetch(path, { ...init, headers });
   const data = await response.json();
   if (!response.ok) {
     if (response.status === 401)
