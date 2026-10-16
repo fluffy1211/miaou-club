@@ -34,7 +34,7 @@
     "start": "node server/start.mjs",
     "security:secrets": "docker run --rm -v \"$PWD:/repo:ro\" ghcr.io/gitleaks/gitleaks:v8.30.0 dir /repo --config /repo/.gitleaks.toml --redact --no-banner",
     "security:image": "docker run --rm -v /var/run/docker.sock:/var/run/docker.sock -v miaou-trivy-cache:/root/.cache aquasec/trivy:0.75.0 image --quiet --severity HIGH,CRITICAL --scanners vuln --exit-code 1 miaou-lot1:local",
-    "security:workflows": "docker run --rm -v \"$PWD/.github/workflows:/work:ro\" -w /work rhysd/actionlint:1.7.12 ci.yml promotion-preflight.yml",
+    "security:workflows": "docker run --rm -v \"$PWD/.github/workflows:/work:ro\" -w /work rhysd/actionlint:1.7.12 ci.yml promotion-preflight.yml backup-rehearsal.yml",
     "test:image": "node scripts/smoke-image.mjs",
     "accounts:ops": "tsx server/src/ops/accounts.ts",
     "accounts:cleanup": "tsx server/src/ops/cleanup.ts",
@@ -46,7 +46,9 @@
     "recovery:local": "tsx server/src/ops/recovery-cli.ts",
     "recovery:rehearse": "tsx --test server/tests/recovery.test.ts",
     "benchmark:models": "node scripts/model-benchmark.mjs",
-    "benchmark:models:check": "node scripts/model-benchmark.mjs --self-test"
+    "benchmark:models:check": "node scripts/model-benchmark.mjs --self-test",
+    "backup:remote": "node --import tsx scripts/backup-remote-runner.mjs",
+    "backup:rehearse": "node --import tsx --test server/backup-tests/*.test.ts tests/remote-backup-repository.test.mjs tests/backup-render-quiescence.test.mjs tests/backup-remote-runner.test.mjs"
   },
   "dependencies": {
     "@astrojs/check": "^0.9.10",

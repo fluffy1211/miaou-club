@@ -1,0 +1,61 @@
+# Synthetic rehearsal only: no provider credentials or remote backup activation.
+name: CI — backup rehearsal
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: backup-rehearsal-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  rehearsal:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    services:
+      postgres:
+        image: postgres:17.7-alpine
+        env:
+          POSTGRES_USER: miaou_test
+          POSTGRES_PASSWORD: local-test-only
+          POSTGRES_DB: miaou_test
+        ports: [54339:5432]
+        options: >-
+          --health-cmd "pg_isready -U miaou_test -d miaou_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgresql://miaou_test:local-test-only@127.0.0.1:54339/miaou_test
+      MIAOU_RESTIC_BINARY: /usr/local/bin/restic
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Install verified restic 0.19.1
+        run: |
+          set -euo pipefail
+          tools=$(mktemp -d)
+          trap 'rm -rf -- "$tools"' EXIT
+          cd "$tools"
+          curl --fail --silent --show-error --location https://github.com/restic/restic/releases/download/v0.19.1/restic_0.19.1_linux_amd64.bz2 -o restic.bz2
+          curl --fail --silent --show-error --location https://github.com/restic/restic/releases/download/v0.19.1/SHA256SUMS -o SHA256SUMS
+          grep -Fx 'f415415624dcc452f2a02b8c33641791a8c6d6d3b65bbb3543fcf9a25151585c  restic_0.19.1_linux_amd64.bz2' SHA256SUMS
+          printf '%s  %s\n' f415415624dcc452f2a02b8c33641791a8c6d6d3b65bbb3543fcf9a25151585c restic.bz2 | sha256sum --check --status
+          bunzip2 restic.bz2
+          sudo install -m 755 restic /usr/local/bin/restic
+      - name: Name disposable PostgreSQL client for strict fixtures
+        env:
+          POSTGRES_SERVICE_ID: ${{ job.services.postgres.id }}
+        run: |
+          fixture_container="miaou-backup-test-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          docker rename "$POSTGRES_SERVICE_ID" "$fixture_container"
+          printf 'MIAOU_BACKUP_TEST_CONTAINER=%s\n' "$fixture_container" >> "$GITHUB_ENV"
+      - name: Rehearse capture, encrypted archive, quarantine and safe orchestration
+        run: npm run backup:rehearse
