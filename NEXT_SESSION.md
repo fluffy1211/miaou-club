@@ -1,6 +1,16 @@
 # Miaou Club — reprise
 
 
+## Sauvegardes distantes — préparation à livrer, 16 octobre 2026
+
+Gabriel autorise la poursuite après le patch local revu. Livraison bornée à la préparation technique, sans activation externe. Branche `feat/remote-backup-preparation` depuis `origin/develop` `0bea46df13eff0aa9f46d0a7c2f9d3f60b3d55b4`, dont le contenu est identique à la base initialement testée `dab0f0a`. Worktree dédié ; checkout partagé et autres services préservés.
+
+Capture snapshot PostgreSQL 17 et WebP, dépôt restic chiffré, journal indépendant, restauration locale en quarantaine, lanceur avec pause/reprise Render et exemples privés préparés. Le workflow de sauvegarde reste un exemple **inactif** dans `ops/` ; seule la CI synthétique dédiée est ajoutée. Documentation d’usage et limites : [ops/backup-remote.md](ops/backup-remote.md).
+
+Preuves avant intégration : 40/40 tests synthétiques (vrais pg_dump/pg_restore/restic, perte de source et restrictions ; Render simulé), TypeScript, ESLint, formatage, actionlint/ShellCheck, Gitleaks et revue indépendante Sol favorables. Contrôles sur la branche de livraison, SHA publié, CI/Greptile et état de fusion à consigner après exécution. La suite locale spécialisée exige son conteneur jetable et son binaire restic explicites ; elle ne rejoint pas implicitement `test:server`.
+
+Aucun compte B2, secret GitHub, sauvegarde réelle Neon/Supabase/B2, pause Render, planning distant ni alerte activé. Gabriel n’a pas encore de compte B2 et demande une exécution indépendante du Mac. Cadre fournisseur, accès restreints et qualification externe restent nécessaires avant exploitation. Journaux anciens non rafraîchis, décisions après coupe inconnues, surveillance inter-exécutions, mort du runner et drainage Storage non qualifiés ; aucun RPO/RTO ni effacement physique des versions B2 démontré. La restauration exposée par le module reste locale et fermée, sans réouverture de l’application. Le report de la qualification proxy et les CIDR vides restent inchangés.
+
 ## État actuel — sonde proxy temporaire, 14 octobre 2026
 
 Gabriel autorise « oui » après proposition de livraison Git puis déploiement temporaire sur la seule préproduction fermée après contrôles, sans activation CIDR. Worktree isolé depuis develop distant relu `ccedfefd712d4592d735e66ff819598e1e8e07b3`, branche `chore/proxy-chain-qualification`. Checkout partagé historique et changements/services concurrents préservés.

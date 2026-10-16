@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "source": "miaou-preproduction",
+  "enabled": false,
+  "allowPause": false,
+  "expectedScope": "closed-preproduction",
+  "closedQualification": true,
+  "sourceEnvFile": "/run/miaou-secrets/source.env",
+  "stagingParent": "/run/miaou-stage",
+  "journalRoot": "/run/miaou-journals",
+  "anchorsRoot": "/run/miaou-anchors",
+  "journalKeyFile": "/run/miaou-journal-key/key",
+  "tokenFile": "/run/miaou-secrets/render-token",
+  "repo": {
+    "binary": "/usr/local/bin/restic",
+    "repository": "s3:https://s3.eu-central-003.backblazeb2.com/REPLACE_BUCKET/miaou-preproduction",
+    "credentialsFile": "/run/miaou-secrets/b2.json",
+    "passwordFile": "/run/miaou-secrets/restic-password"
+  },
+  "stateFile": "/run/miaou-status/status.json",
+  "pgDumpBinary": "/usr/lib/postgresql/17/bin/pg_dump",
+  "service": {
+    "id": "REPLACE_SERVICE_ID",
+    "name": "REPLACE_PREPRODUCTION_SERVICE_NAME",
+    "origin": "https://REPLACE_SERVICE.onrender.com",
+    "expectedDigest": "sha256:REPLACE_DEPLOYED_DIGEST"
+  }
+}

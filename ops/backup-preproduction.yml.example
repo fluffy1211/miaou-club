@@ -1,0 +1,107 @@
+# NON ACTIF : copier dans .github/workflows exige une autorisation distincte.
+# Qualification préproduction fermée uniquement (zéro admis/invitations actives).
+# Aucun compte B2/contrat/secret configuré ; init explicite du dépôt requis avant backup.
+# Une coupe de journal par nouveau bundle : aucune actualisation des anciennes bases.
+# Décisions après copiedAt inconnues. Pas de preuve RPO, de reprise après mort runner,
+# ni d'alerte si GitHub retarde/omet un run. Le webhook optionnel n'est pas qualifié.
+# Les artifacts conservent les états ; aucun téléchargement du dernier état ici :
+# un runner neuf ignore lastSuccessAt des runs précédents (monitoring à compléter).
+# Suspension/instances vides ne prouvent pas le drainage côté fournisseur Storage.
+name: Backup — closed preproduction qualification
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 3 * * *"
+      timezone: Europe/Paris
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: miaou-remote-backup-preproduction
+  cancel-in-progress: false
+jobs:
+  backup:
+    if: vars.MIAOU_REMOTE_BACKUP_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Set isolated backup directory
+        env:
+          BACKUP_RUN_ID: ${{ github.run_id }}
+          BACKUP_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          printf 'BACKUP_ROOT=%s/miaou-backup-%s-%s\n' "$RUNNER_TEMP" "$BACKUP_RUN_ID" "$BACKUP_RUN_ATTEMPT" >> "$GITHUB_ENV"
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version-file: .node-version
+      - run: npm ci
+      - name: Install PostgreSQL 17 client and verified restic 0.19.1
+        run: |
+          set -euo pipefail
+          umask 077
+          mkdir -p "$BACKUP_ROOT/bin"
+          sudo install -d /usr/share/postgresql-common/pgdg
+          sudo curl --fail --silent --show-error https://www.postgresql.org/media/keys/ACCC4CF8.asc -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc
+          echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt noble-pgdg main' | sudo tee /etc/apt/sources.list.d/miaou-pgdg.list >/dev/null
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends postgresql-client-17
+          cd "$BACKUP_ROOT/bin"
+          curl --fail --silent --show-error --location https://github.com/restic/restic/releases/download/v0.19.1/restic_0.19.1_linux_amd64.bz2 -o restic.bz2
+          curl --fail --silent --show-error --location https://github.com/restic/restic/releases/download/v0.19.1/SHA256SUMS -o SHA256SUMS
+          grep -Fx 'f415415624dcc452f2a02b8c33641791a8c6d6d3b65bbb3543fcf9a25151585c  restic_0.19.1_linux_amd64.bz2' SHA256SUMS
+          printf '%s  %s\n' f415415624dcc452f2a02b8c33641791a8c6d6d3b65bbb3543fcf9a25151585c restic.bz2 | sha256sum --check --status
+          bunzip2 restic.bz2
+          chmod 700 restic
+      - name: Materialize private configuration without shell interpolation
+        env:
+          BACKUP_SETTINGS: ${{ secrets.MIAOU_REMOTE_BACKUP_SETTINGS }}
+          SOURCE_ENV: ${{ secrets.MIAOU_REMOTE_BACKUP_SOURCE_ENV }}
+          RESTIC_PASSWORD: ${{ secrets.MIAOU_REMOTE_BACKUP_PASSWORD }}
+          B2_CREDENTIALS: ${{ secrets.MIAOU_REMOTE_BACKUP_B2_CREDENTIALS }}
+          JOURNAL_KEY_HEX: ${{ secrets.MIAOU_REMOTE_BACKUP_JOURNAL_KEY_HEX }}
+          RENDER_TOKEN: ${{ secrets.MIAOU_REMOTE_BACKUP_RENDER_TOKEN }}
+          ALERT_WEBHOOK: ${{ secrets.MIAOU_REMOTE_BACKUP_ALERT_WEBHOOK }}
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import path from 'node:path';
+          try {
+            const root = fs.realpathSync(process.env.BACKUP_ROOT), p = path.join(root, 'private'), a = path.join(root, 'artifacts');
+            for (const dir of [p, a, path.join(root,'staging'), path.join(a,'journal'), path.join(a,'anchors')]) fs.mkdirSync(dir, {recursive:true,mode:0o700});
+            const write = (name, bytes) => { const file=path.join(p,name); fs.writeFileSync(file,bytes,{mode:0o600,flag:'wx'}); return file; };
+            const s = JSON.parse(process.env.BACKUP_SETTINGS);
+            if (!/^[a-f0-9]{64}$/.test(process.env.JOURNAL_KEY_HEX) || process.env.RESTIC_PASSWORD.length < 32) throw Error();
+            const config = {version:1,source:'miaou-preproduction',enabled:true,allowPause:true,expectedScope:'closed-preproduction',closedQualification:true,
+              sourceEnvFile:write('source.env',process.env.SOURCE_ENV),stagingParent:path.join(root,'staging'),journalRoot:path.join(a,'journal'),anchorsRoot:path.join(a,'anchors'),
+              journalKeyFile:write('journal.key',Buffer.from(process.env.JOURNAL_KEY_HEX,'hex')),tokenFile:write('render-token',process.env.RENDER_TOKEN),
+              repo:{binary:path.join(root,'bin/restic'),repository:s.repository,passwordFile:write('restic-password',process.env.RESTIC_PASSWORD),credentialsFile:write('b2.json',process.env.B2_CREDENTIALS)},
+              stateFile:path.join(a,'status.json'),pgDumpBinary:'/usr/lib/postgresql/17/bin/pg_dump',service:s.service};
+            if (process.env.ALERT_WEBHOOK) config.alertWebhookFile=write('alert-webhook',process.env.ALERT_WEBHOOK);
+            write('config.json',JSON.stringify(config));
+          } catch { console.error('Private backup configuration invalid'); process.exitCode=1; }
+          NODE
+      - name: Capture while paused, resume, then archive
+        run: |
+          umask 077
+          node --import tsx scripts/backup-remote-runner.mjs backup "$BACKUP_ROOT/private/config.json" --allow-service-pause > "$BACKUP_ROOT/artifacts/receipt.json"
+      - name: Retain only encrypted journal, anchors and technical status
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: backup-cut-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ env.BACKUP_ROOT }}/artifacts/journal/*.enc
+            ${{ env.BACKUP_ROOT }}/artifacts/anchors/*.anchor
+            ${{ env.BACKUP_ROOT }}/artifacts/status.json
+            ${{ env.BACKUP_ROOT }}/artifacts/receipt.json
+          retention-days: 28
+          if-no-files-found: ignore
+      - name: Remove private runner files and plaintext
+        if: always()
+        run: |
+          if [ -n "${BACKUP_ROOT:-}" ]; then
+            rm -rf -- "$BACKUP_ROOT"
+          fi
