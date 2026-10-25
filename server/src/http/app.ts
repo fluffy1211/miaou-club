@@ -4,7 +4,7 @@ import type {
   HealthResponse,
 } from "@miaou/contracts";
 import { Context, Data, Effect } from "effect";
-import { HttpServerRequest, HttpServerResponse } from "@effect/platform";
+import { HttpServerRequest, HttpServerResponse } from "effect/http";
 import type { Pool } from "pg";
 import type { Auth } from "../infrastructure/auth/auth.js";
 import type { Database } from "../infrastructure/db/client.js";
@@ -17,7 +17,7 @@ import { accountsHTTP } from "../accounts/http.js";
 import { friendsHTTP } from "../friends/http.js";
 import type { Friends } from "../friends/service.js";
 
-export const Services = Context.GenericTag<{
+export const Services = Context.Service<{
   db: Database;
   pool: Pool;
   auth: Auth;
@@ -29,7 +29,7 @@ class Unavailable extends Data.TaggedError("Unavailable") {}
 const external = <T>(action: () => Promise<T>) =>
   Effect.tryPromise({ try: action, catch: () => new Unavailable() });
 const json = (body: AccessResponse | ApiError | HealthResponse, status = 200) =>
-  HttpServerResponse.unsafeJson(body, {
+  HttpServerResponse.jsonUnsafe(body, {
     status,
     headers: { "cache-control": "no-store" },
   });
@@ -62,6 +62,4 @@ export const app = Effect.gen(function* () {
     mediaResponse ??
     (yield* external(() => accountsHTTP(webRequest, db, auth)));
   return HttpServerResponse.fromWeb(response);
-}).pipe(
-  Effect.catchAll(() => Effect.succeed(json({ code: "unavailable" }, 503))),
-);
+}).pipe(Effect.orElseSucceed(() => json({ code: "unavailable" }, 503)));

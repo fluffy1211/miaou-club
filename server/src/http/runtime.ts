@@ -6,7 +6,7 @@ import { storageFromEnvironment } from "../encounters/storage.js";
 import { setInterval, clearInterval } from "node:timers";
 import { cleanupAccounts } from "../accounts/cleanup.js";
 import { Effect, Layer } from "effect";
-import { HttpApp } from "@effect/platform";
+import { HttpEffect } from "effect/http";
 import { createDatabase, closePool } from "../infrastructure/db/client.js";
 import { resetSender, inactivitySender } from "../accounts/mail.js";
 import { createAuth } from "../infrastructure/auth/auth.js";
@@ -18,7 +18,7 @@ function required(name: string) {
   if (!value) throw new Error(`Missing server configuration: ${name}`);
   return value;
 }
-const layer = Layer.scoped(
+const layer = Layer.effect(
   Services,
   Effect.acquireRelease(
     Effect.sync(() => {
@@ -122,6 +122,6 @@ const layer = Layer.scoped(
       }),
   ),
 );
-const runtime = HttpApp.toWebHandlerLayer(app, layer);
+const runtime = HttpEffect.toWebHandlerLayer(app, layer);
 export const handleRequest = runtime.handler;
 export const dispose = runtime.dispose;

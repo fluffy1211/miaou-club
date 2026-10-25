@@ -10,7 +10,7 @@ import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { Layer } from "effect";
-import { HttpApp } from "@effect/platform";
+import { HttpEffect } from "effect/http";
 import { createDatabase, closePool } from "../src/infrastructure/db/client.js";
 import { createAuth } from "../src/infrastructure/auth/auth.js";
 import * as schema from "../src/infrastructure/db/schema.js";
@@ -132,7 +132,7 @@ test("real Better Auth cookie: refusal, verified session, admission, suspension,
       account.user.id,
     ]);
     const auth = createAuth(db, { secret, baseURL }, schema);
-    const runtime = HttpApp.toWebHandlerLayer(
+    const runtime = HttpEffect.toWebHandlerLayer(
       app,
       Layer.succeed(Services, { db, pool, auth }),
     );
@@ -326,7 +326,7 @@ test("Google provider with deterministic double: native auth session, no auto-li
 test("database failure is a bounded 503 without driver details", async () =>
   isolated(async ({ db, pool }) => {
     const auth = createAuth(db, { secret, baseURL }, schema);
-    const runtime = HttpApp.toWebHandlerLayer(
+    const runtime = HttpEffect.toWebHandlerLayer(
       app,
       Layer.succeed(Services, { db, pool, auth }),
     );
