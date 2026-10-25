@@ -30,6 +30,8 @@ Cycle : **implémentation → revue → corrections autorisées et tests ciblés
 
 ### Retours Greptile et fusion des prochaines PR
 
+**Mise à jour du 25 octobre 2026 :** Greptile n’a plus de crédits et Gabriel retire « Greptile Review » des checks requis de `develop`. La fusion exige désormais la revue de l’agent (miaou-review) sur le dernier SHA et la CI requise réussie ; si Greptile commente encore, ses retours sont traités comme ci-dessous, sans être attendus. Les mentions de review Greptile obligatoire ci-dessous sont remplacées par cette règle.
+
 Consigne de Gabriel du 6 octobre 2026 : pour les prochaines PR dont la livraison est autorisée, l’agent prend en charge les retours Greptile jusqu’à la validation, puis fusionne sans redemander confirmation. Cette autorisation couvre les corrections dans le périmètre de la PR, leurs commits/pushes et la fusion selon le [Git flow](#git) ; elle n’autorise pas une nouvelle tranche, une livraison en production ou un déploiement.
 
 - Lire la review complète et vérifier chaque remarque contre le code et les règles du projet. Corriger les problèmes confirmés ; justifier les faux positifs ou remarques non applicables dans le bilan. Un retour externe ne modifie pas les décisions produit et n’autorise pas d’action hors périmètre.
@@ -355,8 +357,8 @@ Sécurité construite/testée dans chaque lot ; lots 5/6 avant ouverture réelle
 | Images/carte | HEIC/bibliothèque, ressources et débit passerelle ; origine de grille, cellules frontalières, permission/consentement et réseau sur vrais mobiles |
 | Données/reprise | Inventaire contre schéma réel, export exhaustif, droits tiers, purge active/fournisseurs, capacité/isolation/planification/restauration |
 | Composants | Stabiliser un composant représentatif puis décider Plop |
-| Contrats | MapTiler/B2 : demandes rédigées, non envoyées ; réponses nécessaires, pas répétition de la même recherche publique |
-| Juridique pilote | Qualification économique/DSA et exception domestique, déclaration 18+/indices de minorité, AIPD, mentions légales, données de tiers et textes non publiables |
+| Contrats | Conditions standard MapTiler/B2 acceptées, aucune demande contractuelle ([cadre allégé](CADRAGE.md#cercle-prive)) |
+| Juridique pilote | Courte charte en langage simple à rédiger ; le reste est retiré par le [cadre allégé](CADRAGE.md#cercle-prive) |
 
 Chaque détail et son état sont dans la référence liée ci-dessus ; les choix produit déjà validés ne sont pas à redemander. Push après V1 : détails ci-dessous. Commandes installées dans le socle : section CI ; les mécanismes fonctionnels futurs restent à implémenter et vérifier.
 

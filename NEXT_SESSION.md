@@ -1,5 +1,9 @@
 # Miaou Club — reprise
 
+## Reprise sous Claude Code — 25 octobre 2026
+
+Gabriel passe de Codex à Claude Code. Cadre juridique allégé pour un site réservé à quelques amis ([CADRAGE#cercle-prive](docs/CADRAGE.md#cercle-prive)) : AIPD, DSA, CGU/notice juridiques, contrats MapTiler/B2 et suivi formel des demandes retirés ; une courte charte reste à rédiger. Dépendances : PR #32 remplace les PR Dependabot #27/#28 sans `oxc-transform-react`, `@vitejs/plugin-react`, `astro` et `@astrojs/node` (conflit de peers ; contrôle d'origine d'Astro ≥ 7.3.8 en 403 derrière `server/start.mjs`, à corriger via `security.allowedDomains`). Restent : Node 26 (#26), Effect 4 (#29), TypeScript 7 (#30), #31 vise `main`. Blocages lot 6 inchangés : compte B2, qualification proxy Render, protections GitHub.
+
 
 ## Sauvegardes distantes — préparation à livrer, 16 octobre 2026
 

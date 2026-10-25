@@ -193,8 +193,23 @@ Paramétrage/purge : [DEVELOPPEMENT.md](DEVELOPPEMENT.md#donnees) ; rétentions 
 
 Cartographie et justification : [JURIDIQUE.md](JURIDIQUE.md). Notice/CGU : [TEXTES_UTILISATEURS.md](TEXTES_UTILISATEURS.md), brouillons non publiables. Contrats : [FOURNISSEURS.md](FOURNISSEURS.md). Aucune conformité démontrée.
 
+<a id="cercle-prive"></a>
+## Cadre juridique allégé — décision de Gabriel du 25 octobre 2026
+
+Le site reste réservé à Gabriel et à quelques amis, sans but commercial ni public indéterminé. Le traitement relève de l'exception pour activité strictement personnelle ou domestique (RGPD, article 2.2.c) et le service n'est pas offert sur le marché au sens du DSA. Appréciation de risque faible, pas un avis juridique. Objectif : aller au plus simple, sans travail administratif.
+
+Retirés des conditions d'ouverture et des lots :
+
+- AIPD, qualification économique/DSA et mécanisme de notification hors connexion des contenus illicites ;
+- notice de confidentialité et CGU au format juridique : une courte charte en langage simple suffit (ce qui est collecté, qui le voit, comment exporter ou supprimer, contact de Gabriel) ;
+- traitement des indices de minorité au-delà de la case existante ;
+- demandes contractuelles MapTiler/B2 : leurs conditions standard suffisent ;
+- canal alternatif d'exercice des droits hors connexion, suivi formel des demandes, délais et refus motivés : une demande à Gabriel suffit.
+
+Conservé parce que déjà construit et utile aux amis : sécurité OWASP pertinente, photos privées et permissions serveur, GPS facultatif sans position précise, export, suppression, purges et sauvegardes. Les sections ci-dessus qui mentionnent ces obligations retirées restent historiques ; cette section prime. Une ouverture au-delà du cercle d'amis rouvrirait ces points.
+
 ## Critères avant tests avec amis
 
-Exigence validée par Gabriel le 3 octobre 2026 : respecter le RGPD et appliquer les exigences de sécurité OWASP pertinentes pour la V1. Vérifier protection des données dès la conception, information/droits et mesures serveur avant ouverture réelle ; référentiel, justificatifs et contrôles dans DEVELOPPEMENT. Un choix de fournisseur ou un document ne constitue pas une preuve de conformité.
+Exigence validée par Gabriel le 3 octobre 2026, allégée le 25 octobre 2026 ([cadre allégé](#cercle-prive)) : appliquer les exigences de sécurité OWASP pertinentes pour la V1 et les mesures serveur avant ouverture réelle ; référentiel et contrôles dans DEVELOPPEMENT. Un choix de fournisseur ou un document ne constitue pas une preuve de fonctionnement.
 
 Photo testée sur vrais téléphones ; refus de permissions/erreurs réseau compréhensibles. Persistance réelle, droits vérifiés sur images/listes/carte/URL directes. Publication sans doublons à la reprise ; suppression et changement de visibilité vérifiés. Admin opérationnel, sauvegardes restaurables et installation testée sur mobiles ciblés.
