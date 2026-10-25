@@ -115,7 +115,7 @@ export function AccountPanel({
       <input name="acceptedTerms" type="checkbox" required />{" "}
       <span>
         Je déclare avoir 18 ans ou plus et j’accepte les{" "}
-        <a href="/conditions">conditions générales d’utilisation</a>.
+        <a href="/conditions">la charte du site</a>.
       </span>
     </label>
   );
