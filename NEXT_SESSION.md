@@ -1,5 +1,9 @@
 # Miaou Club — reprise
 
+## Suite Claude Code — 25 octobre 2026 (soir)
+
+Fusionnées : Effect 4 (#34, remplace #29), TypeScript 7 ignoré par Dependabot (#35, #30 fermée : typescript-eslint < 6.1 et `@astrojs/check` ^5 || ^6 ne supportent pas encore TS 7), Node 26.12.0 dans Docker et `.node-version` (#36, remplace #26). #31 (vite sur `main`) fermée sur décision de Gabriel. Charte courte pour les amis sur `/conditions` (#37). Domaine souhaité : `miaou-club.fr`, `miaou.club` ou `miaouclub.fr`, disponibilité non vérifiée. Astro reste en 7.3.5 / `@astrojs/node` 11.1.6 : le correctif `security.allowedDomains` attend le domaine choisi (liste explicite des hôtes, pas de joker). Blocages lot 6 inchangés : domaine, compte B2, qualification proxy Render, protections GitHub.
+
 ## Reprise sous Claude Code — 25 octobre 2026
 
 Gabriel passe de Codex à Claude Code. Cadre juridique allégé pour un site réservé à quelques amis ([CADRAGE#cercle-prive](docs/CADRAGE.md#cercle-prive)) : AIPD, DSA, CGU/notice juridiques, contrats MapTiler/B2 et suivi formel des demandes retirés ; une courte charte reste à rédiger. Dépendances : PR #32 remplace les PR Dependabot #27/#28 sans `oxc-transform-react`, `@vitejs/plugin-react`, `astro` et `@astrojs/node` (conflit de peers ; contrôle d'origine d'Astro ≥ 7.3.8 en 403 derrière `server/start.mjs`, à corriger via `security.allowedDomains`). Restent : Node 26 (#26), Effect 4 (#29), TypeScript 7 (#30), #31 vise `main`. Blocages lot 6 inchangés : compte B2, qualification proxy Render, protections GitHub.
