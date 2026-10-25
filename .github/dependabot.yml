@@ -23,6 +23,11 @@ updates:
       timezone: Europe/Paris
     target-branch: develop
     open-pull-requests-limit: 5
+    ignore:
+      # TypeScript 7 (native compiler) has no JS API yet: typescript-eslint and
+      # @astrojs/check only support up to 6.x. Revisit when they add 7.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
     groups:
       production-minor-patch:
         dependency-type: production
