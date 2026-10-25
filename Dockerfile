@@ -1,4 +1,4 @@
-FROM node:24.21.0-alpine AS dependencies
+FROM node:26.12.0-alpine AS dependencies
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY server/package.json server/package.json
@@ -14,7 +14,7 @@ FROM build AS production-dependencies
 # npm retains Drizzle Kit as Better Auth's optional peer. It is a schema-generation
 # tool, not a runtime dependency; migrations use the compiled ORM migrator.
 RUN npm prune --omit=dev --omit=peer && rm -rf node_modules/drizzle-kit node_modules/@esbuild-kit
-FROM node:24.21.0-alpine AS runtime
+FROM node:26.12.0-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production HOST=0.0.0.0 PORT=4321
 COPY --from=build --chown=node:node /app/dist ./dist
