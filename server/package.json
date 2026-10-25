@@ -12,7 +12,7 @@
     "@supabase/supabase-js": "2.118.0",
     "better-auth": "1.7.10",
     "drizzle-orm": "0.45.4",
-    "effect": "3.22.2",
+    "effect": "4.0.5",
     "pg": "8.23.1",
     "sharp": "0.35.5"
   }
