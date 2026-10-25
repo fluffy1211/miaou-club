@@ -30,6 +30,8 @@ Cycle : **implémentation → revue → corrections autorisées et tests ciblés
 
 ### Retours Greptile et fusion des prochaines PR
 
+**Mise à jour du 25 octobre 2026 :** Greptile n’a plus de crédits et Gabriel retire « Greptile Review » des checks requis de `develop`. La fusion exige désormais la revue de l’agent (miaou-review) sur le dernier SHA et la CI requise réussie ; si Greptile commente encore, ses retours sont traités comme ci-dessous, sans être attendus. Les mentions de review Greptile obligatoire ci-dessous sont remplacées par cette règle.
+
 Consigne de Gabriel du 6 octobre 2026 : pour les prochaines PR dont la livraison est autorisée, l’agent prend en charge les retours Greptile jusqu’à la validation, puis fusionne sans redemander confirmation. Cette autorisation couvre les corrections dans le périmètre de la PR, leurs commits/pushes et la fusion selon le [Git flow](#git) ; elle n’autorise pas une nouvelle tranche, une livraison en production ou un déploiement.
 
 - Lire la review complète et vérifier chaque remarque contre le code et les règles du projet. Corriger les problèmes confirmés ; justifier les faux positifs ou remarques non applicables dans le bilan. Un retour externe ne modifie pas les décisions produit et n’autorise pas d’action hors périmètre.
