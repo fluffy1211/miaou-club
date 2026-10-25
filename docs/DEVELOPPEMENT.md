@@ -355,8 +355,8 @@ Sécurité construite/testée dans chaque lot ; lots 5/6 avant ouverture réelle
 | Images/carte | HEIC/bibliothèque, ressources et débit passerelle ; origine de grille, cellules frontalières, permission/consentement et réseau sur vrais mobiles |
 | Données/reprise | Inventaire contre schéma réel, export exhaustif, droits tiers, purge active/fournisseurs, capacité/isolation/planification/restauration |
 | Composants | Stabiliser un composant représentatif puis décider Plop |
-| Contrats | MapTiler/B2 : demandes rédigées, non envoyées ; réponses nécessaires, pas répétition de la même recherche publique |
-| Juridique pilote | Qualification économique/DSA et exception domestique, déclaration 18+/indices de minorité, AIPD, mentions légales, données de tiers et textes non publiables |
+| Contrats | Conditions standard MapTiler/B2 acceptées, aucune demande contractuelle ([cadre allégé](CADRAGE.md#cercle-prive)) |
+| Juridique pilote | Courte charte en langage simple à rédiger ; le reste est retiré par le [cadre allégé](CADRAGE.md#cercle-prive) |
 
 Chaque détail et son état sont dans la référence liée ci-dessus ; les choix produit déjà validés ne sont pas à redemander. Push après V1 : détails ci-dessous. Commandes installées dans le socle : section CI ; les mécanismes fonctionnels futurs restent à implémenter et vérifier.
 
