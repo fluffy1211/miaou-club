@@ -5,6 +5,15 @@ import tailwindcss from "@tailwindcss/vite";
 export default defineConfig({
   output: "server",
   session: false,
+  // Hosts allowed to set Request.url (Astro's origin check compares against it).
+  // localhost covers the E2E and image smoke servers.
+  security: {
+    allowedDomains: [
+      { hostname: "miaou-club.fr", protocol: "https" },
+      { hostname: "*.miaou-club.fr", protocol: "https" },
+      { hostname: "localhost" },
+    ],
+  },
   adapter: node({ mode: "standalone", bodySizeLimit: 65536 }),
   integrations: [react()],
   image: {
