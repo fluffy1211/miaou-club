@@ -1,8 +1,9 @@
 ---
-import AccountLayout from "../layouts/AccountLayout.astro";
+import EncounterLayout from "../layouts/EncounterLayout.astro";
 import { ModerationPanel } from "../components/ModerationPanel";
+import "../styles/accounts.css";
 ---
 
-<AccountLayout>
+<EncounterLayout title="Administration">
   <ModerationPanel client:load />
-</AccountLayout>
+</EncounterLayout>
