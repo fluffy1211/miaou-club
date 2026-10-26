@@ -427,7 +427,8 @@ a:hover > .encounter-polaroid,
   .encounter-button,
   .encounter-nav svg,
   .encounter-header .logo svg,
-  .encounter-polaroid {
+  .encounter-polaroid,
+  .discovery-tabs a {
     transition: none;
     transform: none !important;
   }
@@ -458,11 +459,14 @@ body > .skip-link:focus {
   height: 430px;
   max-width: 100%;
   border: 2px solid var(--ink);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-paper);
+  overflow: hidden;
 }
 .zone-marker {
-  background: #49366d;
-  color: white;
+  background: var(--gradient-primary);
+  color: var(--ink);
+  box-shadow: 0 4px 10px #ff7a6159;
   min-width: 36px;
   height: 36px;
   border-radius: 50%;
@@ -471,30 +475,79 @@ body > .skip-link:focus {
   font-weight: 700;
 }
 .location-fields {
-  padding: 20px 0;
-  border-top: 1px solid #e2d8f0;
+  padding: var(--space-5) 0;
+  border-top: 1px solid var(--lilac);
 }
 .location-fields p {
   line-height: 1.5;
 }
 .home-notebook {
-  margin-top: 48px;
-  padding: 24px;
-  background: #e2d8f0;
-  border-radius: 10px;
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+  margin-top: var(--space-7);
+  padding: var(--space-6);
+  background: linear-gradient(150deg, var(--lilac), #f1e9f8);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-paper);
 }
 .home-notebook article {
   max-width: 320px;
 }
 .public-profile {
-  background: #e2d8f0;
-  padding: 24px;
-  border-radius: 12px;
-  margin-bottom: 24px;
+  display: grid;
+  gap: var(--space-2);
+  justify-items: start;
+  background: var(--lilac);
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-paper);
+  margin-bottom: var(--space-5);
 }
 .profile-initial {
-  font-size: 40px;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: var(--white);
+  font-size: var(--text-xl);
   font-family: var(--display);
+}
+.discovery-greeting {
+  font-family: var(--display);
+  font-size: var(--text-lg);
+  color: var(--muted);
+  margin-bottom: var(--space-2);
+}
+.discovery-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0 0 var(--space-6);
+}
+.discovery-tabs a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: var(--space-2) var(--space-4);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--white);
+  font-weight: 600;
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s var(--bounce);
+}
+.discovery-tabs a:hover {
+  border-color: var(--coral);
+  text-decoration: none;
+  transform: translateY(-2px);
+}
+.discovery-tabs a[aria-current] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
 }
 @media (max-width: 600px) {
   .zone-map {
@@ -510,14 +563,18 @@ body > .skip-link:focus {
 }
 .zone-map-wrap {
   position: relative;
+  margin-bottom: var(--space-6);
+}
+.notebook-grid:empty {
+  display: none;
 }
 .map-provider-credit {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
-  background: white;
-  padding: 4px;
-  border-radius: 3px;
+  bottom: var(--space-3);
+  left: var(--space-3);
+  background: var(--white);
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
 }
 .map-provider-credit img {
   width: 90px;
@@ -526,8 +583,8 @@ body > .skip-link:focus {
 .map-search {
   display: flex;
   align-items: end;
-  gap: 12px;
-  margin: 20px 0;
+  gap: var(--space-3);
+  margin: var(--space-5) 0;
 }
 .map-search label {
   flex: 1;
@@ -535,9 +592,6 @@ body > .skip-link:focus {
 }
 .map-search input {
   width: 100%;
-  padding: 12px;
-  border: 1px solid #49366d;
-  border-radius: 8px;
 }
 
 @media (max-width: 600px) {
@@ -547,18 +601,18 @@ body > .skip-link:focus {
     grid-template-columns: none;
     overflow-x: auto;
     scroll-snap-type: x proximity;
-    padding: 8px 8px 20px;
+    padding: var(--space-2) var(--space-2) var(--space-5);
   }
   .discovery-home-grid article {
     scroll-snap-align: start;
   }
   .discovery-home-grid .encounter-polaroid figcaption {
-    font-size: 27px;
+    font-size: var(--text-xl);
   }
 }
 
 .public-profile.account-color-corail {
-  background: #f6c1b5;
+  background: #ffd3c9;
 }
 .public-profile.account-color-sauge {
   background: #bcdccb;
