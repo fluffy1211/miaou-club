@@ -577,9 +577,7 @@ export function AccountPanel({
             Première visite ? <a href="/compte">Créer un compte</a>
           </p>
           <a href="/mot-de-passe-oublie">Mot de passe oublié</a>
-          <p>
-            Si tu as perdu tous tes accès, contacte directement Gabriel.
-          </p>
+          <p>Si tu as perdu tous tes accès, contacte directement Gabriel.</p>
           {options.google && (
             <form onSubmit={google}>
               <div className="account-divider">ou</div>
