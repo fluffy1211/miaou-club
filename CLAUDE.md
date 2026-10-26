@@ -32,7 +32,7 @@ Choisir l'outil le moins coûteux qui répond à la question :
 
 1. Fichiers et Git : `Read` avec `offset`/`limit`, `Grep` avec `glob` ou `type`, `git diff --stat`, `git log -n`. Ne pas relire un fichier déjà lu ni un fichier qu'on vient d'éditer.
 2. GitHub : CLI `gh` (ou l'outil MCP GitHub quand `gh` est refusé), avec `--json` et `--jq` pour ne garder que les champs utiles.
-3. Sorties longues (tests, build, logs) : rediriger vers un fichier temporaire et n'afficher que le résumé ou les lignes en échec (`| tail`, `grep -n`).
+3. Sorties longues (tests, build, logs) : `npm run verify:quiet` (ou `node scripts/quiet.mjs COMMANDE`) écrit tout dans un journal et n'affiche qu'une ligne en cas de succès, ou les 40 dernières lignes en cas d'échec. Ouvrir le journal complet seulement si ces lignes ne suffisent pas.
 4. Navigateur : lire le DOM ou le texte (`read_page`, `get_page_text`, `find`, `javascript_tool`, requêtes réseau, console) avant toute capture. Les captures et le contrôle de l'écran (`computer`) sont réservés à ce que le texte ne montre pas : rendu visuel, mise en page, animation. Une capture ciblée et réduite, jamais en boucle de sondage.
 5. Playwright et E2E : suivre les traces et rapports texte ; ouvrir une capture seulement sur échec visuel.
 6. Montage réseau `/mnt/project-files/` : pas de recherche sur tout le dossier, chemins explicites avec `/` final.
