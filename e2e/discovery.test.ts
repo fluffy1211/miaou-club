@@ -1,4 +1,5 @@
-import { test, expect, type BrowserContext } from "@playwright/test";
+import type { BrowserContext } from "@playwright/test";
+import { test, expect } from "./fixtures.js";
 import { readFile, mkdir } from "node:fs/promises";
 async function login(context: BrowserContext, role = "reader") {
   const sessions = JSON.parse(
@@ -304,8 +305,11 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
   expect(
     (await map.json()).encounters.some((x: { id: string }) => x.id === e.id),
   ).toBe(false);
-  await page.getByRole("button", { name: "Supprimer ma rencontre" }).click();
-  await page.getByRole("button", { name: "Confirmer la suppression" }).click();
+  // Cleanup through the API: the delete dialog is covered by encounters.test.ts.
+  const removed = await context.request.delete("/api/v1/encounters/" + e.id, {
+    headers: { origin: "http://localhost:43991" },
+  });
+  expect(removed.ok()).toBe(true);
 });
 test("home and notebook avoid geographic JavaScript; a failed geographic import leaves the photo flow usable", async ({
   page,
@@ -462,8 +466,12 @@ test("manual map selection preserves the draft and publishes only the selected c
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Supprimer ma rencontre" }).click();
-  await page.getByRole("button", { name: "Confirmer la suppression" }).click();
+  // Cleanup through the API: the delete dialog is covered by encounters.test.ts.
+  const removed = await context.request.delete(
+    "/api/v1/encounters/" + new URL(page.url()).pathname.split("/").at(-1)!,
+    { headers: { origin: "http://localhost:43991" } },
+  );
+  expect(removed.ok()).toBe(true);
 });
 
 for (const download of ["delayed", "failed"] as const) {
