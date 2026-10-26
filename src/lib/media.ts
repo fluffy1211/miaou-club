@@ -1,5 +1,4 @@
 import { getImage } from "astro:assets";
-import { getCollection } from "astro:content";
 import type { ImageMetadata } from "astro";
 const originals = import.meta.glob<{ default: ImageMetadata }>(
   "../assets/figue-*.jpg",
@@ -23,27 +22,4 @@ const local = await Promise.all(
     ] as const;
   }),
 );
-const remote = await Promise.all(
-  (await getCollection("breeds"))
-    .filter(({ data }) => data.credit)
-    .map(async ({ data: breed }) => {
-      const credit = breed.credit!;
-      const width = Math.min(1000, credit.width);
-      const optimized = await getImage({
-        src: credit.imageUrl,
-        width,
-        height: Math.round((width * credit.height) / credit.width),
-        format: "webp",
-        quality: 88,
-      });
-      return [
-        breed.image,
-        {
-          src: optimized.src,
-          width: Number(optimized.options.width),
-          height: Number(optimized.options.height),
-        },
-      ] as const;
-    }),
-);
-export const photos = Object.fromEntries([...local, ...remote]);
+export const photos = Object.fromEntries(local);

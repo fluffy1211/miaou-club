@@ -557,7 +557,6 @@ export class DataManagement {
         "Données de tiers et signalements reçus : examen manuel nécessaire.",
         "Événements de sécurité et compteurs anti-abus : complément sécurisé sur demande.",
         "Messages externes de support et données des fournisseurs : complément après inventaire.",
-        "Favoris du catalogue : conservés seulement dans ce navigateur.",
         "Avatars externes : seule la source enregistrée est fournie ; demander un complément pour le fichier fournisseur.",
         "Originaux photo déjà purgés : absents ; aucune reconstitution.",
       ];

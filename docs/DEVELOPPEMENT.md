@@ -82,18 +82,18 @@ Commandes livrées au lot 1 (les scripts restent la référence exécutable) :
 | Usage | Commande et prérequis |
 | --- | --- |
 | Installation | Node selon `.node-version`, `npm ci`, Docker/Compose ; `npx playwright install chromium webkit` (Linux CI : `--with-deps`) ; Python 3 pour servir les stories compilées pendant les E2E |
-| Configuration locale | Conserver la clé catalogue éventuelle de `.env`, ajouter les noms de `.env.example` ; secret Better Auth privé généré localement, jamais commité |
+| Configuration locale | Copier les noms de `.env.example` ; secret Better Auth privé généré localement, jamais commité |
 | PostgreSQL développement | `npm run db:up`, puis `npm run db:migrate` avec `DATABASE_URL` de développement ; génération séparée `db:auth-schema`/`db:generate`, SQL à relire |
-| Docker application | `docker compose --profile app up -d --build app` ; source montée, catalogue enregistré sans clé fournisseur. Si 4321 est déjà occupé : préfixer `MIAOU_APP_PORT=43993`, ne pas arrêter l’autre serveur |
-| Application hôte | `npm run dev` pour éditer ; `npm run build:offline && npm run start` pour vérifier l’assemblage compilé, notamment les images protégées. `HOST`/`PORT` configurables, `.env` chargé côté serveur |
-| Contrôles rapides | `npm run verify` : format/lint, tests catalogue, types Astro/backend, builds application/backend et Storybook |
+| Docker application | `docker compose --profile app up -d --build app` ; source montée. Si 4321 est déjà occupé : préfixer `MIAOU_APP_PORT=43993`, ne pas arrêter l’autre serveur |
+| Application hôte | `npm run dev` pour éditer ; `npm run build && npm run start` pour vérifier l’assemblage compilé, notamment les images protégées. `HOST`/`PORT` configurables, `.env` chargé côté serveur |
+| Contrôles rapides | `npm run verify` : format/lint, tests unitaires, types Astro/backend, builds application/backend et Storybook |
 | Contrôles complets | `npm run db:test:up`, puis `npm run verify:full` : contrôles précédents + PostgreSQL/auth + E2E Chromium/WebKit + audit dépendances, Gitleaks et actionlint |
 | Storybook | `npm run storybook` / `npm run build:storybook` ; `AccessNotice` réellement rendu par Astro, mêmes styles/polices. Stories et parcours mobiles exercés, pas audit visuel complet |
 | Hook | `npm run hooks:install` configure `.githooks` ; pre-push lance DB de test et `verify:full`. Activation locale vérifiée au lot 1 ; contournable ; livraison et CI distante du lot 1 dans NEXT_SESSION |
 | Image candidate | `docker build --target runtime -t miaou-lot1:local .`, puis `npm run test:image` et `npm run security:image` ; test du runtime avec DB unique et contrôle HIGH/CRITICAL, sans exclusion de CVE |
 | Arrêt local | `docker compose --profile app --profile test stop app db db-test`, seulement si ces services ne sont pas utilisés par un autre chat ; volume de développement conservé |
 
-`verify` et l’image Docker utilisent `MIAOU_OFFLINE_CATALOG=1` : réponses publiques réelles enregistrées depuis le cache existant dans `tests/fixtures/catalogue`, toujours validées, sans repli sur des données inventées. Ce mode n’affirme pas la fraîcheur du fournisseur ; le build normal et `data:refresh` conservent le flux réel. Les tests serveur refusent une cible sans suffixe `_test`, créent une base unique par test puis la détruisent ; E2E crée aussi une base unique et des sessions synthétiques. Aucun test ne tronque la base de développement. Les rapports ne contiennent pas de traces/screenhots/vidéos de session ; cookies temporaires en `.cache`, supprimés à la fermeture.
+Les tests serveur refusent une cible sans suffixe `_test`, créent une base unique par test puis la détruisent ; E2E crée aussi une base unique et des sessions synthétiques. Aucun test ne tronque la base de développement. Les rapports ne contiennent pas de traces/screenhots/vidéos de session ; cookies temporaires en `.cache`, supprimés à la fermeture.
 
 CI préparée : PR vers develop/main et push develop/main, permissions en lecture, actions verrouillées par SHA, même `verify:full`, image runtime, test de démarrage sur DB unique et scan Trivy. Un push réussi peut produire une archive candidate liée au SHA et à l’identifiant d’image, avec checksum. `promotion-preflight.yml` vérifie manuellement le run CI, sa réussite, l’événement push, la branche attendue (develop/préprod, main/prod), le SHA et l’archive exacte. **Ce workflow ne déploie pas.** Activation GitHub, environnements/protections, publication de l’image, migrations distantes verrouillées, préprod automatique, promotion réelle, santé et reprise restent au lot livraison autorisé séparément. Résultats de la CI distante du lot 1 dans NEXT_SESSION ; aucune infrastructure déployée présumée.
 

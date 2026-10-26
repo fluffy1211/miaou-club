@@ -1,15 +1,15 @@
 ---
-import Layout from "../layouts/Layout.astro";
+import EncounterLayout from "../layouts/EncounterLayout.astro";
 import Icon from "../components/Icon.astro";
 ---
 
-<Layout title="Page introuvable" noindex>
+<EncounterLayout title="Page introuvable">
   <section class="empty">
     <Icon name="doodle" />
     <h1>Ce chat s’est échappé.</h1>
-    <p>Cette page n’existe pas. Retrouve les races dans le catalogue.</p>
-    <a class="button" href="/races/">
-      Retour aux races
+    <p>Cette page n’existe pas.</p>
+    <a class="button" href="/">
+      Retour à l’accueil
     </a>
   </section>
-</Layout>
+</EncounterLayout>
