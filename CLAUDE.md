@@ -8,12 +8,12 @@ Complète AGENTS.md pour Claude Code. En cas de conflit, les consignes de Gabrie
 
 Le chat principal (Opus 5.5, réglé dans `.claude/settings.json`) planifie, tranche les cas ambigus, contrôle les résultats et fait la revue finale. Il délègue le reste via l'outil Agent aux sous-agents de `.claude/agents/` :
 
-| Tâche | Sous-agent (modèle) |
-| --- | --- |
-| Extraction, renommage, transformation mécanique, tâche entièrement spécifiée avec contrôle déterministe | `miaou-small` (Haiku 5.5) |
-| Composant ou service limité, correctif multi-fichiers aux contrats établis, tests ciblés, exploration de code | `miaou-worker` (Sonnet 5.5, défaut) |
-| Revue du diff avant push, second avis | `miaou-reviewer` (Opus 5.5, lecture seule) |
-| Plan, architecture, diagnostic ambigu, permissions, auth, médias privés, migrations, concurrence, décisions produit | Reste dans le chat principal (Opus) |
+| Tâche                                                                                                               | Sous-agent (modèle)                        |
+| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
+| Extraction, renommage, transformation mécanique, tâche entièrement spécifiée avec contrôle déterministe             | `miaou-small` (Haiku 5.5)                  |
+| Composant ou service limité, correctif multi-fichiers aux contrats établis, tests ciblés, exploration de code       | `miaou-worker` (Sonnet 5.5, défaut)        |
+| Revue du diff avant push, second avis                                                                               | `miaou-reviewer` (Opus 5.5, lecture seule) |
+| Plan, architecture, diagnostic ambigu, permissions, auth, médias privés, migrations, concurrence, décisions produit | Reste dans le chat principal (Opus)        |
 
 Règles :
 
