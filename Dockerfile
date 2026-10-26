@@ -9,7 +9,7 @@ FROM dependencies AS development
 EXPOSE 4321
 CMD ["npm", "run", "dev:docker"]
 FROM dependencies AS build
-RUN npm run build:offline
+RUN npm run build
 FROM build AS production-dependencies
 # npm retains Drizzle Kit as Better Auth's optional peer. It is a schema-generation
 # tool, not a runtime dependency; migrations use the compiled ORM migrator.

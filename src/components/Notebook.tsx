@@ -139,9 +139,6 @@ export function Notebook({ id }: { id?: string }) {
                 Ajouter une rencontre
               </a>
             )}
-            <a className="encounter-link" href="/favoris">
-              Mes races favorites
-            </a>
           </div>
           {list.length ? (
             <div className="notebook-grid">

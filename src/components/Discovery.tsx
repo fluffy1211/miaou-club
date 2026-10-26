@@ -351,7 +351,6 @@ export function Discovery({
               <a href="/photo">Photographier un chat</a>
             </p>
           )}
-          <a href="/races">Découvrir les races</a>
         </section>
       )}
     </section>
