@@ -162,3 +162,7 @@
 .encounter-main .account-brand {
   display: none;
 }
+.encounter-main .account-panel {
+  width: min(100%, 480px);
+  margin-top: 0;
+}
