@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { groupAllowed, type Identity } from "../accounts/security.js";
-import { EncounterError, uuid } from "../encounters/service.js";
+import { ApiError, uuid } from "../http/member-api.js";
 import { visibleMember } from "../accounts/visibility.js";
 const fail = (code: string, status = 400, retryAfter?: number): never => {
-  throw new EncounterError(code, status, retryAfter);
+  throw new ApiError(code, status, retryAfter);
 };
 const handleValid = (h: string) => /^[a-z0-9_]{3,30}$/.test(h);
 // Shared projection: no auth ID, e-mail, social list or private encounters.
