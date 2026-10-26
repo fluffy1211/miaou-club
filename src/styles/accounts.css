@@ -135,3 +135,6 @@
   flex-wrap: wrap;
   gap: 8px;
 }
+.encounter-main .account-brand {
+  display: none;
+}
