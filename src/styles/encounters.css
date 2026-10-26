@@ -305,6 +305,10 @@
   outline: 3px solid var(--ink);
   outline-offset: 4px;
 }
+/* Titres focalisés par script pour les lecteurs d'écran : pas de cadre. */
+.encounter-main [tabindex="-1"]:focus-visible {
+  outline: none;
+}
 @media (max-width: 650px) {
   .encounter-editor,
   .encounter-detail {

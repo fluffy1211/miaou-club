@@ -134,7 +134,7 @@ export function Notebook({ id }: { id?: string }) {
             </p>
           )}
           <div className="encounter-actions">
-            {group && (
+            {group && list.length > 0 && (
               <a className="encounter-button" href="/photo">
                 Ajouter une rencontre
               </a>

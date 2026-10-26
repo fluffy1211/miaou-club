@@ -201,9 +201,15 @@ export function Discovery({
       )}
       <p role="status">{message || (busy ? "Chargement…" : "")}</p>
       <div className="encounter-actions">
-        <a href="/rencontres">Les mignons</a>
-        <a href="/carte">La carte</a>
-        <a href="/photo">Ajouter une rencontre</a>
+        <a className="encounter-link" href="/rencontres">
+          Les mignons
+        </a>
+        <a className="encounter-link" href="/carte">
+          La carte
+        </a>
+        <a className="encounter-link" href="/photo">
+          Ajouter une rencontre
+        </a>
       </div>
       {mode === "map" && ready && (
         <>
@@ -309,11 +315,7 @@ export function Discovery({
               <a href="/photo">Revenir sans lieu</a>
             </section>
           )}
-          <h2>Liste alternative des rencontres localisées</h2>
-          <p>
-            La carte et la liste affichent les mêmes rencontres chargées.
-            Charger la suite ajoute aussi les zones.
-          </p>
+          <h2>Les rencontres de la carte</h2>
         </>
       )}
       <div
@@ -324,7 +326,7 @@ export function Discovery({
         {entries.map(card)}
       </div>
       {!busy && !entries.length && !message && (
-        <p>Aucun souvenir partagé ici pour le moment.</p>
+        <p>Aucune rencontre partagée pour le moment.</p>
       )}
       {next && (
         <button
@@ -337,10 +339,12 @@ export function Discovery({
       )}
       {mode === "home" && (
         <section className="home-notebook">
-          <h2>Ton dernier souvenir</h2>
-          <a href="/carnet">Ton carnet</a>
+          <h2>{own ? "Ta dernière rencontre" : "Ton carnet"}</h2>
           {own ? (
-            card(own)
+            <>
+              {card(own)}
+              <a href="/carnet">Voir tout mon carnet</a>
+            </>
           ) : (
             <p>
               Le prochain Polaroid, c’est le tien.{" "}
