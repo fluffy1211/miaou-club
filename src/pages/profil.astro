@@ -1,10 +1,21 @@
 ---
 import AccountLayout from "../layouts/AccountLayout.astro";
+import EncounterLayout from "../layouts/EncounterLayout.astro";
 import { AccountPanel } from "../components/AccountPanel";
+import { handleRequest } from "@miaou/server/http";
 import { safeReturn } from "../../server/src/accounts/security";
+import "../styles/accounts.css";
 const returnTo = safeReturn(Astro.url.searchParams.get("retour"));
+// Un membre admis retrouve la navigation du club ; sinon page de connexion seule.
+const access = await handleRequest(
+  new Request(new URL("/api/v1/access", Astro.url), {
+    headers: Astro.request.headers,
+  }),
+);
+const member = access.status === 200;
+const Layout = member ? EncounterLayout : AccountLayout;
 ---
 
-<AccountLayout>
+<Layout title={member ? "Mon profil" : undefined}>
   <AccountPanel client:load mode="profile" returnTo={returnTo} />
-</AccountLayout>
+</Layout>
