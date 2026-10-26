@@ -331,7 +331,9 @@ test("home and notebook avoid geographic JavaScript; a failed geographic import 
   ).toBeVisible();
   await page.goto("/carnet");
   await expect(
-    page.getByRole("link", { name: "Ajouter une rencontre" }).first(),
+    page
+      .getByRole("link", { name: /Ajouter (une|ma première) rencontre/ })
+      .first(),
   ).toBeVisible();
   expect(geographicResources).toEqual([]);
   await page.route("**/_astro/location.*.js", (route) => route.abort());
