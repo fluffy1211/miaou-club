@@ -8,20 +8,22 @@ Complète AGENTS.md pour Claude Code. En cas de conflit, les consignes de Gabrie
 
 Le chat principal (Opus 5.5, réglé dans `.claude/settings.json`) planifie, tranche les cas ambigus, contrôle les résultats et fait la revue finale. Il délègue le reste via l'outil Agent aux sous-agents de `.claude/agents/` :
 
-| Tâche                                                                                                               | Sous-agent (modèle)                        |
-| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------ |
-| Extraction, renommage, transformation mécanique, tâche entièrement spécifiée avec contrôle déterministe             | `miaou-small` (Haiku 5.5)                  |
-| Composant ou service limité, correctif multi-fichiers aux contrats établis, tests ciblés, exploration de code       | `miaou-worker` (Sonnet 5.5, défaut)        |
-| Revue du diff avant push, second avis                                                                               | `miaou-reviewer` (Opus 5.5, lecture seule) |
-| Plan, architecture, diagnostic ambigu, permissions, auth, médias privés, migrations, concurrence, décisions produit | Reste dans le chat principal (Opus)        |
+| Tâche                                                                                                               | Sous-agent (modèle)                                     |
+| ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Extraction, renommage, transformation mécanique, tâche entièrement spécifiée avec contrôle déterministe             | `miaou-small` (Haiku 5.5)                               |
+| Composant ou service limité, correctif multi-fichiers aux contrats établis, tests ciblés, exploration de code       | `miaou-worker` (Sonnet 5.5, défaut)                     |
+| Revue du diff avant push, second avis                                                                               | `miaou-reviewer` (Opus 5.5, effort high, lecture seule) |
+| Plan, architecture, diagnostic ambigu, permissions, auth, médias privés, migrations, concurrence, décisions produit | Reste dans le chat principal (Opus)                     |
 
 Règles :
+
+- Le niveau d'effort se choisit avec le modèle (champ `effort` de chaque agent, `/effort` pour le chat principal). Par défaut le plus bas qui passe les contrôles : l'effort coûte des tokens de réflexion, donc de l'usage sur un abonnement limité. Monter d'un cran seulement après un échec, jamais par précaution.
 
 - Une question simple ou une retouche triviale se traite directement, sans sous-agent : déléguer a un coût fixe de contexte.
 - Chaque mission précise objectif vérifiable, fichiers attribués, règles à lire, contrôle attendu. Un seul sous-agent actif par défaut ; en parallèle seulement pour des fichiers distincts.
 - Après deux tentatives infructueuses d'un sous-agent, le chat principal reprend. Ne jamais présenter le rapport d'un sous-agent comme une preuve : relire le diff et relancer le contrôle sur la cible.
 - Un sous-agent ne délègue pas, ne touche pas à Git et ne publie pas.
-- Les modèles se choisissent par alias (`haiku`, `sonnet`, `opus`) ; ils suivent la dernière version disponible. Le routage a été calibré sur des fixtures Codex ([résultats](docs/benchmarks/model-routing.md)) ; il reste à recalibrer avec les modèles Claude.
+- Les modèles se choisissent par alias (`haiku`, `sonnet`, `opus`) ; ils suivent la dernière version disponible. Routage calibré le 26 octobre 2026 sur des fixtures synthétiques ([résultats Claude](docs/benchmarks/model-routing-claude.md), [résultats Codex](docs/benchmarks/model-routing.md)) : Haiku échoue la revue de concurrence, ne pas lui confier de revue.
 
 ## Économie d'outils
 
