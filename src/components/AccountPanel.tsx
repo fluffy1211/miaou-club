@@ -19,6 +19,40 @@ type Me = {
   mfaValid: boolean;
   recoveryPending: boolean;
 };
+const minPasswordLength = 12;
+const errorMessages: Record<string, string> = {
+  PASSWORD_TOO_SHORT: `Ton mot de passe doit faire au moins ${minPasswordLength} caractères.`,
+  PASSWORD_TOO_LONG: "Ton mot de passe est trop long (128 caractères maximum).",
+  INVALID_EMAIL_OR_PASSWORD: "E-mail ou mot de passe incorrect.",
+};
+function NewPassword({ name }: { name: string }) {
+  const [length, setLength] = useState(0);
+  const ok = length >= minPasswordLength;
+  return (
+    <>
+      <label>
+        Ton mot de passe
+        <input
+          name={name}
+          type="password"
+          autoComplete="new-password"
+          minLength={minPasswordLength}
+          maxLength={128}
+          aria-describedby="password-rule"
+          onInput={(e) => setLength(e.currentTarget.value.length)}
+          required
+        />
+      </label>
+      <small
+        id="password-rule"
+        className={ok ? "account-rule account-rule-ok" : "account-rule"}
+      >
+        {ok ? "✓" : "○"} Au moins {minPasswordLength} caractères ({length}/
+        {minPasswordLength})
+      </small>
+    </>
+  );
+}
 export function AccountPanel({
   mode = "login",
   returnTo = "/profil",
@@ -69,7 +103,8 @@ export function AccountPanel({
             ? `Réessaie dans ${result.retryAfter ?? 30} secondes.`
             : r.status === 503
               ? "Le service est temporairement indisponible."
-              : "L’action n’a pas abouti. Vérifie les informations et tes droits d’accès.",
+              : (errorMessages[result?.code] ??
+                "L’action n’a pas abouti. Vérifie les informations et tes droits d’accès."),
         );
         return null;
       }
@@ -114,23 +149,31 @@ export function AccountPanel({
     <label className="account-consent">
       <input name="acceptedTerms" type="checkbox" required />{" "}
       <span>
-        Je déclare avoir 18 ans ou plus et j’accepte les{" "}
+        Je déclare avoir 18 ans ou plus et j’accepte{" "}
         <a href="/conditions">la charte du site</a>.
       </span>
     </label>
   );
-  const password = (auto = "current-password") => (
+  const password = () => (
     <label>
       Ton mot de passe
       <input
-        name={auto === "new-password" ? "newPassword" : "password"}
+        name="password"
         type="password"
-        autoComplete={auto}
-        minLength={auto === "new-password" ? 12 : undefined}
+        autoComplete="current-password"
         required
       />
     </label>
   );
+  const status = (
+    <p role="status" aria-live="polite" className="account-message">
+      {message}
+    </p>
+  );
+  const profile = me && (mode === "profile" || mode === "login");
+  // Les formulaires de connexion affichent le message près de leur bouton.
+  const inlineStatus =
+    !profile && !challenge && (mode !== "signup" || options.signup);
   const email = (
     <label>
       Ton e-mail
@@ -142,10 +185,8 @@ export function AccountPanel({
       <a className="account-brand" href="/profil">
         miaou club
       </a>
-      <p role="status" aria-live="polite" className="account-message">
-        {message}
-      </p>
-      {me && (mode === "profile" || mode === "login") ? (
+      {!inlineStatus && status}
+      {profile ? (
         <>
           <h1>Mon profil</h1>
           <div
@@ -515,8 +556,9 @@ export function AccountPanel({
                 />
               </label>
               {email}
-              {password()}
+              <NewPassword name="password" />
               {terms}
+              {status}
               <button disabled={busy}>Créer mon compte</button>
             </form>
           ) : (
@@ -536,6 +578,7 @@ export function AccountPanel({
             }}
           >
             {email}
+            {status}
             <button disabled={busy}>
               Recevoir un lien de réinitialisation
             </button>
@@ -559,7 +602,8 @@ export function AccountPanel({
               }
             }}
           >
-            {password("new-password")}
+            <NewPassword name="newPassword" />
+            {status}
             <button disabled={busy}>Changer le mot de passe</button>
           </form>
           <a href="/profil">Se connecter</a>
@@ -571,6 +615,7 @@ export function AccountPanel({
           <form onSubmit={login}>
             {email}
             {password()}
+            {status}
             <button disabled={busy}>Se connecter</button>
           </form>
           <p>
