@@ -6,6 +6,7 @@ import { groupAllowed } from "../accounts/security.js";
 import type { ObjectStorage } from "./storage.js";
 import { objectKeys } from "./storage.js";
 import { optimize, MAX_BYTES, InvalidPhoto } from "./pipeline.js";
+import { publicEncounter, visibleMember } from "../accounts/visibility.js";
 export class EncounterError extends Error {
   constructor(
     public code: string,
@@ -69,7 +70,7 @@ export const uuid = (x: unknown): x is string =>
   typeof x === "string" &&
   /^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(x);
 const joined = `from encounter e join media m on m.id=e.media_id join user_policy p on p.user_id=e.owner_id join "user" u on u.id=e.owner_id left join admission a on a.email=lower(u.email) left join profile f on f.user_id=e.owner_id`;
-const permitted = `e.deleted_at is null and m.state='ready' and (e.owner_id=$1 or ($2 and e.visibility='public' and not e.hidden and p.status='active' and p.admitted and p.accepted_at is not null and p.terms_version is not null and a.active))`;
+const permitted = `e.deleted_at is null and m.state='ready' and (e.owner_id=$1 or ($2 and ${publicEncounter} and ${visibleMember}))`;
 function project(row: QueryResultRow, ownerId: string) {
   return {
     id: row.id,
@@ -130,7 +131,7 @@ export class Encounters {
   }
   private async active(c: PoolClient, i: Identity) {
     const r = await c.query(
-      `select p.user_id from user_policy p join "user" u on u.id=p.user_id join admission a on a.email=lower(u.email) where p.user_id=$1 and p.status='active' and p.admitted and p.accepted_at is not null and p.terms_version is not null and a.active for share of p,a`,
+      `select p.user_id from user_policy p join "user" u on u.id=p.user_id join admission a on a.email=lower(u.email) where p.user_id=$1 and ${visibleMember} for share of p,a`,
       [i.user.id],
     );
     if (!r.rowCount) fail("forbidden", 403);
@@ -351,8 +352,8 @@ export class Encounters {
     }
     const r = await this.pool.query(
       `select e.*,to_char(e.published_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.US"Z"') as cursor_time,e.encounter_date::text as encounter_date,m.width,m.height,f.display_name,f.handle ${joined}
-       where $1::text is not null and e.deleted_at is null and m.state='ready' and e.visibility='public' and not e.hidden
-       and p.status='active' and p.admitted and p.accepted_at is not null and p.terms_version is not null and a.active
+       where $1::text is not null and ${publicEncounter}
+       and ${visibleMember}
        and ($2::text is null or f.handle=$2) and (not $3::boolean or e.location_size is not null)
        and ($4::timestamptz is null or (e.published_at,e.id)<($4::timestamptz,$5::text))
        order by e.published_at desc,e.id desc limit 31`,
