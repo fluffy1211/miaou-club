@@ -1,44 +1,53 @@
 .account-panel {
-  width: min(100% - 40px, 480px);
-  margin: 24px auto 80px;
+  width: min(100% - 2 * var(--space-5), 480px);
+  margin: var(--space-5) auto var(--space-8);
 }
 .account-brand {
   display: inline-block;
   font-family: var(--display);
-  font-size: 28px;
+  font-size: var(--text-xl);
   font-weight: 600;
   text-decoration: none;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-5);
 }
 .account-panel h1 {
   font-family: var(--display);
-  font-size: clamp(28px, 7vw, 38px);
-  line-height: 1.12;
+  font-size: var(--text-title);
+  line-height: 1.1;
+  letter-spacing: -1px;
 }
 .account-panel h2 {
   font-family: var(--display);
-  font-size: 24px;
+  font-size: var(--text-lg);
 }
 .account-panel form {
   display: grid;
-  gap: 18px;
-  margin: 24px 0;
+  gap: var(--space-4);
+  margin: var(--space-5) 0;
 }
 .account-panel label {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   font-weight: 600;
 }
 .account-panel input,
 .account-panel textarea,
 .account-panel select {
   width: 100%;
-  padding: 14px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  min-height: var(--control-height);
+  padding: var(--space-3) var(--space-4);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-control);
   background: var(--white);
   color: var(--ink);
   font: inherit;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.account-panel :is(input, textarea, select):focus {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 4px #ff7a6133;
 }
 .account-panel input[readonly] {
   background: var(--lilac);
@@ -48,15 +57,27 @@
   font-weight: 400;
 }
 .account-panel button {
-  border: 0;
-  border-radius: 999px;
-  background: var(--coral);
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--gradient-primary) border-box;
+  box-shadow: 0 6px 16px #ff7a6140;
   color: var(--ink);
-  font: inherit;
-  font-weight: 700;
-  padding: 14px 20px;
+  font-family: var(--display);
+  font-size: var(--text-md);
+  font-weight: 600;
+  padding: var(--space-3) var(--space-5);
   cursor: pointer;
-  min-height: 48px;
+  min-height: var(--control-height);
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s var(--bounce);
+}
+.account-panel button:hover:not(:disabled) {
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+}
+.account-panel button:active:not(:disabled) {
+  transform: scale(0.96);
 }
 .account-panel button:disabled {
   opacity: 0.65;
@@ -94,14 +115,15 @@
 }
 .account-panel .account-google {
   background: var(--white);
-  border: 1px solid var(--line);
+  border-color: var(--line);
+  box-shadow: none;
 }
 .account-paper {
   background: var(--white);
   border: 1px solid var(--line);
-  border-radius: 14px;
+  border-radius: var(--radius-card);
   box-shadow: var(--shadow-paper);
-  padding: 28px;
+  padding: var(--space-5);
   text-align: center;
   overflow-wrap: anywhere;
 }
@@ -112,7 +134,7 @@
   height: 80px;
   border-radius: 50%;
   font-family: var(--display);
-  font-size: 32px;
+  font-size: var(--text-xl);
   background: var(--lilac);
 }
 .account-color-corail .account-avatar {
