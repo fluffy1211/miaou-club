@@ -165,7 +165,9 @@ export function Discovery({
   }
   return (
     <section aria-busy={busy}>
-      {mode === "home" && name && <p>Bonjour {name}</p>}
+      {mode === "home" && name && (
+        <p className="discovery-greeting">Bonjour {name}</p>
+      )}
       <h1>
         {mode === "home"
           ? "Les dernières rencontres."
@@ -336,13 +338,17 @@ export function Discovery({
           {own ? (
             <>
               {card(own)}
-              <a href="/carnet">Voir tout mon carnet</a>
+              <a className="text-link" href="/carnet">
+                Voir tout mon carnet
+              </a>
             </>
           ) : (
-            <p>
-              Le prochain Polaroid, c’est le tien.{" "}
-              <a href="/photo">Photographier un chat</a>
-            </p>
+            <>
+              <p>Le prochain Polaroid, c’est le tien.</p>
+              <a className="encounter-button" href="/photo">
+                Photographier un chat
+              </a>
+            </>
           )}
         </section>
       )}

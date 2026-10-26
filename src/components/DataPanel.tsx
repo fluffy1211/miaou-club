@@ -70,7 +70,11 @@ export function DataPanel({
       >
         Demander ma copie
       </button>
-      <button disabled={busy} onClick={() => void action(load)}>
+      <button
+        className="secondary"
+        disabled={busy}
+        onClick={() => void action(load)}
+      >
         Actualiser mes copies
       </button>
       <ul>
@@ -140,7 +144,7 @@ export function DataPanel({
             required
           />
         </label>
-        <button disabled={busy || confirm !== "SUPPRIMER"}>
+        <button className="danger" disabled={busy || confirm !== "SUPPRIMER"}>
           Supprimer définitivement mon compte
         </button>
       </form>
