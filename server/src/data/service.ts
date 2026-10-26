@@ -9,6 +9,7 @@ import {
 import { EncounterError, uuid } from "../encounters/service.js";
 import { objectKeys, type ObjectStorage } from "../encounters/storage.js";
 import { zip, csv } from "./archive.js";
+import { publicEncounter, visibleMember } from "../accounts/visibility.js";
 const fail = (code: string, status = 400): never => {
   throw new EncounterError(code, status);
 };
@@ -53,7 +54,7 @@ export class DataManagement {
     )
       fail("forbidden", 403);
     const p = await c.query(
-      `select p.* from user_policy p join "user" u on u.id=p.user_id left join admission a on a.email=lower(u.email) where p.user_id=$1 and p.status<>'deleting' ${admin ? "and p.role='admin'" : ""} ${admin || group ? "and p.status='active' and p.admitted and a.active and p.accepted_at is not null and p.terms_version is not null" : ""} for share of p`,
+      `select p.* from user_policy p join "user" u on u.id=p.user_id left join admission a on a.email=lower(u.email) where p.user_id=$1 and p.status<>'deleting' ${admin ? "and p.role='admin'" : ""} ${admin || group ? `and ${visibleMember}` : ""} for share of p`,
       [i.user.id],
     );
     if (!p.rowCount) fail("forbidden", 403);
@@ -94,7 +95,7 @@ export class DataManagement {
         i.user.id,
       ]);
       const allowed = await c.query(
-        `select e.id from encounter e join media m on m.id=e.media_id join user_policy p on p.user_id=e.owner_id join "user" u on u.id=p.user_id join admission a on a.email=lower(u.email) where e.id=$1 and e.visibility='public' and not e.hidden and e.deleted_at is null and m.state='ready' and p.status='active' and p.admitted and a.active and p.accepted_at is not null and p.terms_version is not null for share of e,p,a`,
+        `select e.id from encounter e join media m on m.id=e.media_id join user_policy p on p.user_id=e.owner_id join "user" u on u.id=p.user_id join admission a on a.email=lower(u.email) where e.id=$1 and ${publicEncounter} and ${visibleMember} for share of e,p,a`,
         [encounterId],
       );
       if (!allowed.rowCount) fail("not_found", 404);
@@ -501,10 +502,8 @@ export class DataManagement {
       // The owner lock blocks physical media purges until the archive commits.
       // Explicit column projections: authentication material must never enter archives.
       const selections: Record<string, string> = {
-        friends:
-          "select case when p.status='active' and p.admitted and p.accepted_at is not null and p.terms_version is not null and a.active then f.handle else null end as peer_handle,case when s.sender_id=$1 then 'sent' else 'received' end as request_direction,s.created_at,s.accepted_at from friendship s left join \"user\" u on u.id=case when s.low_id=$1 then s.high_id else s.low_id end left join profile f on f.user_id=u.id left join user_policy p on p.user_id=u.id left join admission a on a.email=lower(u.email) where (s.low_id=$1 or s.high_id=$1) and s.state='accepted' order by s.id",
-        friend_requests:
-          "select case when p.status='active' and p.admitted and p.accepted_at is not null and p.terms_version is not null and a.active then f.handle else null end as peer_handle,case when s.sender_id=$1 then 'sent' else 'received' end as direction,s.created_at from friendship s left join \"user\" u on u.id=case when s.low_id=$1 then s.high_id else s.low_id end left join profile f on f.user_id=u.id left join user_policy p on p.user_id=u.id left join admission a on a.email=lower(u.email) where (s.low_id=$1 or s.high_id=$1) and s.state='pending' order by s.id",
+        friends: `select case when ${visibleMember} then f.handle else null end as peer_handle,case when s.sender_id=$1 then 'sent' else 'received' end as request_direction,s.created_at,s.accepted_at from friendship s left join "user" u on u.id=case when s.low_id=$1 then s.high_id else s.low_id end left join profile f on f.user_id=u.id left join user_policy p on p.user_id=u.id left join admission a on a.email=lower(u.email) where (s.low_id=$1 or s.high_id=$1) and s.state='accepted' order by s.id`,
+        friend_requests: `select case when ${visibleMember} then f.handle else null end as peer_handle,case when s.sender_id=$1 then 'sent' else 'received' end as direction,s.created_at from friendship s left join "user" u on u.id=case when s.low_id=$1 then s.high_id else s.low_id end left join profile f on f.user_id=u.id left join user_policy p on p.user_id=u.id left join admission a on a.email=lower(u.email) where (s.low_id=$1 or s.high_id=$1) and s.state='pending' order by s.id`,
         friend_attempts:
           "select created_at from friend_attempt where owner_id=$1 order by created_at",
 
