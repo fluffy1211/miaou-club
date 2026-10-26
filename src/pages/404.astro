@@ -1,11 +1,14 @@
 ---
 import EncounterLayout from "../layouts/EncounterLayout.astro";
 import Icon from "../components/Icon.astro";
+import "../styles/figue.css";
 ---
 
 <EncounterLayout title="Page introuvable">
   <section class="empty">
-    <Icon name="doodle" />
+    <a class="figue-hint" href="/figue" aria-label="Suivre le petit chat">
+      <Icon name="doodle" />
+    </a>
     <h1>Ce chat s’est échappé.</h1>
     <p>Cette page n’existe pas.</p>
     <a class="button" href="/">

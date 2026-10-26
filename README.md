@@ -17,6 +17,6 @@ Commandes de contrôle, Docker et E2E : [docs/DEVELOPPEMENT.md](docs/DEVELOPPEME
 
 ## Figue
 
-`/figue` est la page de Figue, le chat de Gabriel, réservée aux membres et absente de la navigation. Ses photos sont dans `src/assets/figue-*.jpg` ; Astro les convertit en WebP de 1000 px maximum au build.
+`/figue` est la page de Figue, le chat de Gabriel, réservée aux membres et absente de la navigation. On la trouve en cherchant « figue » dans la recherche d’amis, ou en cliquant le petit chat de la page 404. À l’ouverture, une animation (Motion) et des confettis (canvas-confetti) l’accueillent ; le bouton « Lancer son jouet » relance la fête. Les animations sont coupées si le système demande moins de mouvement. Ses photos sont dans `src/assets/figue-*.jpg` ; Astro les convertit en WebP de 1000 px maximum au build.
 
 Le catalogue des races de la première version a été retiré le 26 octobre 2026 : le site est centré sur les photos de chats prises par les membres.
