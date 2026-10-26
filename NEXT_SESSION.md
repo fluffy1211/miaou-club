@@ -2,7 +2,7 @@
 
 ## Catalogue des races retiré — 26 octobre 2026
 
-Sur décision de Gabriel, le site se recentre sur les photos de chats : `/races`, `/race/*`, `/favoris`, `/a-propos`, l’ancien gabarit `Layout.astro`, la collection `breeds` (TheCatAPI, Wikimedia), `CAT_API_KEY`, `MIAOU_OFFLINE_CATALOG`, `build:offline` et `data:refresh` sont supprimés. `/figue` et la page 404 passent sur le gabarit du club. Prochaine étape : Figue retrouvable par la recherche d’amis (« figue ») et par la 404, avec animation.
+Sur décision de Gabriel, le site se recentre sur les photos de chats : `/races`, `/race/*`, `/favoris`, `/a-propos`, l’ancien gabarit `Layout.astro`, la collection `breeds` (TheCatAPI, Wikimedia), `CAT_API_KEY`, `MIAOU_OFFLINE_CATALOG`, `build:offline` et `data:refresh` sont supprimés. `/figue` et la page 404 passent sur le gabarit du club. Suite (PR Figue) : recherche « figue » sur `/amis` et petit chat de la 404 mènent à `/figue`, animée avec `motion` et `canvas-confetti` (respect de `prefers-reduced-motion`), E2E `e2e/figue.test.ts`.
 
 ## Suite Claude Code — 25 octobre 2026 (soir)
 
