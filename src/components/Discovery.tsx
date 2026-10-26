@@ -165,7 +165,9 @@ export function Discovery({
   }
   return (
     <section aria-busy={busy}>
-      {mode === "home" && name && <p>Bonjour {name}</p>}
+      {mode === "home" && name && (
+        <p className="discovery-greeting">Bonjour {name}</p>
+      )}
       <h1>
         {mode === "home"
           ? "Les derniers mignons."
@@ -199,17 +201,18 @@ export function Discovery({
         </div>
       )}
       <p role="status">{message || (busy ? "Chargement…" : "")}</p>
-      <div className="encounter-actions">
-        <a className="encounter-link" href="/rencontres">
+      <nav className="discovery-tabs" aria-label="Découvrir">
+        <a
+          href="/rencontres"
+          aria-current={mode === "list" ? "page" : undefined}
+        >
           Les mignons
         </a>
-        <a className="encounter-link" href="/carte">
+        <a href="/carte" aria-current={mode === "map" ? "page" : undefined}>
           La carte
         </a>
-        <a className="encounter-link" href="/photo">
-          Ajouter une rencontre
-        </a>
-      </div>
+        <a href="/photo">Ajouter une rencontre</a>
+      </nav>
       {mode === "map" && ready && (
         <>
           {providerKey && (
@@ -342,13 +345,17 @@ export function Discovery({
           {own ? (
             <>
               {card(own)}
-              <a href="/carnet">Voir tout mon carnet</a>
+              <a className="text-link" href="/carnet">
+                Voir tout mon carnet
+              </a>
             </>
           ) : (
-            <p>
-              Le prochain Polaroid, c’est le tien.{" "}
-              <a href="/photo">Photographier un chat</a>
-            </p>
+            <>
+              <p>Le prochain Polaroid, c’est le tien.</p>
+              <a className="encounter-button" href="/photo">
+                Photographier un chat
+              </a>
+            </>
           )}
         </section>
       )}
