@@ -1,10 +1,10 @@
 # Préparation sauvegardes distantes — préproduction fermée
 
-Préparation locale non activée, basée sur `dab0f0a79179e92b038147851949c745e6617a41`. Les règles opérationnelles restent dans [DEVELOPPEMENT](../docs/DEVELOPPEMENT.md) ; les décisions fournisseur restent dans le cadrage local du projet (`docs/FOURNISSEURS.md`, non inclus dans cette copie de livraison). Aucun compte B2 ni dépôt distant n’est créé par cette préparation.
+Préparation locale non activée, basée sur `dab0f0a79179e92b038147851949c745e6617a41`. Les règles opérationnelles restent dans [DEVELOPPEMENT](../docs/DEVELOPPEMENT.md) ; les décisions fournisseur restent dans le cadrage local du projet (`docs/FOURNISSEURS.md`, non inclus dans cette copie de livraison). Le bucket B2 privé de préproduction existe depuis le 2026-10-16.
 
 ## Entrées et commandes
 
-Installer les dépendances verrouillées, PostgreSQL client **17** et restic **0.19.1** vérifié contre les sommes officielles. Copier `backup-config.example.json` hors Git, remplacer ses valeurs, conserver `enabled:false` et `allowPause:false` tant que l’activation externe n’est pas autorisée. Le workflow `.yml.example` reste inactif hors `.github/workflows`.
+Installer les dépendances verrouillées, PostgreSQL client **17** et restic **0.19.1** vérifié contre les sommes officielles. Copier `backup-config.example.json` hors Git, remplacer ses valeurs, conserver `enabled:false` et `allowPause:false` tant que l’activation externe n’est pas autorisée. Le workflow `.github/workflows/backup-preproduction.yml` ne fait rien tant que la variable de dépôt `MIAOU_REMOTE_BACKUP_ENABLED` ne vaut pas `true`.
 
 Les chemins doivent être absolus et canoniques : répertoires mode 700, fichiers de configuration et secrets mode 600. Staging, journaux, ancres et répertoire de clé journal sont distincts, sans imbrication. La clé journal contient exactement 32 octets et diffère du mot de passe restic, d’au moins 32 octets. Conserver séparément les deux clés de récupération hors du runner ; sans elles, les archives correspondantes sont inutilisables.
 
