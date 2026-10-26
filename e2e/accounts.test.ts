@@ -52,14 +52,14 @@ test("admitted signup without verification, profile persistence, logout and prot
     page.getByRole("heading", { name: "Retrouve ton petit monde." }),
   ).toBeVisible();
   expect((await context.request.get("/api/v1/me")).status()).toBe(401);
-  await page.goto("/races");
+  await page.goto("/figue");
   await expect(page).toHaveURL(/\/profil\?retour=/);
   await page.getByLabel("Ton e-mail", { exact: true }).fill(email);
   await page
     .getByLabel("Ton mot de passe", { exact: true })
     .fill("synthetic-ui-password-long");
   await page.getByRole("button", { name: "Se connecter", exact: true }).click();
-  await expect(page).toHaveURL(/\/races$/);
+  await expect(page).toHaveURL(/\/figue$/);
 });
 test("non admitted signup and external return refuse without exposing group content", async ({
   page,

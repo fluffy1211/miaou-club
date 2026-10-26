@@ -102,12 +102,12 @@ try {
     if (response.headers.get("cache-control") !== "no-store")
       throw new Error("Missing no-store");
   }
-  const page = await fetch(origin + "/races", { redirect: "manual" });
+  const page = await fetch(origin + "/figue", { redirect: "manual" });
   if (
     page.status !== 302 ||
-    page.headers.get("location") !== "/profil?retour=%2Fraces"
+    page.headers.get("location") !== "/profil?retour=%2Ffigue"
   )
-    throw new Error("Catalogue guard failed in image");
+    throw new Error("Member page guard failed in image");
   const notice = await fetch(origin + "/acces");
   if (
     notice.status !== 200 ||
