@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures.js";
 test("admitted signup without verification, profile persistence, logout and protected return", async ({
   page,
   context,
