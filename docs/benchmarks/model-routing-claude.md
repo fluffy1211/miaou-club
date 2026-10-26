@@ -28,3 +28,18 @@ Coût API cumulé reçu du CLI (hors abonnement) : Haiku environ 0,011 $, Sonnet
 ## Routage retenu
 
 Inchangé dans [CLAUDE.md](../../CLAUDE.md), avec cette précision : Haiku seulement pour extraction et transformation entièrement spécifiées avec contrôle déterministe ; Sonnet pour l'implémentation et les revues ciblées ; Opus pour la planification, les décisions ambiguës et la revue finale du diff. Échantillon de 3 essais par cellule : une différence d'un essai n'est pas significative. L'effort `low` est mesuré ; medium et high ne le sont pas. La consommation d'un abonnement n'est pas le coût API.
+
+## Essai rejoué sur un vrai commit
+
+Même jour, une seule tâche réelle : parent du commit `236d221` (corriger `encounterAPI` pour ajouter `content-type` aux mutations sans corps), énoncé précis, outils Read/Edit/Grep/Glob/Bash, critère `tests/encounter-api-request.test.ts` issu du commit d'origine. Un essai par configuration, worktree jetable.
+
+| Configuration | Réussite | Tours | Coût API |
+| --- | --- | --- | --- |
+| Haiku low | oui | 3 | 0,003 $ |
+| Haiku medium | oui | 7 | 0,003 $ |
+| Sonnet low | oui | 3 | 0,021 $ |
+| Sonnet medium | oui | 3 | 0,054 $ |
+| Opus low | oui | 4 | 0,116 $ |
+| Opus medium | oui | 5 | 0,061 $ |
+
+Les six réussissent : la tâche ne départage pas les modèles. Les coûts incluent la création du cache de prompt, qui pèse sur le premier appel d'une série (Sonnet medium, lancé en premier, paie plus que Sonnet low) ; ils sont indicatifs. Enseignement : une correction bornée, énoncée précisément et couverte par un test passe en Haiku low pour une fraction du coût, d'où l'échelle d'escalade de CLAUDE.md (essai bon marché, vérification par le test, escalade seulement en cas d'échec). Un cas, un essai : aucune généralisation.

@@ -22,6 +22,7 @@ Règles :
 - Une question simple ou une retouche triviale se traite directement, sans sous-agent : déléguer a un coût fixe de contexte.
 - Chaque mission précise objectif vérifiable, fichiers attribués, règles à lire, contrôle attendu. Un seul sous-agent actif par défaut ; en parallèle seulement pour des fichiers distincts.
 - Après deux tentatives infructueuses d'un sous-agent, le chat principal reprend. Ne jamais présenter le rapport d'un sous-agent comme une preuve : relire le diff et relancer le contrôle sur la cible.
+- Échelle d'escalade pour une correction précisément énoncée et couverte par un test : essayer `miaou-small` (Haiku, effort low), lancer le test, passer à `miaou-worker` seulement en cas d'échec, puis reprendre en Opus. Ne pas appliquer l'échelle aux revues, permissions, auth, médias privés, migrations ni concurrence.
 - Un sous-agent ne délègue pas, ne touche pas à Git et ne publie pas.
 - Les modèles se choisissent par alias (`haiku`, `sonnet`, `opus`) ; ils suivent la dernière version disponible. Routage calibré le 26 octobre 2026 sur des fixtures synthétiques ([résultats Claude](docs/benchmarks/model-routing-claude.md), [résultats Codex](docs/benchmarks/model-routing.md)) : Haiku échoue la revue de concurrence, ne pas lui confier de revue.
 
