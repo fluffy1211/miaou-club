@@ -226,6 +226,11 @@ export function FriendsPanel({
         className="friend-search"
         onSubmit={(e) => {
           e.preventDefault();
+          // Easter egg: Figue, Gabriel's cat, is found by name.
+          if (query.trim().toLowerCase() === "figue") {
+            window.location.assign("/figue");
+            return;
+          }
           void run(async () => {
             const q = query.trim().toLowerCase();
             const found = await encounterAPI<Page>(

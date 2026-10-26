@@ -6,12 +6,12 @@ import {
   sensitiveAllowed,
   type Identity,
 } from "../accounts/security.js";
-import { EncounterError, uuid } from "../encounters/service.js";
+import { ApiError, uuid } from "../http/member-api.js";
 import { objectKeys, type ObjectStorage } from "../encounters/storage.js";
 import { zip, csv } from "./archive.js";
 import { publicEncounter, visibleMember } from "../accounts/visibility.js";
 const fail = (code: string, status = 400): never => {
-  throw new EncounterError(code, status);
+  throw new ApiError(code, status);
 };
 const reason = (input: unknown) =>
   typeof input === "string" && input.trim().length > 0 && input.length <= 1000
@@ -113,7 +113,7 @@ export class DataManagement {
         )
       ).rows[0];
       if (count.hourly >= 5 || count.daily >= 20)
-        throw new EncounterError("limited", 429, 3600);
+        throw new ApiError("limited", 429, 3600);
       const id = randomUUID();
       await c.query(
         "insert into report(id,encounter_id,reporter_id,reason) values($1,$2,$3,$4)",
@@ -278,7 +278,7 @@ export class DataManagement {
           [i.user.id],
         )
       ).rows[0];
-      if (quota.n >= 3) throw new EncounterError("limited", 429, 86400);
+      if (quota.n >= 3) throw new ApiError("limited", 429, 86400);
       const id = randomUUID();
       await c.query("insert into data_export(id,owner_id) values($1,$2)", [
         id,
@@ -450,7 +450,7 @@ export class DataManagement {
       } catch (e) {
         await this.pool.query(
           "update data_export set attempts=attempts+1,state=case when attempts>=2 then 'failed' else 'pending' end,error=$2,next_attempt_at=now()+interval '5 minutes' where id=$1 and state='pending'",
-          [job.id, e instanceof EncounterError ? e.code : "export_unavailable"],
+          [job.id, e instanceof ApiError ? e.code : "export_unavailable"],
         );
       }
     const deletions = (
