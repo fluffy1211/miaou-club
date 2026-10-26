@@ -7,11 +7,11 @@
     "./http": "./src/http/runtime.ts"
   },
   "dependencies": {
-    "@better-auth/drizzle-adapter": "1.7.10",
+    "@better-auth/drizzle-adapter": "1.7.12",
     "@supabase/supabase-js": "2.118.0",
-    "better-auth": "1.7.10",
+    "better-auth": "1.7.12",
     "drizzle-orm": "0.45.4",
-    "effect": "4.0.5",
+    "effect": "4.0.6",
     "pg": "8.23.1",
     "sharp": "0.35.5"
   }
