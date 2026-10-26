@@ -256,13 +256,13 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
   await page.goto("/carte");
   await expect(
     page.getByRole("heading", {
-      name: "Liste alternative des rencontres localisées",
+      name: "Les rencontres de la carte",
     }),
   ).toBeVisible();
   await expect(page.getByText(e.title)).toBeVisible();
   await expect(page.locator(".zone-marker")).toHaveCount(1);
   await expect(page.locator(".zone-map")).toHaveAttribute("data-ready", "true");
-  await expect(page.getByText(/fond local simplifié/)).toBeVisible();
+  await expect(page.getByText(/jamais une position exacte/)).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -333,7 +333,9 @@ test("home and notebook avoid geographic JavaScript; a failed geographic import 
   ).toBeVisible();
   await page.goto("/carnet");
   await expect(
-    page.getByRole("link", { name: "Ajouter une rencontre" }).first(),
+    page
+      .getByRole("link", { name: /Ajouter (une|ma première) rencontre/ })
+      .first(),
   ).toBeVisible();
   expect(geographicResources).toEqual([]);
   await page.route("**/_astro/location.*.js", (route) => route.abort());

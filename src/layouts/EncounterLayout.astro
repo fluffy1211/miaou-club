@@ -32,7 +32,12 @@ const path = Astro.url.pathname;
       <slot />
     </main>
     <nav class="encounter-nav" aria-label="Navigation principale">
-      <a href="/" aria-current={path === "/" ? "page" : undefined}>
+      <a
+        href="/"
+        aria-current={
+          path === "/" || path === "/rencontres" ? "page" : undefined
+        }
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z" />
         </svg>
