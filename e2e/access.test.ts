@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect } from "./fixtures.js";
 import { readFile } from "node:fs/promises";
 
 test("anonymous member pages are closed and public Astro/React notice renders", async ({

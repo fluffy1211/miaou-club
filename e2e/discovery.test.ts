@@ -1,4 +1,5 @@
-import { test, expect, type BrowserContext } from "@playwright/test";
+import type { BrowserContext } from "@playwright/test";
+import { test, expect } from "./fixtures.js";
 import { readFile, mkdir } from "node:fs/promises";
 async function login(context: BrowserContext, role = "reader") {
   const sessions = JSON.parse(
