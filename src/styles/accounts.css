@@ -95,6 +95,15 @@
   flex-shrink: 0;
   margin: 2px 4px 0 0;
 }
+.account-rule {
+  margin-top: -10px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.account-rule-ok {
+  color: var(--ink);
+  font-weight: 600;
+}
 .account-message {
   min-height: 24px;
   overflow-wrap: anywhere;
