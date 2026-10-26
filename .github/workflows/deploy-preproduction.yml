@@ -1,0 +1,81 @@
+name: CD — déploiement préproduction
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run:
+        description: ID du run CI réussi (vide = dernier run develop réussi)
+        required: false
+        type: string
+      deploy:
+        description: Déclencher le déploiement Render (sinon publication GHCR seule)
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  actions: read
+  packages: write
+concurrency:
+  group: deploy-preproduction
+  cancel-in-progress: false
+env:
+  IMAGE: ghcr.io/fluffy1211/miaou-preproduction
+jobs:
+  deploy:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    environment: preproduction
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+      - name: Resolve and verify candidate
+        id: candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          CANDIDATE_RUN: ${{ inputs.candidate_run }}
+        run: |
+          if [ -z "$CANDIDATE_RUN" ]; then
+            CANDIDATE_RUN=$(gh run list --workflow ci.yml --branch develop --event push --status success --limit 1 --json databaseId --jq '.[0].databaseId')
+          fi
+          [[ "$CANDIDATE_RUN" =~ ^[0-9]+$ ]] || { echo "Aucun run CI réussi trouvé" >&2; exit 1; }
+          gh api "repos/$GH_REPO/actions/runs/$CANDIDATE_RUN" > run.json
+          sha=$(node -p "require('./run.json').head_sha")
+          node scripts/candidate.mjs --run-only run.json preproduction "$sha"
+          gh run download "$CANDIDATE_RUN" -n "candidate-$sha" -D candidate
+          node scripts/candidate.mjs candidate run.json preproduction "$sha"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+      - name: Load candidate and push to GHCR
+        id: push
+        env:
+          SHA: ${{ steps.candidate.outputs.sha }}
+          GHCR_TOKEN: ${{ secrets.GHCR_TOKEN || github.token }}
+          GHCR_USER: ${{ secrets.GHCR_TOKEN && 'fluffy1211' || github.actor }}
+        run: |
+          node scripts/load-candidate.mjs candidate run.json preproduction "$SHA"
+          printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
+          docker tag "miaou-candidate:$SHA" "$IMAGE:$SHA"
+          docker push "$IMAGE:$SHA"
+          digest=$(docker image inspect "$IMAGE:$SHA" --format '{{index .RepoDigests 0}}')
+          [[ "$digest" == "$IMAGE@sha256:"* ]] || { echo "Digest GHCR introuvable" >&2; exit 1; }
+          echo "image=$digest" >> "$GITHUB_OUTPUT"
+          printf 'Candidat %s publié : %s\n' "$SHA" "$digest" >> "$GITHUB_STEP_SUMMARY"
+      - name: Deploy on Render
+        if: inputs.deploy
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+          IMAGE_DIGEST: ${{ steps.push.outputs.image }}
+        run: |
+          if [ -z "$RENDER_API_KEY" ] || [ -z "$RENDER_SERVICE_ID" ]; then
+            echo "RENDER_API_KEY ou RENDER_SERVICE_ID manquant" >&2
+            exit 1
+          fi
+          body=$(jq -n --arg image "$IMAGE_DIGEST" '{imageUrl: $image}')
+          curl -sS --fail-with-body -X POST "https://api.render.com/v1/services/$RENDER_SERVICE_ID/deploys" \
+            -H "Authorization: Bearer $RENDER_API_KEY" -H "Content-Type: application/json" -d "$body" \
+            | jq '{id, status}' | tee -a "$GITHUB_STEP_SUMMARY"
