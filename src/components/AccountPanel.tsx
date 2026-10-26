@@ -211,7 +211,7 @@ export function AccountPanel({
               <p>Ton adresse : {me.user.email}</p>
               <p>
                 Pour obtenir tes données ou demander la suppression de ton
-                compte, contacte Gabriel par votre canal habituel.
+                compte, contacte directement Gabriel.
               </p>
             </div>
           ) : (
@@ -543,7 +543,7 @@ export function AccountPanel({
       ) : mode === "signup" ? (
         <>
           <h1>Crée ton petit carnet.</h1>
-          <p>Le pilote est réservé aux personnes admises par Gabriel.</p>
+          <p>Miaou Club est réservé aux amis admis par Gabriel.</p>
           {options.signup ? (
             <form onSubmit={signup}>
               <label>
@@ -622,10 +622,7 @@ export function AccountPanel({
             Première visite ? <a href="/compte">Créer un compte</a>
           </p>
           <a href="/mot-de-passe-oublie">Mot de passe oublié</a>
-          <p>
-            Si tu as perdu tous tes accès, contacte Gabriel par votre moyen
-            habituel.
-          </p>
+          <p>Si tu as perdu tous tes accès, contacte directement Gabriel.</p>
           {options.google && (
             <form onSubmit={google}>
               <div className="account-divider">ou</div>

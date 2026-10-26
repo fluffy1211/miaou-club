@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import "../styles/accounts.css";
+const { title = "ton compte" } = Astro.props;
 Astro.response.headers.set("Cache-Control", "no-store");
 ---
 
@@ -11,7 +12,7 @@ Astro.response.headers.set("Cache-Control", "no-store");
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="robots" content="noindex" />
     <meta name="referrer" content="no-referrer" />
-    <title>Miaou Club — ton compte</title>
+    <title>Miaou Club — {title}</title>
     <link rel="stylesheet" href="/fonts/fonts.css" />
   </head>
   <body>
