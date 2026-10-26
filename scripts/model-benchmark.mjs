@@ -150,6 +150,45 @@ const cases = [
       '["M-8","M-21","M-8"]',
     ],
   },
+  {
+    id: "publish-race-review",
+    prompt: `Review this function against these rules: the idempotency key is unique per owner; a retry or concurrent duplicate request must never create two encounters; an encounter and its audit row must exist together or not at all; an owner can only ever receive their own rows; the server sets ownerId and the payload must not be able to override it. Code: async function publish(db, user, key, payload) { const existing = await db.find('encounters', { key }); if (existing) return existing; const row = await db.insert('encounters', { ownerId: user.id, key, ...payload }); await db.insert('audit', { encounterId: row.id }); return row; } Return only confirmed findings using these ids: lookup_not_scoped_to_owner, check_then_insert_race, audit_not_atomic, payload_overrides_owner, missing_await, sql_injection, unhandled_null_user. Use solution:"". Avoid false positives.`,
+    expected: [
+      "lookup_not_scoped_to_owner",
+      "check_then_insert_race",
+      "audit_not_atomic",
+      "payload_overrides_owner",
+    ],
+    good: "",
+    mutants: [],
+  },
+  {
+    id: "slug-normalisation",
+    prompt:
+      "Write a JavaScript function expression toSlug(name) returning a URL slug. Rules, applied in this order: Unicode-normalise with NFD and drop combining marks; lowercase; replace every run of characters other than a-z and 0-9 with a single '-'; remove leading and trailing '-'; keep at most the first 40 characters, then remove a trailing '-' left by the cut; if the result is empty return 'chat'. No dependencies. Put code in solution and [] in findings.",
+    tests: [
+      { args: ["Éléonore  la Chatte!"], expected: "eleonore-la-chatte" },
+      { args: ["  --Mimi__&&Sol--  "], expected: "mimi-sol" },
+      { args: ["!!!"], expected: "chat" },
+      { args: ["日本"], expected: "chat" },
+      { args: ["Chat 2 Chat"], expected: "chat-2-chat" },
+      {
+        args: ["abcdefghi abcdefghi abcdefghi abcdefghi xyz"],
+        expected: "abcdefghi-abcdefghi-abcdefghi-abcdefghi",
+      },
+      {
+        args: ["abcdefghi abcdefghi abcdefghi abcdefgh ijk"],
+        expected: "abcdefghi-abcdefghi-abcdefghi-abcdefgh-i",
+      },
+    ],
+    good: "(name) => { const s = name.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40).replace(/-+$/,''); return s || 'chat'; }",
+    mutants: [
+      "(name) => name.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40) || 'chat'",
+      "(name) => { const s = name.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40).replace(/-+$/,''); return s || 'chat'; }",
+      "(name) => { const s = name.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,''); return s || 'chat'; }",
+      "(name) => { const s = name.normalize('NFD').replace(/[\\u0300-\\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'').slice(0,40); return s || 'chat'; }",
+    ],
+  },
 ];
 
 const hash = (value) =>
@@ -263,7 +302,7 @@ function selfTest() {
 
 function options(argv) {
   const out = {
-    models: ["gpt-5.6-luna", "gpt-6-luna", "gpt-6.1-sol"],
+    models: ["haiku", "sonnet", "opus"],
     runs: 1,
     timeout: 180,
     output: null,
@@ -337,27 +376,47 @@ function options(argv) {
 function execute(model, task, directory, schemaPath, timeout) {
   return new Promise((resolveRun) => {
     const started = performance.now();
-    const args = [
-      "exec",
-      "--model",
-      model,
-      "-c",
-      'model_reasoning_effort="low"',
-      "-c",
-      "agents.enabled=false",
-      "--json",
-      "--ephemeral",
-      "--sandbox",
-      "read-only",
-      "--skip-git-repo-check",
-      "--ignore-user-config",
-      "--output-schema",
-      schemaPath,
-      "-C",
-      directory,
-      "-",
-    ];
-    const child = spawn("codex", args, {
+    const claude = /^(haiku|sonnet|opus|claude-)/.test(model);
+    const args = claude
+      ? [
+          "-p",
+          "--model",
+          model,
+          "--effort",
+          "low",
+          "--tools",
+          "",
+          "--setting-sources",
+          "",
+          "--disable-slash-commands",
+          "--strict-mcp-config",
+          "--no-session-persistence",
+          "--output-format",
+          "json",
+          "--json-schema",
+          JSON.stringify(schema),
+        ]
+      : [
+          "exec",
+          "--model",
+          model,
+          "-c",
+          'model_reasoning_effort="low"',
+          "-c",
+          "agents.enabled=false",
+          "--json",
+          "--ephemeral",
+          "--sandbox",
+          "read-only",
+          "--skip-git-repo-check",
+          "--ignore-user-config",
+          "--output-schema",
+          schemaPath,
+          "-C",
+          directory,
+          "-",
+        ];
+    const child = spawn(claude ? "claude" : "codex", args, {
       cwd: directory,
       detached: process.platform !== "win32",
       stdio: ["pipe", "pipe", "pipe"],
@@ -379,6 +438,26 @@ function execute(model, task, directory, schemaPath, timeout) {
         )
           responseText = data.item.text.slice(0, 100_000);
         if (data.type === "turn.completed" && data.usage) usage = data.usage;
+        if (data.type === "result") {
+          // Claude Code `--output-format json`: one result object with structured_output and cost.
+          if (data.is_error) turnError = String(data.result ?? "CLI error");
+          else if (data.structured_output)
+            responseText = JSON.stringify(data.structured_output).slice(
+              0,
+              100_000,
+            );
+          const u = data.usage ?? {};
+          const cached = u.cache_read_input_tokens ?? 0;
+          usage = {
+            input_tokens:
+              (u.input_tokens ?? 0) +
+              cached +
+              (u.cache_creation_input_tokens ?? 0),
+            cached_input_tokens: cached,
+            output_tokens: u.output_tokens ?? 0,
+            cost_usd: data.total_cost_usd ?? null,
+          };
+        }
         if (data.type === "turn.failed")
           turnError = data.error?.message ?? "Turn failed";
         if (data.type === "error")
