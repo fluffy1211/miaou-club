@@ -238,7 +238,9 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
     fullPage: true,
   });
   await page.goto("/profil/synthetic_reader");
-  await expect(page.getByText("@synthetic_reader")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "synthetic_reader", exact: true }),
+  ).toBeVisible();
   await expect(page.locator(".public-profile")).toHaveClass(
     /account-color-corail/,
   );

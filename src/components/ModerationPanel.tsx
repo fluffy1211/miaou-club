@@ -208,7 +208,7 @@ export function ModerationPanel({
         {members.map((member) => (
           <li key={member.user_id}>
             <p>
-              {member.display_name} {member.handle ? "@" + member.handle : ""} ·{" "}
+              {member.handle ?? member.display_name} ·{" "}
               {(
                 {
                   active: "Actif",

@@ -131,7 +131,7 @@ async function setup(url: string) {
     const c = client();
     const r = await c.call("/api/auth/sign-up/email", {
       email,
-      name: "Synthetic member",
+      name: "member_" + email.split("@")[0].replace(/[^a-z0-9_]/g, "_"),
       password: "synthetic-password-long",
       acceptedTerms: true,
     });
@@ -149,7 +149,7 @@ test("admission and terms: refusal without acceptance, no anonymous ownership, u
     );
     const input = {
       email: "a@example.test",
-      name: "A",
+      name: "member_a",
       password: "synthetic-password-long",
     };
     assert.equal((await a.call("/api/auth/sign-up/email", input)).status, 403);
@@ -208,13 +208,32 @@ test("admission and terms: refusal without acceptance, no anonymous ownership, u
       403,
     );
   }));
-test("profiles: ownership, immutable handle, privacy, collision and persistence", async () =>
+test("profiles: pseudo chosen at signup is the only name, immutable, private and unique", async () =>
   isolated(async (h) => {
     const a = await h.member("a@example.test");
     const b = await h.member("b@example.test");
+    for (const [email, name, code] of [
+      ["taken@example.test", "Member_A", "HANDLE_TAKEN"],
+      ["invalid@example.test", "Synthetic member", "HANDLE_INVALID"],
+      ["reserved@example.test", "admin", "HANDLE_INVALID"],
+    ]) {
+      await h.pool.query("insert into admission (email) values ($1)", [email]);
+      const r = await h.client().call("/api/auth/sign-up/email", {
+        email,
+        name,
+        password: "synthetic-password-long",
+        acceptedTerms: true,
+      });
+      assert.equal(r.status, 400);
+      assert.equal((await r.json()).code, code);
+    }
+    assert.equal(
+      (await h.pool.query('select count(*) from "user"')).rows[0].count,
+      "2",
+    );
     const payload = {
       handle: "member_a",
-      displayName: "A renamed",
+      displayName: "Ignored legacy name",
       bio: "Synthetic biography",
       color: "sauge",
       avatar: "cat",
@@ -245,12 +264,27 @@ test("profiles: ownership, immutable handle, privacy, collision and persistence"
     );
     assert.equal(
       (await b.call("/api/v1/me/profile", payload, "PATCH")).status,
+      403,
+    );
+    // Accounts created before the merge (or via Google) choose their pseudo once.
+    await h.pool.query("update profile set handle=null where user_id=$1", [
+      b.id,
+    ]);
+    assert.equal(
+      (await b.call("/api/v1/me/profile", payload, "PATCH")).status,
       409,
     );
+    const legacy = await b.call(
+      "/api/v1/me/profile",
+      { ...payload, handle: "member_legacy" },
+      "PATCH",
+    );
+    assert.equal(legacy.status, 200);
+    assert.equal((await legacy.json()).profile.displayName, "member_legacy");
     const publicProfile = await b.call("/api/v1/profiles/member_a");
     assert.equal(publicProfile.status, 200);
     const p = (await publicProfile.json()).profile;
-    assert.equal(p.displayName, "A renamed");
+    assert.equal(p.displayName, "member_a");
     assert.equal("email" in p, false);
     assert.equal("userId" in p, false);
     assert.equal((await a.call("/api/auth/sign-out", {})).status, 200);

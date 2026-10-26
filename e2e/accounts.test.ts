@@ -4,8 +4,9 @@ test("admitted signup without verification, profile persistence, logout and prot
   context,
 }, testInfo) => {
   const email = `new-${testInfo.project.name}@example.test`;
+  const handle = `member_${testInfo.project.name.replaceAll("-", "_")}`;
   await page.goto("/compte");
-  await page.getByLabel("Ton nom affiché").fill("Synthetic member");
+  await page.getByLabel("Ton pseudo").fill(handle);
   await page.getByLabel("Ton e-mail", { exact: true }).fill(email);
   await page
     .getByLabel("Ton mot de passe", { exact: true })
@@ -24,21 +25,15 @@ test("admitted signup without verification, profile persistence, logout and prot
     page.getByRole("heading", { name: "Mon profil", exact: true }),
   ).toBeVisible();
   expect((await context.request.get("/api/v1/access")).status()).toBe(200);
-  await page
-    .getByLabel("Identifiant public")
-    .fill(`member_${testInfo.project.name.replaceAll("-", "_")}`);
-  await page
-    .getByLabel("Nom affiché", { exact: true })
-    .fill("Synthetic renamed");
+  await expect(page.getByRole("heading", { name: handle })).toBeVisible();
+  await expect(page.getByLabel("Pseudo")).toHaveValue(handle);
+  await expect(page.getByLabel("Pseudo")).toHaveAttribute("readonly", "");
+  await page.getByLabel("Biographie").fill("Synthetic biography");
   await page.getByRole("button", { name: "Enregistrer le profil" }).click();
   await expect(page.getByRole("status")).toContainText("Profil enregistré.");
   await page.reload();
-  await expect(page.getByLabel("Nom affiché", { exact: true })).toHaveValue(
-    "Synthetic renamed",
-  );
-  await expect(page.getByLabel("Identifiant public")).toHaveAttribute(
-    "readonly",
-    "",
+  await expect(page.getByLabel("Biographie")).toHaveValue(
+    "Synthetic biography",
   );
   expect(
     await page.evaluate(
@@ -66,7 +61,7 @@ test("non admitted signup and external return refuse without exposing group cont
   context,
 }) => {
   await page.goto("/compte");
-  await page.getByLabel("Ton nom affiché").fill("Synthetic outsider");
+  await page.getByLabel("Ton pseudo").fill("synthetic_outsider");
   await page
     .getByLabel("Ton e-mail", { exact: true })
     .fill("outsider@example.test");
