@@ -232,7 +232,6 @@ export function AccountPanel({
                   </>
                 )}
               </p>
-              <a href="/races">Découvrir le catalogue</a>
               <form
                 onSubmit={async (e) => {
                   const v = values(e);
