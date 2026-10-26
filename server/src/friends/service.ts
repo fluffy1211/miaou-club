@@ -2,13 +2,14 @@ import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { groupAllowed, type Identity } from "../accounts/security.js";
 import { EncounterError, uuid } from "../encounters/service.js";
+import { visibleMember } from "../accounts/visibility.js";
 const fail = (code: string, status = 400, retryAfter?: number): never => {
   throw new EncounterError(code, status, retryAfter);
 };
 const handleValid = (h: string) => /^[a-z0-9_]{3,30}$/.test(h);
 // Shared projection: no auth ID, e-mail, social list or private encounters.
 const members = `from profile f join "user" u on u.id=f.user_id join user_policy p on p.user_id=u.id join admission a on a.email=lower(u.email)`;
-const visible = `p.status='active' and p.admitted and p.accepted_at is not null and p.terms_version is not null and a.active`;
+const visible = visibleMember;
 export class Friends {
   constructor(private pool: Pool) {}
   private async transaction<T>(i: Identity, fn: (c: PoolClient) => Promise<T>) {
