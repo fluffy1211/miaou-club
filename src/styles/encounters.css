@@ -2,42 +2,53 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  width: min(1120px, 100% - 40px);
-  margin: 24px auto 32px;
-  gap: 20px;
+  width: min(1120px, 100% - 2 * var(--space-5));
+  margin: var(--space-5) auto var(--space-6);
+  gap: var(--space-5);
 }
 .encounter-header .logo {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--space-2);
   font-family: var(--display);
-  font-size: 26px;
+  font-size: var(--text-xl);
   font-weight: 600;
 }
 .encounter-header .logo svg {
-  width: 30px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
   stroke: currentColor;
   stroke-width: 1.5;
   fill: none;
+  transition: transform 0.15s var(--bounce);
+}
+.encounter-header .logo:hover {
+  text-decoration: none;
+}
+.encounter-header .logo:hover svg {
+  transform: rotate(-8deg) scale(1.08);
 }
 .encounter-main {
-  width: min(1040px, 100% - 40px);
+  width: min(1040px, 100% - 2 * var(--space-5));
   margin: 0 auto 120px;
 }
 .encounter-main h1 {
   font-family: var(--display);
   font-weight: 600;
-  font-size: clamp(28px, 5vw, 46px);
-  line-height: 1.12;
-  margin: 0 0 18px;
+  font-size: var(--text-title);
+  line-height: 1.1;
+  letter-spacing: -1px;
+  margin: 0 0 var(--space-5);
   overflow-wrap: anywhere;
 }
 .encounter-main h2 {
   font-family: var(--display);
   font-weight: 500;
-  font-size: 28px;
+  font-size: var(--text-xl);
   overflow-wrap: anywhere;
+}
+.encounter-main h3 {
+  font-size: var(--text-lg);
 }
 .encounter-nav {
   position: fixed;
@@ -46,67 +57,102 @@
   right: 0;
   display: flex;
   justify-content: space-around;
-  padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
-  background: var(--paper);
+  padding: var(--space-2) var(--space-3)
+    calc(var(--space-2) + env(safe-area-inset-bottom));
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
+  box-shadow: 0 -6px 20px #49366d0f;
   z-index: 10;
 }
 .encounter-nav a {
   display: grid;
   justify-items: center;
-  gap: 3px;
-  font-size: 12px;
+  gap: var(--space-1);
+  font-size: var(--text-sm);
   min-width: 64px;
   min-height: 52px;
 }
+.encounter-nav a:hover {
+  text-decoration: none;
+}
 .encounter-nav svg {
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   padding: 6px;
   fill: none;
   stroke: currentColor;
-  stroke-width: 1.4;
-  border-radius: 12px;
+  stroke-width: 1.5;
+  border-radius: var(--radius-md);
+  transition:
+    background 0.15s ease,
+    transform 0.15s var(--bounce);
+}
+.encounter-nav a:hover svg {
+  background: var(--lilac);
+  transform: translateY(-2px);
 }
 .encounter-nav [aria-current] {
   font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 5px;
 }
-.encounter-nav [aria-current] svg {
-  background: var(--coral);
+.encounter-nav [aria-current] svg,
+.encounter-nav a[aria-current]:hover svg {
+  background: var(--gradient-primary) border-box;
+  box-shadow: 0 4px 12px #ff7a6159;
+  transform: none;
 }
 .encounter-button {
   display: inline-flex;
   justify-content: center;
   align-items: center;
-  min-height: 48px;
-  padding: 14px 24px;
-  border: 1px solid transparent;
-  border-radius: 999px;
-  background: var(--coral);
+  gap: var(--space-2);
+  min-height: var(--control-height);
+  padding: var(--space-3) var(--space-5);
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--gradient-primary) border-box;
+  box-shadow: 0 6px 16px #ff7a6140;
   color: var(--ink);
-  font: inherit;
-  font-weight: 700;
+  font-family: var(--display);
+  font-size: var(--text-md);
+  font-weight: 600;
+  line-height: 1.2;
   text-align: center;
   text-decoration: none;
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.15s var(--bounce);
+}
+.encounter-button:hover {
+  box-shadow: var(--shadow-lift);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+.encounter-button:active {
+  transform: scale(0.96);
 }
 .encounter-button.secondary {
   background: transparent;
-  border-color: var(--line);
+  border-color: var(--ink);
+  box-shadow: none;
 }
 .encounter-button:disabled,
 .encounter-link:disabled {
   opacity: 0.6;
   cursor: wait;
+  transform: none;
 }
 .encounter-link {
   border: 0;
   background: transparent;
-  padding: 12px 0;
+  padding: var(--space-3) 0;
   font: inherit;
+  font-weight: 600;
   text-decoration: underline;
-  text-underline-offset: 3px;
+  text-decoration-color: var(--coral);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
   color: var(--ink);
   min-height: 44px;
 }
@@ -346,6 +392,12 @@
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
+  }
+  .encounter-button,
+  .encounter-nav svg,
+  .encounter-header .logo svg {
+    transition: none;
+    transform: none !important;
   }
 }
 /* Keep the off-screen skip link hidden even in full-page WebKit captures. */
