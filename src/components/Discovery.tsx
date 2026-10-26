@@ -168,12 +168,12 @@ export function Discovery({
       {mode === "home" && name && <p>Bonjour {name}</p>}
       <h1>
         {mode === "home"
-          ? "Les derniers mignons."
+          ? "Les dernières rencontres."
           : mode === "profile"
             ? (profile?.displayName ?? "Profil du club")
             : mode === "map"
               ? "Les chats du coin."
-              : "Tous les mignons."}
+              : "Toutes les rencontres."}
       </h1>
       {profile && (
         <div className={"public-profile account-color-" + profile.color}>
@@ -199,17 +199,11 @@ export function Discovery({
         </div>
       )}
       <p role="status">{message || (busy ? "Chargement…" : "")}</p>
-      <div className="encounter-actions">
-        <a className="encounter-link" href="/rencontres">
-          Les mignons
+      {mode === "home" && (
+        <a className="text-link" href="/rencontres">
+          Voir toutes les rencontres
         </a>
-        <a className="encounter-link" href="/carte">
-          La carte
-        </a>
-        <a className="encounter-link" href="/photo">
-          Ajouter une rencontre
-        </a>
-      </div>
+      )}
       {mode === "map" && ready && (
         <>
           {providerKey && (

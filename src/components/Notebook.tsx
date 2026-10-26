@@ -96,7 +96,7 @@ export function Notebook({ id }: { id?: string }) {
       setEntry(r.encounter);
       setDraft(r.encounter);
       setEditing(false);
-      setMessage("Souvenir modifié.");
+      setMessage("Rencontre modifiée.");
     } catch (e) {
       setMessage((e as Error).message);
     } finally {
@@ -126,7 +126,7 @@ export function Notebook({ id }: { id?: string }) {
       {!id ? (
         <>
           <h1>Mon petit carnet.</h1>
-          <p>Les museaux croisés, les souvenirs gardés.</p>
+          <p>Tes rencontres et leurs Polaroids.</p>
           {!group && !busy && (
             <p className="encounter-privacy">
               Ton espace personnel reste accessible. La publication et l’accès
@@ -177,7 +177,7 @@ export function Notebook({ id }: { id?: string }) {
               disabled={busy}
               onClick={() => void more()}
             >
-              Voir les souvenirs précédents
+              Voir les rencontres précédentes
             </button>
           )}
         </>
@@ -197,7 +197,7 @@ export function Notebook({ id }: { id?: string }) {
                 </aside>
                 <div>
                   <h1 ref={editHeading} tabIndex={-1}>
-                    Ton souvenir, tes mots.
+                    Ta rencontre, tes mots.
                   </h1>
                   <form
                     onSubmit={(e) => {
@@ -263,7 +263,7 @@ export function Notebook({ id }: { id?: string }) {
                     </p>
                     {entry.hidden && (
                       <p className="encounter-privacy">
-                        Ce souvenir est masqué pour les autres membres.{" "}
+                        Cette rencontre est masquée pour les autres membres.{" "}
                         {entry.hiddenReason}
                       </p>
                     )}
@@ -299,7 +299,7 @@ export function Notebook({ id }: { id?: string }) {
                           className="encounter-button secondary"
                           disabled={busy}
                         >
-                          Signaler ce souvenir
+                          Signaler cette rencontre
                         </button>
                       </form>
                     )}
@@ -311,7 +311,7 @@ export function Notebook({ id }: { id?: string }) {
                             disabled={busy}
                             onClick={() => setEditing(true)}
                           >
-                            Modifier le souvenir
+                            Modifier la rencontre
                           </button>
                         )}
                         <button
@@ -334,7 +334,7 @@ export function Notebook({ id }: { id?: string }) {
             aria-labelledby="delete-title"
             onClose={() => deleteButton.current?.focus()}
           >
-            <h2 id="delete-title">Supprimer ce souvenir ?</h2>
+            <h2 id="delete-title">Supprimer cette rencontre ?</h2>
             <p>
               La rencontre sera retirée de ton carnet et sa photo supprimée.
               Cette action est définitive.
@@ -346,7 +346,7 @@ export function Notebook({ id }: { id?: string }) {
                 disabled={busy}
                 onClick={() => dialog.current?.close()}
               >
-                Garder le souvenir
+                Garder la rencontre
               </button>
               <button
                 className="encounter-button"

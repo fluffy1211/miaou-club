@@ -27,6 +27,22 @@ const path = Astro.url.pathname;
         <Icon name="cat" />
         miaou club
       </a>
+      <a
+        class="header-profile"
+        href="/profil"
+        aria-current={
+          path.startsWith("/profil") ||
+          ["/donnees", "/administration"].includes(path)
+            ? "page"
+            : undefined
+        }
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="7" r="4" />
+          <path d="M4 22v-3a8 8 0 0 1 16 0v3" />
+        </svg>
+        Profil
+      </a>
     </header>
     <main id="main" class="encounter-main">
       <slot />
@@ -57,21 +73,6 @@ const path = Astro.url.pathname;
         Photo
       </a>
       <a
-        href="/profil"
-        aria-current={
-          path.startsWith("/profil") ||
-          ["/amis", "/donnees", "/administration"].includes(path)
-            ? "page"
-            : undefined
-        }
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="7" r="4" />
-          <path d="M4 22v-3a8 8 0 0 1 16 0v3" />
-        </svg>
-        Profil
-      </a>
-      <a
         href="/carnet"
         aria-current={
           path === "/carnet" || path.startsWith("/rencontre/")
@@ -83,6 +84,14 @@ const path = Astro.url.pathname;
           <path d="M6 3h14v18H6ZM3 7h6M3 12h6M3 17h6M12 8h4M12 13h4" />
         </svg>
         Carnet
+      </a>
+      <a href="/amis" aria-current={path === "/amis" ? "page" : undefined}>
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="9" cy="8" r="3.5" />
+          <circle cx="17" cy="9" r="2.5" />
+          <path d="M2 21v-2a7 7 0 0 1 14 0v2M16 14a5 5 0 0 1 6 5v2" />
+        </svg>
+        Amis
       </a>
     </nav>
   </body>

@@ -19,11 +19,12 @@ const messages: Record<string, string> = {
     "Le stockage est indisponible. Tu peux reprendre le traitement plus tard.",
   media_unavailable: "La photo est momentanément indisponible.",
   forbidden: "Cette action n’est pas autorisée pour ton compte.",
-  not_found: "Ce souvenir n’est plus accessible.",
-  edit_conflict: "Le souvenir a changé. Recharge la page avant de le modifier.",
+  not_found: "Cette rencontre n’est plus accessible.",
+  edit_conflict:
+    "La rencontre a changé. Recharge la page avant de la modifier.",
   idempotency_conflict:
     "Cette publication a déjà été envoyée avec d’autres informations. Vérifie ton carnet.",
-  gone: "Ce souvenir a été supprimé.",
+  gone: "Cette rencontre a été supprimée.",
   unavailable: "Le club est temporairement indisponible. Réessaie.",
   retry_unavailable:
     "Le traitement ne peut plus être repris. Choisis à nouveau une photo.",

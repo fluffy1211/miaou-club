@@ -229,7 +229,7 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
   ).encounter;
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Les derniers mignons." }),
+    page.getByRole("heading", { name: "Les dernières rencontres." }),
   ).toBeVisible();
   await expect(page.getByText(e.title).first()).toBeVisible();
   await mkdir(".cache/lot4-browser", { recursive: true });
@@ -280,13 +280,13 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
   });
   expect(foreign).toEqual([]);
   await page.goto("/rencontre/" + e.id);
-  await page.getByRole("button", { name: "Modifier le souvenir" }).click();
+  await page.getByRole("button", { name: "Modifier la rencontre" }).click();
   await page.getByLabel("Taille de la zone").selectOption("2000");
   await page
     .getByRole("button", { name: "Enregistrer les changements" })
     .click();
   await expect(page.getByText(/Zone de 2 km de côté/)).toBeVisible();
-  await page.getByRole("button", { name: "Modifier le souvenir" }).click();
+  await page.getByRole("button", { name: "Modifier la rencontre" }).click();
   await page.getByRole("button", { name: "Retirer le lieu" }).click();
   const edited = page.waitForResponse(
     (r) =>
@@ -298,7 +298,7 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
     .click();
   expect((await edited).status()).toBe(200);
   await expect(
-    page.getByRole("button", { name: "Modifier le souvenir" }),
+    page.getByRole("button", { name: "Modifier la rencontre" }),
   ).toBeVisible();
   const map = await context.request.get("/api/v1/map");
   expect(
@@ -329,7 +329,7 @@ test("home and notebook avoid geographic JavaScript; a failed geographic import 
   });
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Les derniers mignons." }),
+    page.getByRole("heading", { name: "Les dernières rencontres." }),
   ).toBeVisible();
   await page.goto("/carnet");
   await expect(

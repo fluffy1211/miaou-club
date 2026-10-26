@@ -116,7 +116,7 @@ export function DataPanel({
       </ul>
       <h2>Supprimer mon compte</h2>
       <p>
-        Ton profil et tes souvenirs deviennent immédiatement inaccessibles.
+        Ton profil et tes rencontres deviennent immédiatement inaccessibles.
         Leurs fichiers sont ensuite purgés. Cette action est définitive.
       </p>
       <form
