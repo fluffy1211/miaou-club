@@ -219,19 +219,14 @@ export function AccountPanel({
             </div>
           ) : (
             <>
-              <p>
-                <a href="/photo">Photographier un chat</a> ·{" "}
-                <a href="/carnet">Mon carnet</a> · <a href="/amis">Mes amis</a>
+              <nav className="pill-links" aria-label="Mon espace">
+                <a href="/amis">Mes amis</a>
                 {me.profile?.handle && (
-                  <>
-                    {" "}
-                    ·{" "}
-                    <a href={"/profil/" + me.profile.handle}>
-                      Voir mon profil public
-                    </a>
-                  </>
+                  <a href={"/profil/" + me.profile.handle}>
+                    Voir mon profil public
+                  </a>
                 )}
-              </p>
+              </nav>
               <form
                 onSubmit={async (e) => {
                   const v = values(e);
@@ -293,9 +288,7 @@ export function AccountPanel({
           )}
           <section>
             <h2>Sécurité du compte</h2>
-            <p>
-              Méthodes liées : {me.methods.join(", ")}. Ton e-mail reste privé.
-            </p>
+            <p className="account-note">Ton e-mail reste privé.</p>
             {me.role === "admin" && me.mfaValid && (
               <button
                 disabled={busy}
@@ -367,6 +360,7 @@ export function AccountPanel({
               </button>
             )}
             <button
+              className="secondary"
               disabled={busy}
               onClick={async () => {
                 if (await send("/api/v1/me/revoke-others", {}))
@@ -484,6 +478,7 @@ export function AccountPanel({
             )}
           </section>
           <button
+            className="account-signout"
             disabled={busy}
             onClick={async () => {
               if (await send("/api/auth/sign-out", {})) {
