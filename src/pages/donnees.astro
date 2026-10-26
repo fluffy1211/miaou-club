@@ -1,8 +1,9 @@
 ---
-import AccountLayout from "../layouts/AccountLayout.astro";
+import EncounterLayout from "../layouts/EncounterLayout.astro";
 import { DataPanel } from "../components/DataPanel";
+import "../styles/accounts.css";
 ---
 
-<AccountLayout>
+<EncounterLayout title="Mes données">
   <DataPanel client:load />
-</AccountLayout>
+</EncounterLayout>
