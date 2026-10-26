@@ -1,6 +1,6 @@
-# NON ACTIF : copier dans .github/workflows exige une autorisation distincte.
+# Actif seulement si la variable de dépôt MIAOU_REMOTE_BACKUP_ENABLED vaut 'true'.
 # Qualification préproduction fermée uniquement (zéro admis/invitations actives).
-# Aucun compte B2/contrat/secret configuré ; init explicite du dépôt requis avant backup.
+# Bucket B2 privé créé le 2026-10-16 ; init explicite du dépôt requis avant backup.
 # Une coupe de journal par nouveau bundle : aucune actualisation des anciennes bases.
 # Décisions après copiedAt inconnues. Pas de preuve RPO, de reprise après mort runner,
 # ni d'alerte si GitHub retarde/omet un run. Le webhook optionnel n'est pas qualifié.
