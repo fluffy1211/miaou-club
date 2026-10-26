@@ -171,17 +171,20 @@
   text-align: center;
 }
 .capture-frame {
-  background: var(--mint);
-  border: 2px dashed #9cafaa;
-  border-radius: 24px;
+  background:
+    radial-gradient(circle at 20% 15%, #ffffff80 0 18%, transparent 19%),
+    linear-gradient(160deg, var(--mint), #d7ecd9);
+  border: 2px dashed #8fb3a3;
+  border-radius: var(--radius-md);
+  box-shadow: 0 12px 28px #6fae9433;
   max-width: 480px;
-  min-height: 370px;
+  min-height: 360px;
   display: flex;
   align-items: center;
   justify-content: center;
   flex-direction: column;
-  padding: 40px 28px;
-  margin: 28px auto 16px;
+  padding: var(--space-7) var(--space-5);
+  margin: var(--space-5) auto var(--space-4);
 }
 .capture-icon {
   width: 54px;
@@ -192,9 +195,9 @@
 }
 .capture-frame p {
   font-family: var(--hand);
-  font-size: 32px;
+  font-size: var(--text-xl);
   font-weight: 700;
-  margin: 18px 0;
+  margin: var(--space-4) 0 var(--space-5);
 }
 .capture-frame .encounter-button {
   width: 100%;
@@ -202,10 +205,10 @@
 }
 .capture-gallery {
   display: block;
-  margin: 10px auto 0;
+  margin: var(--space-2) auto 0;
 }
 .photo-help {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--muted);
 }
 .photo-file {
@@ -215,22 +218,38 @@
 .encounter-detail {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 48px;
+  gap: var(--space-7);
   align-items: start;
-  margin: 32px 0;
+  margin: var(--space-6) 0;
 }
 .encounter-editor > div,
 .encounter-detail > div {
   min-width: 0;
 }
 .encounter-polaroid {
-  margin: 8px auto 24px;
-  background: white;
-  padding: 14px 14px 20px;
+  margin: var(--space-2) auto var(--space-5);
+  background: var(--white);
+  padding: var(--space-3) var(--space-3) var(--space-4);
+  border-radius: 4px;
   box-shadow: var(--shadow-paper);
   max-width: 410px;
   transform: rotate(-2deg);
   overflow-wrap: anywhere;
+  transition:
+    transform 0.2s var(--bounce),
+    box-shadow 0.2s ease;
+}
+.notebook-grid .encounter-polaroid:nth-child(even) {
+  transform: rotate(1.5deg);
+}
+.notebook-grid .encounter-polaroid:nth-child(3n) {
+  transform: rotate(-1deg);
+}
+a:hover > .encounter-polaroid,
+.notebook-grid a:hover .encounter-polaroid,
+.notebook-grid .encounter-polaroid:hover {
+  transform: rotate(0) translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-lift);
 }
 .encounter-polaroid img {
   display: block;
@@ -241,13 +260,13 @@
 }
 .encounter-polaroid figcaption {
   font-family: var(--hand);
-  font-size: 32px;
+  font-size: var(--text-xl);
   font-weight: 700;
   line-height: 1.15;
-  margin: 14px 8px 0;
+  margin: var(--space-3) var(--space-2) 0;
 }
 .encounter-polaroid.small figcaption {
-  font-size: 27px;
+  font-size: 24px;
 }
 .encounter-description {
   white-space: pre-wrap;
@@ -256,17 +275,17 @@
 .photo-replace {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
-  font-size: 13px;
-  margin: 20px 0;
+  gap: var(--space-3);
+  font-size: var(--text-sm);
+  margin: var(--space-5) 0;
 }
 .encounter-main form {
   display: grid;
-  gap: 20px;
+  gap: var(--space-5);
 }
 .encounter-main fieldset {
   display: grid;
-  gap: 20px;
+  gap: var(--space-5);
   border: 0;
   padding: 0;
   margin: 0;
@@ -274,69 +293,81 @@
 }
 .encounter-main label {
   display: grid;
-  gap: 8px;
+  gap: var(--space-2);
   font-weight: 600;
 }
 .encounter-main input,
 .encounter-main textarea,
 .encounter-main select {
   width: 100%;
-  padding: 13px 14px;
-  min-height: 48px;
-  background: white;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  padding: var(--space-3) var(--space-4);
+  min-height: var(--control-height);
+  background: var(--white);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-control);
   color: var(--ink);
   font: inherit;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.encounter-main :is(input, textarea, select):focus {
+  border-color: var(--coral);
+  box-shadow: 0 0 0 4px #ff7a6133;
 }
 .encounter-main small {
   font-weight: 400;
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 .encounter-privacy {
-  font-size: 14px;
+  font-size: var(--text-sm);
   background: var(--lilac);
-  padding: 16px;
-  border-radius: 12px;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
   overflow-wrap: anywhere;
 }
 .encounter-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: var(--space-3);
   align-items: center;
-  margin: 24px 0;
+  margin: var(--space-5) 0;
 }
 .photo-pending {
   min-height: 260px;
   background: var(--lilac);
-  padding: 28px;
-  border-radius: 14px;
+  padding: var(--space-5);
+  border-radius: var(--radius-md);
 }
 .notebook-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 32px 24px;
-  margin: 36px 0;
+  gap: var(--space-6) var(--space-5);
+  margin: var(--space-6) 0;
 }
 .encounter-meta {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--muted);
   overflow-wrap: anywhere;
 }
 .empty-notebook {
-  background: var(--lilac);
-  padding: 32px;
-  border-radius: 18px;
-  margin: 32px 0;
+  display: grid;
+  gap: var(--space-4);
+  justify-items: start;
+  background: linear-gradient(150deg, var(--lilac), #f1e9f8);
+  padding: var(--space-6);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-paper);
+  margin: var(--space-6) 0;
 }
 .encounter-dialog {
-  width: min(440px, 100% - 32px);
+  width: min(440px, 100% - 2 * var(--space-4));
   border: 1px solid var(--line);
-  border-radius: 18px;
+  border-radius: var(--radius-md);
   background: var(--paper);
+  box-shadow: var(--shadow-lift);
   color: var(--ink);
-  padding: 28px;
+  padding: var(--space-5);
 }
 .encounter-dialog::backdrop {
   background: #49366d66;
@@ -368,22 +399,22 @@
     font-size: 27px;
   }
   .encounter-header {
-    margin: 20px auto 24px;
+    margin: var(--space-5) auto var(--space-5);
   }
   .capture-frame {
-    min-height: 350px;
-    padding: 36px 24px;
+    min-height: 340px;
+    padding: var(--space-6) var(--space-5);
   }
   .notebook-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 24px 18px;
+    gap: var(--space-5) var(--space-4);
   }
   .notebook-grid .encounter-polaroid {
-    padding: 8px 8px 14px;
+    padding: var(--space-2) var(--space-2) var(--space-3);
   }
   .notebook-grid .encounter-polaroid figcaption {
-    font-size: 23px;
-    margin: 10px 2px 0;
+    font-size: var(--text-lg);
+    margin: var(--space-2) var(--space-1) 0;
   }
   .encounter-actions > * {
     flex: 1 1 auto;
@@ -395,7 +426,8 @@
   }
   .encounter-button,
   .encounter-nav svg,
-  .encounter-header .logo svg {
+  .encounter-header .logo svg,
+  .encounter-polaroid {
     transition: none;
     transform: none !important;
   }
