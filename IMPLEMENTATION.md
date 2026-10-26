@@ -1,5 +1,7 @@
 # Miaou Club — plan d’implémentation
 
+> Historique : le catalogue des races décrit ici a été retiré du site le 26 octobre 2026. Seule la page de Figue (`/figue`) est conservée.
+
 Établi avec Gabriel le 1er octobre 2026. Ce document transmet les décisions du chat de conception au chat d’implémentation.
 
 ## Objectif et référence

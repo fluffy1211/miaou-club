@@ -28,14 +28,6 @@
 .encounter-header .logo:hover svg {
   transform: rotate(-8deg) scale(1.08);
 }
-.encounter-header > a:last-child {
-  font-size: var(--text-md);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: var(--coral);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
-}
 .encounter-main {
   width: min(1040px, 100% - 2 * var(--space-5));
   margin: 0 auto 120px;

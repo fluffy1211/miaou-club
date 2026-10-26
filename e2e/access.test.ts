@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
-test("anonymous catalogue is closed and public Astro/React notice renders", async ({
+test("anonymous member pages are closed and public Astro/React notice renders", async ({
   page,
   request,
 }) => {
-  await page.goto("/races");
+  await page.goto("/figue");
   await expect(page).toHaveURL(/\/profil\?retour=/);
   await expect(
     page.getByRole("heading", { name: "Retrouve ton petit monde." }),
@@ -55,7 +55,7 @@ test("real session allows admitted member, refuses non-admitted and suspended fi
         sameSite: "Lax",
       },
     ]);
-    await page.goto("/races");
+    await page.goto("/figue");
     const image = await context.request.get("/_astro/e2e-fixture.svg");
     expect(image.status()).toBe(role === "member" ? 200 : 403);
     expect(image.headers()["cache-control"]).toBe("no-store");
@@ -63,16 +63,10 @@ test("real session allows admitted member, refuses non-admitted and suspended fi
       await expect(page).toHaveURL(/\/profil\?retour=/);
       expect((await context.request.get("/api/v1/access")).status()).toBe(403);
     } else {
-      await expect(page).toHaveURL(/\/races$/);
-      await expect(
-        page.getByRole("searchbox", { name: "Chercher une race" }),
-      ).toBeVisible();
-      await expect(
-        page.getByRole("link", { name: "Abyssin", exact: true }),
-      ).toBeVisible();
-      const link = page.locator('a[href^="/race/"]').first();
-      await link.click();
-      await expect(page.locator("h1")).toBeVisible();
+      await expect(page).toHaveURL(/\/figue$/);
+      await expect(page.getByRole("heading", { level: 1 })).toContainText(
+        "Figue",
+      );
       const response = await context.request.get("/api/v1/access");
       expect(response.status()).toBe(200);
       expect(response.headers()["cache-control"]).toBe("no-store");
