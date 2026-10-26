@@ -318,7 +318,7 @@ async function setup(url: string) {
         body: JSON.stringify({
           email,
           password: "synthetic-password-long",
-          name: "Synthetic member",
+          name: "m_" + email.split("@")[0].replace(/[^a-z0-9_]/g, "_"),
           acceptedTerms: true,
         }),
       }),

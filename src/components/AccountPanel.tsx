@@ -24,6 +24,10 @@ const errorMessages: Record<string, string> = {
   PASSWORD_TOO_SHORT: `Ton mot de passe doit faire au moins ${minPasswordLength} caractères.`,
   PASSWORD_TOO_LONG: "Ton mot de passe est trop long (128 caractères maximum).",
   INVALID_EMAIL_OR_PASSWORD: "E-mail ou mot de passe incorrect.",
+  HANDLE_INVALID:
+    "Ton pseudo doit faire 3 à 30 caractères : minuscules, chiffres ou tiret bas.",
+  HANDLE_TAKEN: "Ce pseudo est déjà pris, choisis-en un autre.",
+  conflict: "Ce pseudo est déjà pris, choisis-en un autre.",
 };
 function NewPassword({ name }: { name: string }) {
   const [length, setLength] = useState(0);
@@ -171,6 +175,7 @@ export function AccountPanel({
     </p>
   );
   const profile = me && (mode === "profile" || mode === "login");
+  const name = me?.profile?.handle ?? me?.profile?.displayName ?? "Ton compte";
   // Les formulaires de connexion affichent le message près de leur bouton.
   const inlineStatus =
     !profile && !challenge && (mode !== "signup" || options.signup);
@@ -193,11 +198,9 @@ export function AccountPanel({
             className={`account-paper account-color-${me.profile?.color ?? "violet"}`}
           >
             <span className="account-avatar" aria-hidden="true">
-              {me.profile?.avatar === "cat"
-                ? "∧ ∧"
-                : (me.profile?.displayName ?? "M").slice(0, 1)}
+              {me.profile?.avatar === "cat" ? "∧ ∧" : name.slice(0, 1)}
             </span>
-            <h2>{me.profile?.displayName ?? "Ton compte"}</h2>
+            <h2>{name}</h2>
             <p>{me.profile?.bio}</p>
           </div>
           {me.access !== "group" ? (
@@ -241,7 +244,7 @@ export function AccountPanel({
               >
                 <h2>Personnaliser mon profil</h2>
                 <label>
-                  Identifiant public
+                  Pseudo
                   <input
                     name="handle"
                     defaultValue={me.profile?.handle ?? ""}
@@ -251,16 +254,10 @@ export function AccountPanel({
                     maxLength={30}
                     required
                   />
-                  <small>Unique et définitif après enregistrement.</small>
-                </label>
-                <label>
-                  Nom affiché
-                  <input
-                    name="displayName"
-                    defaultValue={me.profile?.displayName ?? ""}
-                    maxLength={60}
-                    required
-                  />
+                  <small>
+                    C’est ton nom sur le club. Unique et définitif après
+                    enregistrement.
+                  </small>
                 </label>
                 <label>
                   Biographie
@@ -547,14 +544,21 @@ export function AccountPanel({
           {options.signup ? (
             <form onSubmit={signup}>
               <label>
-                Ton nom affiché
+                Ton pseudo
                 <input
                   name="name"
-                  autoComplete="nickname"
-                  maxLength={60}
+                  autoComplete="username"
+                  pattern="[a-z0-9_]{3,30}"
+                  minLength={3}
+                  maxLength={30}
+                  aria-describedby="handle-rule"
                   required
                 />
               </label>
+              <small id="handle-rule" className="account-rule">
+                3 à 30 caractères : minuscules, chiffres ou tiret bas. Il ne
+                pourra plus être changé.
+              </small>
               {email}
               <NewPassword name="password" />
               {terms}
