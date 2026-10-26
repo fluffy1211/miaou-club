@@ -26,6 +26,7 @@ import {
   manualResetKey,
   recordActivity,
 } from "../../accounts/security.js";
+import { publicHandle } from "../../accounts/handle.js";
 export type AuthOptions = {
   secret: string;
   baseURL: string;
@@ -139,9 +140,31 @@ export function createAuth(
               throw new APIError("FORBIDDEN", {
                 message: "Accès non autorisé.",
               });
-            return { data: { ...u, email: normalizeEmail(u.email) } };
+            if (ctx?.path !== "/sign-up/email")
+              return { data: { ...u, email: normalizeEmail(u.email) } };
+            // E-mail signup asks for the pseudo directly; social accounts pick it on the profile.
+            const handle = publicHandle(u.name);
+            if (!handle)
+              throw new APIError("BAD_REQUEST", {
+                code: "HANDLE_INVALID",
+                message: "Pseudo invalide.",
+              });
+            const [taken] = await db
+              .select({ userId: profile.userId })
+              .from(profile)
+              .where(eq(profile.handle, handle));
+            if (taken)
+              throw new APIError("BAD_REQUEST", {
+                code: "HANDLE_TAKEN",
+                message: "Pseudo déjà pris.",
+              });
+            return {
+              data: { ...u, name: handle, email: normalizeEmail(u.email) },
+            };
           },
-          after: async (u) => {
+          after: async (u, ctx) => {
+            const handle =
+              ctx?.path === "/sign-up/email" ? publicHandle(u.name) : null;
             await db.transaction(async (tx) => {
               await tx.insert(userPolicy).values({
                 userId: u.id,
@@ -149,9 +172,11 @@ export function createAuth(
                 acceptedAt: new Date(),
                 termsVersion: options.termsVersion!,
               });
-              await tx
-                .insert(profile)
-                .values({ userId: u.id, displayName: u.name.slice(0, 60) });
+              await tx.insert(profile).values({
+                userId: u.id,
+                handle,
+                displayName: handle ?? u.name.slice(0, 60),
+              });
             });
           },
         },

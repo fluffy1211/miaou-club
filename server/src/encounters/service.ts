@@ -71,7 +71,7 @@ function project(row: QueryResultRow, ownerId: string) {
     visibility: row.visibility,
     revision: row.revision,
     owned: row.owner_id === ownerId,
-    author: row.display_name ?? "Membre",
+    author: row.handle ?? row.display_name ?? "Membre",
     authorHandle: row.handle ?? null,
     image: `/media/${row.media_id}/image`,
     thumbnail: `/media/${row.media_id}/thumb`,

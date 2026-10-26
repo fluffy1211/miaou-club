@@ -100,7 +100,7 @@ export function Discovery({
         if (alive) {
           setReady(true);
           setOwner(me.user.id);
-          setName(me.profile?.displayName ?? "Membre");
+          setName(me.profile?.handle ?? me.profile?.displayName ?? "Membre");
           setProfile(p?.profile ?? null);
           setEntries(page.encounters);
           setNext(page.next);
@@ -195,7 +195,6 @@ export function Discovery({
               profile.displayName.slice(0, 1)
             )}
           </div>
-          <p>@{profile.handle}</p>
           <p>{profile.bio}</p>
         </div>
       )}

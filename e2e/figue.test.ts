@@ -12,7 +12,7 @@ test("Figue is found by searching her name in friends and from the 404 cat", asy
   const [name, ...value] = sessions.member.split("=");
   await context.addCookies([{ name, value: value.join("="), url: origin }]);
   await page.goto("/amis");
-  await page.getByLabel("Chercher un pseudonyme").fill("Figue");
+  await page.getByLabel("Chercher un pseudo").fill("Figue");
   await page.getByRole("button", { name: "Chercher", exact: true }).click();
   await expect(page).toHaveURL(/\/figue$/);
   await expect(
