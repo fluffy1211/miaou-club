@@ -1,21 +1,10 @@
 ---
 interface Props {
-  name?: "arrow" | "search" | "cat" | "doodle";
+  name: "cat" | "doodle";
 }
-const { name = "arrow" } = Astro.props;
+const { name } = Astro.props;
 ---
 
-{name === "arrow" && (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <path d="M6 18 18 6M6 6h12v12" />
-  </svg>
-)}
-{name === "search" && (
-  <svg viewBox="0 0 24 24" aria-hidden="true">
-    <circle cx="10.5" cy="10.5" r="6.5" />
-    <path d="m16 16 4 4" />
-  </svg>
-)}
 {name === "cat" && (
   <svg viewBox="0 0 44 44" aria-hidden="true">
     <path d="M8 20 6 5l13 9h7L38 5l-2 17c5 15-27 22-28-2Z" />

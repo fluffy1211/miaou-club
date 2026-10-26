@@ -21,10 +21,6 @@
   stroke-width: 1.5;
   fill: none;
 }
-.encounter-header > a:last-child {
-  font-size: 14px;
-  text-decoration: underline;
-}
 .encounter-main {
   width: min(1040px, 100% - 40px);
   margin: 0 auto 120px;

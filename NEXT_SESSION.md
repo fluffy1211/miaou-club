@@ -1,5 +1,9 @@
 # Miaou Club — reprise
 
+## Catalogue des races retiré — 26 octobre 2026
+
+Sur décision de Gabriel, le site se recentre sur les photos de chats : `/races`, `/race/*`, `/favoris`, `/a-propos`, l’ancien gabarit `Layout.astro`, la collection `breeds` (TheCatAPI, Wikimedia), `CAT_API_KEY`, `MIAOU_OFFLINE_CATALOG`, `build:offline` et `data:refresh` sont supprimés. `/figue` et la page 404 passent sur le gabarit du club. Prochaine étape : Figue retrouvable par la recherche d’amis (« figue ») et par la 404, avec animation.
+
 ## Suite Claude Code — 25 octobre 2026 (soir)
 
 Fusionnées : Effect 4 (#34, remplace #29), TypeScript 7 ignoré par Dependabot (#35, #30 fermée : typescript-eslint < 6.1 et `@astrojs/check` ^5 || ^6 ne supportent pas encore TS 7), Node 26.12.0 dans Docker et `.node-version` (#36, remplace #26). #31 (vite sur `main`) fermée sur décision de Gabriel. Charte courte pour les amis sur `/conditions` (#37). Domaine souhaité : `miaou-club.fr`, `miaou.club` ou `miaouclub.fr`, disponibilité non vérifiée. Astro reste en 7.3.5 / `@astrojs/node` 11.1.6 : le correctif `security.allowedDomains` attend le domaine choisi (liste explicite des hôtes, pas de joker). Blocages lot 6 inchangés : domaine, compte B2, qualification proxy Render, protections GitHub.
