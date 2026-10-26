@@ -28,6 +28,32 @@
 .encounter-header .logo:hover svg {
   transform: rotate(-8deg) scale(1.08);
 }
+.header-profile {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: 0 var(--space-3) 0 var(--space-1);
+  border-radius: var(--radius-pill);
+  font-weight: 600;
+}
+.header-profile:hover {
+  text-decoration: none;
+  background: var(--lilac);
+}
+.header-profile svg {
+  width: 32px;
+  height: 32px;
+  padding: 5px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  border-radius: 50%;
+}
+.header-profile[aria-current] svg {
+  background: var(--gradient-primary) border-box;
+  box-shadow: 0 4px 12px #ff7a6159;
+}
 .encounter-main {
   width: min(1040px, 100% - 2 * var(--space-5));
   margin: 0 auto 120px;
@@ -428,7 +454,6 @@ a:hover > .encounter-polaroid,
   .encounter-nav svg,
   .encounter-header .logo svg,
   .encounter-polaroid,
-  .discovery-tabs a,
   .pill-links a {
     transition: none;
     transform: none !important;
@@ -521,14 +546,12 @@ body > .skip-link:focus {
   color: var(--muted);
   margin-bottom: var(--space-2);
 }
-.discovery-tabs,
 .pill-links {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
   margin: 0 0 var(--space-6);
 }
-.discovery-tabs a,
 .pill-links a {
   display: inline-flex;
   align-items: center;
@@ -542,13 +565,11 @@ body > .skip-link:focus {
     border-color 0.15s ease,
     transform 0.15s var(--bounce);
 }
-.discovery-tabs a:hover,
 .pill-links a:hover {
   border-color: var(--coral);
   text-decoration: none;
   transform: translateY(-2px);
 }
-.discovery-tabs a[aria-current],
 .pill-links a[aria-current] {
   background: var(--ink);
   border-color: var(--ink);

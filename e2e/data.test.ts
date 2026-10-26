@@ -52,7 +52,7 @@ test("report, audited private administration, protected export and account delet
       .getByLabel("Motif du signalement")
       .fill("Vérification synthétique " + info.project.name);
     await readerPage
-      .getByRole("button", { name: "Signaler ce souvenir" })
+      .getByRole("button", { name: "Signaler cette rencontre" })
       .click();
     await expect(readerPage.getByRole("status")).toContainText(
       "Signalement enregistré",
@@ -89,7 +89,7 @@ test("report, audited private administration, protected export and account delet
       adminPage.getByRole("heading", { name: entry.title }),
     ).toBeVisible();
     await expect(
-      adminPage.getByAltText("Photo du souvenir signalé"),
+      adminPage.getByAltText("Polaroid de la rencontre signalée"),
     ).toBeVisible();
     expect((await admin.request.get(origin + entry.image)).status()).toBe(404);
     await mkdir(".cache/lot5-browser", { recursive: true });

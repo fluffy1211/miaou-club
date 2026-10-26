@@ -25,7 +25,7 @@ async function readyPhoto(page: import("@playwright/test").Page) {
     .getByLabel("Choisir une photo dans la galerie")
     .setInputFiles(".cache/e2e-photo.png");
   await expect(
-    page.getByRole("heading", { name: "Un nouveau museau." }),
+    page.getByRole("heading", { name: "Une nouvelle rencontre." }),
   ).toBeVisible();
   await expect(
     page.getByRole("button", { name: "Voir l’aperçu" }),
@@ -93,10 +93,10 @@ test("real upload, preview, publication, durable notebook, edit revocation and d
     );
     expect(shared.status()).toBe(200);
     expect(shared.headers()["cache-control"]).toBe("no-store");
-    await page.getByRole("button", { name: "Modifier le souvenir" }).click();
+    await page.getByRole("button", { name: "Modifier la rencontre" }).click();
     await page.getByLabel("Un petit titre").fill(title + " privé");
     await page
-      .getByLabel("Qui peut voir ce souvenir ?")
+      .getByLabel("Qui peut voir cette rencontre ?")
       .selectOption("private");
     await page
       .getByRole("button", { name: "Enregistrer les changements" })
@@ -202,7 +202,9 @@ test("camera opens only on explicit action; invalid file error and draft refresh
   await page
     .getByLabel("Un petit titre")
     .fill("Brouillon " + info.project.name);
-  await page.getByLabel("Qui peut voir ce souvenir ?").selectOption("private");
+  await page
+    .getByLabel("Qui peut voir cette rencontre ?")
+    .selectOption("private");
   await page.getByRole("button", { name: "Voir l’aperçu" }).click();
   await page.reload();
   await expect(
@@ -300,7 +302,9 @@ test("publication still completes when browser session storage is disabled", asy
   await readyPhoto(page);
   const title = "Stockage navigateur refusé " + info.project.name;
   await page.getByLabel("Un petit titre").fill(title);
-  await page.getByLabel("Qui peut voir ce souvenir ?").selectOption("private");
+  await page
+    .getByLabel("Qui peut voir cette rencontre ?")
+    .selectOption("private");
   await page.getByRole("button", { name: "Voir l’aperçu" }).click();
   await page.getByRole("button", { name: "Publier la rencontre" }).click();
   await expect(page).toHaveURL(/\/rencontre\//);

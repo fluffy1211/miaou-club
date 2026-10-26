@@ -170,12 +170,12 @@ export function Discovery({
       )}
       <h1>
         {mode === "home"
-          ? "Les derniers mignons."
+          ? "Les dernières rencontres."
           : mode === "profile"
             ? (profile?.displayName ?? "Profil du club")
             : mode === "map"
               ? "Les chats du coin."
-              : "Tous les mignons."}
+              : "Toutes les rencontres."}
       </h1>
       {profile && (
         <div className={"public-profile account-color-" + profile.color}>
@@ -201,18 +201,11 @@ export function Discovery({
         </div>
       )}
       <p role="status">{message || (busy ? "Chargement…" : "")}</p>
-      <nav className="discovery-tabs" aria-label="Découvrir">
-        <a
-          href="/rencontres"
-          aria-current={mode === "list" ? "page" : undefined}
-        >
-          Les mignons
+      {mode === "home" && (
+        <a className="text-link" href="/rencontres">
+          Voir toutes les rencontres
         </a>
-        <a href="/carte" aria-current={mode === "map" ? "page" : undefined}>
-          La carte
-        </a>
-        <a href="/photo">Ajouter une rencontre</a>
-      </nav>
+      )}
       {mode === "map" && ready && (
         <>
           {providerKey && (

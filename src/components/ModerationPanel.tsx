@@ -159,12 +159,12 @@ export function ModerationPanel({
               <p>{entry.description}</p>
               <p>
                 {entry.visibility === "private"
-                  ? "Consultation exceptionnelle d’un souvenir devenu privé."
-                  : "Souvenir partagé signalé."}
+                  ? "Consultation exceptionnelle d’une rencontre devenue privée."
+                  : "Rencontre partagée signalée."}
               </p>
               <img
                 src={entry.image}
-                alt="Photo du souvenir signalé"
+                alt="Polaroid de la rencontre signalée"
                 style={{ maxWidth: "100%" }}
               />
             </div>
