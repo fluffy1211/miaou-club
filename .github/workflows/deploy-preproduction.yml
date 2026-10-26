@@ -63,7 +63,7 @@ jobs:
           digest=$(docker image inspect "$IMAGE:$SHA" --format '{{index .RepoDigests 0}}')
           [[ "$digest" == "$IMAGE@sha256:"* ]] || { echo "Digest GHCR introuvable" >&2; exit 1; }
           echo "image=$digest" >> "$GITHUB_OUTPUT"
-          printf 'Candidat %s publié : `%s`\n' "$SHA" "$digest" >> "$GITHUB_STEP_SUMMARY"
+          printf 'Candidat %s publié : %s\n' "$SHA" "$digest" >> "$GITHUB_STEP_SUMMARY"
       - name: Deploy on Render
         if: inputs.deploy
         env:
