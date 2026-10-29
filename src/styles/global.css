@@ -573,3 +573,46 @@ main:focus {
   background: var(--white);
   box-shadow: var(--shadow-paper);
 }
+
+/* Entrées animées façon page Figue : le contenu monte en douceur, en cascade. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(var(--space-4)) scale(0.98);
+  }
+}
+@keyframes pop-in {
+  50% {
+    transform: scale(1.18);
+  }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .encounter-main > *,
+  .account-panel > * {
+    animation: rise-in 0.4s var(--bounce) backwards;
+  }
+  .encounter-main > :nth-child(2),
+  .account-panel > :nth-child(2) {
+    animation-delay: 60ms;
+  }
+  .encounter-main > :nth-child(3),
+  .account-panel > :nth-child(3) {
+    animation-delay: 120ms;
+  }
+  .encounter-main > :nth-child(4),
+  .account-panel > :nth-child(4) {
+    animation-delay: 180ms;
+  }
+  .encounter-main > :nth-child(n + 5),
+  .account-panel > :nth-child(n + 5) {
+    animation-delay: 240ms;
+  }
+  .friend-section,
+  .friend-row,
+  .notebook-grid > * {
+    animation: rise-in 0.4s var(--bounce) backwards;
+  }
+  .encounter-nav [aria-current] svg {
+    animation: pop-in 0.35s var(--bounce);
+  }
+}
