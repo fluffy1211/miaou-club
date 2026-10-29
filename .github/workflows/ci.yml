@@ -183,6 +183,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: docker build --target runtime -t "miaou-candidate:${GITHUB_SHA}" .
+      # The smoke script imports the compiled server (dist/backend) from the checkout.
+      - name: Build server for the smoke script
+        run: npm run build:server
       - name: Test runtime candidate
         run: MIAOU_IMAGE="miaou-candidate:${GITHUB_SHA}" npm run test:image
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
