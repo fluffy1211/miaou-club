@@ -197,8 +197,14 @@
 .account-panel .account-signout {
   background: transparent;
   color: var(--ink);
-  border-color: var(--ink);
+  border-color: transparent;
   box-shadow: none;
+  min-height: 36px;
+  padding: var(--space-1) 0;
+  text-decoration: underline;
+  text-decoration-color: var(--violet);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
 }
 .account-panel .account-signout {
   display: block;
