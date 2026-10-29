@@ -1,4 +1,5 @@
 ---
+import AppHead from "./AppHead.astro";
 import "../styles/global.css";
 import "../styles/accounts.css";
 const { title = "ton compte" } = Astro.props;
@@ -8,12 +9,7 @@ Astro.response.headers.set("Cache-Control", "no-store");
 <!doctype html>
 <html lang="fr">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex" />
-    <meta name="referrer" content="no-referrer" />
-    <title>Miaou Club — {title}</title>
-    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <AppHead title={`Miaou Club — ${title}`} />
   </head>
   <body>
     <main>
