@@ -1,3 +1,4 @@
+import { crc32 } from "node:zlib";
 // ZIP STORE entries: no executable names, no filesystem extraction, UTF-8 paths.
 export function zip(files: Array<{ name: string; bytes: Buffer }>) {
   const locals: Buffer[] = [],
@@ -11,13 +12,7 @@ export function zip(files: Array<{ name: string; bytes: Buffer }>) {
       throw new Error("Invalid archive name");
     const name = Buffer.from(file.name),
       data = file.bytes;
-    let crc = 0xffffffff;
-    for (const byte of data) {
-      crc ^= byte;
-      for (let bit = 0; bit < 8; bit++)
-        crc = (crc >>> 1) ^ (crc & 1 ? 0xedb88320 : 0);
-    }
-    crc = (crc ^ 0xffffffff) >>> 0;
+    const crc = crc32(data);
     const header = Buffer.alloc(30);
     header.writeUInt32LE(0x04034b50);
     header.writeUInt16LE(20, 4);
