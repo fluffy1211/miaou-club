@@ -4,6 +4,7 @@ on:
     branches: [develop, main]
   push:
     branches: [develop, main]
+  merge_group:
   workflow_dispatch:
 permissions:
   contents: read
@@ -13,6 +14,32 @@ concurrency:
 # Jobs run in parallel; the `verify` job is the single required check and
 # fails unless every other job succeeded (a skipped or cancelled job fails it).
 jobs:
+  # Pull requests skip the image build, smoke test and Trivy scan unless they touch
+  # what the image is made of. Pushes, merge groups and manual runs always run it.
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      image: ${{ steps.filter.outputs.image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Detect image-relevant changes
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$EVENT" != pull_request ]; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$BASE_SHA" HEAD | grep -Eq '^(Dockerfile|\.dockerignore|package(-lock)?\.json|\.node-version|server/|scripts/smoke-image\.mjs|\.github/workflows/ci\.yml)'; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=false" >> "$GITHUB_OUTPUT"
+          fi
+
   quality:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
@@ -79,7 +106,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [chromium-mobile, webkit-mobile]
+        # WebKit is flaky and slow: pull requests run Chromium only, develop and the
+        # merge queue run both.
+        project: ${{ fromJSON(github.event_name == 'pull_request' && '["chromium-mobile"]' || '["chromium-mobile","webkit-mobile"]') }}
     services:
       postgres:
         image: postgres:17.7-alpine
@@ -126,6 +155,8 @@ jobs:
             "$PLAYWRIGHT_IMAGE" npm run test:e2e -- --project "$E2E_PROJECT"
 
   image:
+    needs: changes
+    if: needs.changes.outputs.image == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     services:
@@ -182,14 +213,20 @@ jobs:
 
   verify:
     if: always()
-    needs: [quality, server, e2e, image]
+    needs: [changes, quality, server, e2e, image]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require every CI job to succeed
         env:
           RESULTS: ${{ join(needs.*.result, ' ') }}
+          IMAGE_RESULT: ${{ needs.image.result }}
+          IMAGE_NEEDED: ${{ needs.changes.outputs.image }}
         run: |
+          # The image job may only be skipped when the change filter said it was not needed.
+          if [ "$IMAGE_RESULT" = skipped ] && [ "$IMAGE_NEEDED" = false ]; then
+            RESULTS=${RESULTS/skipped/success}
+          fi
           for result in $RESULTS; do
             [ "$result" = success ] || { echo "A CI job finished as: $result" >&2; exit 1; }
           done
