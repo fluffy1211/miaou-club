@@ -191,7 +191,7 @@
   min-height: 24px;
   overflow-wrap: anywhere;
   margin: 0 0 10px;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 .photo-flow {
   max-width: 900px;
@@ -297,7 +297,7 @@ a:hover > .encounter-polaroid,
   margin: var(--space-3) var(--space-2) 0;
 }
 .encounter-polaroid.small figcaption {
-  font-size: 24px;
+  font-size: var(--text-lg);
 }
 .encounter-description {
   white-space: pre-wrap;
@@ -427,7 +427,7 @@ a:hover > .encounter-polaroid,
     margin-bottom: 16px;
   }
   .encounter-editor .encounter-polaroid figcaption {
-    font-size: 27px;
+    font-size: var(--text-xl);
   }
   .encounter-header {
     margin: var(--space-5) auto var(--space-5);
@@ -472,7 +472,7 @@ body > .skip-link:focus {
   visibility: visible;
 }
 .draft-notice {
-  font-size: 13px;
+  font-size: var(--text-sm);
   color: var(--muted);
   display: flex;
   align-items: center;
@@ -588,7 +588,7 @@ body > .skip-link:focus {
     gap: 0;
   }
   .encounter-nav a {
-    font-size: 11px;
+    font-size: var(--text-sm);
     padding: 8px 5px;
   }
 }

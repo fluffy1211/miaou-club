@@ -53,7 +53,7 @@
   background: var(--lilac);
 }
 .account-panel small {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 400;
 }
 .account-panel button {
@@ -86,7 +86,7 @@
 .account-panel .account-consent {
   display: flex;
   align-items: start;
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 400;
 }
 .account-consent input {
@@ -97,7 +97,7 @@
 }
 .account-rule {
   margin-top: -10px;
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--muted);
 }
 .account-rule-ok {
@@ -146,7 +146,7 @@
 .account-factor output {
   display: block;
   overflow-wrap: anywhere;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 .account-panel section {
   padding-top: 20px;
