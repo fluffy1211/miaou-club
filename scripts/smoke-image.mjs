@@ -108,6 +108,13 @@ try {
     page.headers.get("location") !== "/profil?retour=%2Ffigue"
   )
     throw new Error("Member page guard failed in image");
+  for (const [name, expected] of [
+    ["strict-transport-security", "max-age=31536000; includeSubDomains"],
+    ["x-frame-options", "DENY"],
+    ["content-security-policy", "frame-ancestors 'none'"],
+  ])
+    if (page.headers.get(name) !== expected)
+      throw new Error(`Missing security header ${name}`);
   const notice = await fetch(origin + "/acces");
   if (
     notice.status !== 200 ||
