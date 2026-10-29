@@ -3,7 +3,7 @@
   align-items: center;
   justify-content: space-between;
   width: min(1120px, 100% - 2 * var(--space-5));
-  margin: var(--space-5) auto var(--space-6);
+  margin: calc(var(--space-5) + env(safe-area-inset-top)) auto var(--space-6);
   gap: var(--space-5);
 }
 .encounter-header .logo {
@@ -56,7 +56,7 @@
 }
 .encounter-main {
   width: min(1040px, 100% - 2 * var(--space-5));
-  margin: 0 auto 120px;
+  margin: 0 auto calc(96px + env(safe-area-inset-bottom));
 }
 .encounter-main h1 {
   font-family: var(--display);
@@ -83,8 +83,9 @@
   right: 0;
   display: flex;
   justify-content: space-around;
-  padding: var(--space-2) var(--space-3)
-    calc(var(--space-2) + env(safe-area-inset-bottom));
+  padding: var(--space-2) max(var(--space-3), env(safe-area-inset-right))
+    calc(var(--space-2) + env(safe-area-inset-bottom))
+    max(var(--space-3), env(safe-area-inset-left));
   background: color-mix(in srgb, var(--paper) 88%, transparent);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -102,6 +103,10 @@
 }
 .encounter-nav a:hover {
   text-decoration: none;
+}
+.encounter-nav a:active svg {
+  background: var(--lilac);
+  transform: scale(0.92);
 }
 .encounter-nav svg {
   width: 36px;
