@@ -57,7 +57,7 @@
 }
 .encounter-main {
   width: min(1040px, 100% - 2 * var(--space-5));
-  margin: 0 auto calc(var(--space-8) + env(safe-area-inset-bottom));
+  margin: 0 auto calc(72px + env(safe-area-inset-bottom));
 }
 .encounter-main h1 {
   font-family: var(--display);

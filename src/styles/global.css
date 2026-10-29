@@ -53,6 +53,21 @@
   --body: "DM Sans", sans-serif;
   --hand: "Caveat", cursive;
 }
+/* Échelle compacte et fluide sur téléphone (360 à 430px de large) : plus
+   d'infos sans défiler. Le texte courant reste à 16px (pas de zoom iOS dans
+   les champs). */
+@media (max-width: 640px) {
+  :root {
+    --space-5: clamp(14px, 4vw, 20px);
+    --space-6: clamp(16px, 5vw, 24px);
+    --space-7: clamp(28px, 8vw, 40px);
+    --space-8: clamp(40px, 12vw, 56px);
+    --text-lg: clamp(17px, 4.8vw, 20px);
+    --text-xl: clamp(20px, 5.6vw, 26px);
+    --text-title: clamp(26px, 7vw, 34px);
+    --control-height: 44px;
+  }
+}
 * {
   box-sizing: border-box;
 }
