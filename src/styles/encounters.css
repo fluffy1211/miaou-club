@@ -44,7 +44,7 @@
 .header-profile svg {
   width: 32px;
   height: 32px;
-  padding: 5px;
+  padding: var(--space-1);
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
@@ -111,7 +111,7 @@
 .encounter-nav svg {
   width: 36px;
   height: 36px;
-  padding: 6px;
+  padding: var(--space-2);
   fill: none;
   stroke: currentColor;
   stroke-width: 1.5;
@@ -190,7 +190,7 @@
 .encounter-message {
   min-height: 24px;
   overflow-wrap: anywhere;
-  margin: 0 0 10px;
+  margin: 0 0 var(--space-3);
   font-size: var(--text-sm);
 }
 .photo-flow {
@@ -417,14 +417,14 @@ a:hover > .encounter-polaroid,
   .encounter-editor,
   .encounter-detail {
     grid-template-columns: 1fr;
-    gap: 20px;
+    gap: var(--space-5);
   }
   .encounter-editor aside {
     order: -1;
   }
   .encounter-editor .encounter-polaroid {
     max-width: 230px;
-    margin-bottom: 16px;
+    margin-bottom: var(--space-4);
   }
   .encounter-editor .encounter-polaroid figcaption {
     font-size: var(--text-xl);
@@ -476,9 +476,9 @@ body > .skip-link:focus {
   color: var(--muted);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: var(--space-3);
   flex-wrap: wrap;
-  margin: 0 0 24px;
+  margin: 0 0 var(--space-5);
 }
 .draft-notice p {
   flex: 1;
@@ -589,7 +589,7 @@ body > .skip-link:focus {
   }
   .encounter-nav a {
     font-size: var(--text-sm);
-    padding: 8px 5px;
+    padding: var(--space-2) var(--space-1);
   }
 }
 .zone-map-wrap {
@@ -762,7 +762,7 @@ body > .skip-link:focus {
     flex-wrap: wrap;
   }
   .friend-actions {
-    margin-left: 60px;
+    margin-left: var(--space-8);
     flex-basis: calc(100% - 60px);
   }
 }
