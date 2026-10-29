@@ -608,17 +608,14 @@ export function AccountPanel({
         </>
       ) : (
         <>
-          <h1>Retrouve ton petit monde.</h1>
-          <p>Tes Polaroids, tes amis, ton profil.</p>
+          <h1 className="sr-only">Retrouve ton petit monde.</h1>
           <form onSubmit={login}>
             {email}
             {password()}
             {status}
             <button disabled={busy}>Se connecter</button>
           </form>
-          <p>
-            Première visite ? <a href="/compte">Créer un compte</a>
-          </p>
+          <a href="/compte">Créer un compte</a>
           <a href="/mot-de-passe-oublie">Mot de passe oublié</a>
           <p>Si tu as perdu tous tes accès, contacte directement Gabriel.</p>
           {options.google && (

@@ -1,6 +1,7 @@
 ---
 import AppHead from "./AppHead.astro";
 import Icon from "../components/Icon.astro";
+import { InstallPrompt } from "../components/InstallPrompt";
 import "../styles/global.css";
 import "../styles/encounters.css";
 const { title = "Ton carnet" } = Astro.props;
@@ -89,5 +90,6 @@ const path = Astro.url.pathname;
         Amis
       </a>
     </nav>
+    <InstallPrompt client:idle />
   </body>
 </html>
