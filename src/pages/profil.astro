@@ -5,7 +5,9 @@ import { AccountPanel } from "../components/AccountPanel";
 import { handleRequest } from "@miaou/server/http";
 import { safeReturn } from "../../server/src/accounts/security";
 import "../styles/accounts.css";
-const returnTo = safeReturn(Astro.url.searchParams.get("retour"));
+// Sans retour demandé, la connexion mène à la page photo.
+const retour = Astro.url.searchParams.get("retour");
+const returnTo = retour ? safeReturn(retour) : "/photo";
 // Un membre admis retrouve la navigation du club ; sinon page de connexion seule.
 const access = await handleRequest(
   new Request(new URL("/api/v1/access", Astro.url), {
