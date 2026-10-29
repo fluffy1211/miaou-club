@@ -65,7 +65,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--body);
-  font-size: 16px;
+  font-size: var(--text-md);
   line-height: 1.5;
 }
 body:before {
@@ -176,7 +176,7 @@ input:focus-visible {
 }
 .logo {
   font-family: var(--display);
-  font-size: 32px;
+  font-size: var(--text-xl);
   font-weight: 500;
   display: flex;
   align-items: center;
@@ -246,7 +246,7 @@ input:focus-visible {
 }
 .hand {
   font-family: var(--hand);
-  font-size: 28px;
+  font-size: var(--text-xl);
   line-height: 1.1;
 }
 .badge {
@@ -256,7 +256,7 @@ input:focus-visible {
   padding: 8px 15px;
   background: var(--mint);
   border-radius: 25px;
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 600;
   line-height: 1.5;
 }
@@ -306,7 +306,7 @@ input:focus-visible {
 .polaroid .hand {
   display: block;
   margin-top: 12px;
-  font-size: 27px;
+  font-size: var(--text-xl);
 }
 .tape:before {
   content: "";
@@ -334,7 +334,7 @@ input:focus-visible {
   margin: 20px auto;
 }
 .empty h2 {
-  font-size: 36px;
+  font-size: var(--text-title);
 }
 .empty p {
   max-width: 420px;
@@ -353,7 +353,7 @@ input:focus-visible {
   position: relative;
 }
 .note h2 {
-  font-size: 30px;
+  font-size: var(--text-xl);
   margin-bottom: 18px;
 }
 .note p {
@@ -366,13 +366,13 @@ input:focus-visible {
   background: var(--lilac);
 }
 .note .hand {
-  font-size: 32px;
+  font-size: var(--text-xl);
 }
 .note small {
   display: block;
   margin-top: 12px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: var(--text-sm);
 }
 .figue-intro {
   display: grid;
@@ -394,7 +394,7 @@ input:focus-visible {
   font-size: 68px;
 }
 .figue-copy p {
-  font-size: 19px;
+  font-size: var(--text-md);
   max-width: 460px;
 }
 .figue-notes {
@@ -447,7 +447,7 @@ dialog img {
 }
 dialog p {
   font-family: var(--hand);
-  font-size: 27px;
+  font-size: var(--text-xl);
   padding: 14px 10px 8px;
 }
 figure {
@@ -461,7 +461,7 @@ main:focus {
     width: calc(100% - 64px);
   }
   .polaroid .hand {
-    font-size: 23px;
+    font-size: var(--text-lg);
   }
   .figue-intro {
     gap: 40px;
@@ -478,7 +478,7 @@ main:focus {
     width: calc(100% - 40px);
   }
   .logo {
-    font-size: 27px;
+    font-size: var(--text-xl);
     gap: 7px;
   }
   .logo svg {
@@ -492,13 +492,13 @@ main:focus {
     padding: 24px;
   }
   .note h2 {
-    font-size: 28px;
+    font-size: var(--text-xl);
   }
   .empty {
     padding: 45px 0;
   }
   .empty h2 {
-    font-size: 32px;
+    font-size: var(--text-xl);
   }
   .figue-intro {
     display: flex;
@@ -517,7 +517,7 @@ main:focus {
     margin: 18px 0;
   }
   .figue-copy p {
-    font-size: 17px;
+    font-size: var(--text-md);
   }
   .figue-notes {
     grid-template-columns: 1fr;
