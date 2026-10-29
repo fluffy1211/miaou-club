@@ -30,6 +30,7 @@ export function Discovery({
     [owner, setOwner] = useState(""),
     [name, setName] = useState(""),
     [profile, setProfile] = useState<Profile | null>(null),
+    [noFriends, setNoFriends] = useState(false),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(true),
     [ready, setReady] = useState(false),
@@ -93,12 +94,19 @@ export function Discovery({
             )
           : null;
         const page = await encounterAPI<Page>(endpoint);
+        const friends =
+          mode === "map"
+            ? await encounterAPI<{ people: unknown[] }>(
+                "/api/v1/me/friends?kind=friends",
+              )
+            : null;
         const notebook =
           mode === "home"
             ? await encounterAPI<Page>("/api/v1/me/encounters")
             : null;
         if (alive) {
           setReady(true);
+          setNoFriends(friends !== null && friends.people.length === 0);
           setOwner(me.user.id);
           setName(me.profile?.handle ?? me.profile?.displayName ?? "Membre");
           setProfile(p?.profile ?? null);
@@ -320,6 +328,12 @@ export function Discovery({
       >
         {entries.map(card)}
       </div>
+      {mode === "map" && ready && noFriends && (
+        <p role="note" className="discovery-hint">
+          Tu n’as pas encore d’amis : <a href="/amis">ajoute des gens</a> pour
+          voir leurs rencontres sur la carte.
+        </p>
+      )}
       {!busy && !entries.length && !message && (
         <p>Aucune rencontre partagée pour le moment.</p>
       )}
