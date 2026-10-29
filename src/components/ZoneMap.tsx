@@ -282,7 +282,7 @@ export function ZoneMap({
   }, [selected]);
   return (
     <>
-      <p>
+      <p className="sr-only">
         Zones approximatives : les repères montrent une zone, jamais une
         position exacte.
       </p>

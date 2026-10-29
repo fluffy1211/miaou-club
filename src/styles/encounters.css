@@ -28,33 +28,6 @@
 .encounter-header .logo:hover svg {
   transform: rotate(-8deg) scale(1.08);
 }
-.header-profile {
-  display: flex;
-  align-items: center;
-  gap: var(--space-2);
-  min-height: 44px;
-  padding: 0 var(--space-3) 0 var(--space-1);
-  border-radius: var(--radius-pill);
-  font-weight: 600;
-}
-.header-profile:hover {
-  text-decoration: none;
-  background: var(--lilac);
-}
-.header-profile svg {
-  width: 32px;
-  height: 32px;
-  padding: var(--space-1);
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  border-radius: 50%;
-}
-.header-profile[aria-current] svg {
-  background: var(--gradient-primary) border-box;
-  box-shadow: var(--shadow-button);
-  color: var(--white);
-}
 .encounter-main {
   width: min(1040px, 100% - 2 * var(--space-5));
   margin: 0 auto calc(72px + env(safe-area-inset-bottom));
