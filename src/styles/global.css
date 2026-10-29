@@ -37,16 +37,18 @@
   --radius-pill: 999px;
   --radius-card: var(--radius-md);
   --radius-control: 12px;
-  --shadow-paper: 0 10px 24px #ff7a611f, 0 2px 6px #49366d14;
-  --shadow-lift: 0 14px 30px #ff7a6133, 0 4px 10px #49366d1a;
+  --violet: #6b50b5;
+  --shadow-paper: 0 10px 24px #49366d1f, 0 2px 6px #49366d14;
+  --shadow-lift: 0 12px 26px #49366d40, 0 4px 10px #49366d1a;
+  --shadow-button: 0 4px 12px #49366d40;
   --gradient-primary: linear-gradient(
     135deg,
-    var(--coral) 0%,
-    #ff9a6b 55%,
-    var(--yellow) 100%
+    var(--violet) 0%,
+    var(--ink) 100%
   );
   --bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
   --control-height: 48px;
+  --button-height: 40px;
   --display: "Fredoka", sans-serif;
   --body: "DM Sans", sans-serif;
   --hand: "Caveat", cursive;
@@ -195,15 +197,16 @@ input:focus-visible {
   justify-content: center;
   gap: var(--space-2);
   background: var(--gradient-primary) border-box;
-  min-height: var(--control-height);
-  padding: var(--space-3) var(--space-5);
+  min-height: var(--button-height);
+  padding: var(--space-2) var(--space-4);
   border: 2px solid transparent;
   border-radius: var(--radius-pill);
+  color: var(--white);
   font-family: var(--display);
   font-size: var(--text-md);
   font-weight: 600;
   line-height: 1.2;
-  box-shadow: 0 6px 16px #ff7a6140;
+  box-shadow: var(--shadow-button);
   transition:
     box-shadow 0.15s ease,
     transform 0.15s var(--bounce);
@@ -224,6 +227,7 @@ input:focus-visible {
 }
 .button.secondary {
   background: transparent;
+  color: var(--ink);
   border-color: var(--ink);
   box-shadow: none;
 }
