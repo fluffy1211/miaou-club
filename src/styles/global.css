@@ -53,6 +53,20 @@
   --body: "DM Sans", sans-serif;
   --hand: "Caveat", cursive;
 }
+/* Échelle compacte sur téléphone : plus d'infos sans défiler. Le texte courant
+   reste à 16px (pas de zoom iOS dans les champs). */
+@media (max-width: 640px) {
+  :root {
+    --space-5: 16px;
+    --space-6: 20px;
+    --space-7: 32px;
+    --space-8: 48px;
+    --text-lg: 18px;
+    --text-xl: 22px;
+    --text-title: 28px;
+    --control-height: 44px;
+  }
+}
 * {
   box-sizing: border-box;
 }
