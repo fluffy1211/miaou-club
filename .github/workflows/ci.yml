@@ -4,16 +4,111 @@ on:
     branches: [develop, main]
   push:
     branches: [develop, main]
+  merge_group:
   workflow_dispatch:
 permissions:
   contents: read
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+# Jobs run in parallel; the `verify` job is the single required check and
+# fails unless every other job succeeded (a skipped or cancelled job fails it).
 jobs:
-  verify:
+  # Pull requests skip the image build, smoke test and Trivy scan unless they touch
+  # what the image is made of. Pushes, merge groups and manual runs always run it.
+  changes:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      image: ${{ steps.filter.outputs.image }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Detect image-relevant changes
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          if [ "$EVENT" != pull_request ]; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          elif git diff --name-only "$BASE_SHA" HEAD | grep -Eq '^(Dockerfile|\.dockerignore|package(-lock)?\.json|\.node-version|server/|scripts/smoke-image\.mjs|\.github/workflows/ci\.yml)'; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  quality:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17.7-alpine
+        env:
+          POSTGRES_USER: miaou_test
+          POSTGRES_PASSWORD: local-test-only
+          POSTGRES_DB: miaou_test
+        ports: [54330:5432]
+        options: >-
+          --health-cmd "pg_isready -U miaou_test -d miaou_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgresql://miaou_test:local-test-only@127.0.0.1:54330/miaou_test
+      STORYBOOK_DISABLE_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Verify source and builds
+        run: npm run verify
+      - name: Audit dependencies, secrets and workflows
+        run: npm run security:audit && npm run security:secrets && npm run security:workflows
+
+  server:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17.7-alpine
+        env:
+          POSTGRES_USER: miaou_test
+          POSTGRES_PASSWORD: local-test-only
+          POSTGRES_DB: miaou_test
+        ports: [54330:5432]
+        options: >-
+          --health-cmd "pg_isready -U miaou_test -d miaou_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgresql://miaou_test:local-test-only@127.0.0.1:54330/miaou_test
+      STORYBOOK_DISABLE_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
+      - name: Test server
+        run: npm run test:server
+
+  e2e:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        # WebKit is flaky and slow: pull requests run Chromium only, develop and the
+        # merge queue run both.
+        project: ${{ fromJSON(github.event_name == 'pull_request' && '["chromium-mobile"]' || '["chromium-mobile","webkit-mobile"]') }}
     services:
       postgres:
         image: postgres:17.7-alpine
@@ -42,15 +137,14 @@ jobs:
         run: |
           version=$(node -p "require('@playwright/test/package.json').version")
           echo "image=mcr.microsoft.com/playwright:v${version}-noble" >> "$GITHUB_OUTPUT"
-      - name: Verify source and builds
-        run: npm run verify
-      - name: Test server
-        run: npm run test:server
+      - name: Build app and Storybook for E2E
+        run: npm run build && npm run build:storybook
       # Browsers and OS dependencies are preinstalled: no apt mirror on the critical path.
       # Keep the runner's Node version and Linux node_modules in the test container.
-      - name: Test Chromium and WebKit
+      - name: Test ${{ matrix.project }}
         env:
           PLAYWRIGHT_IMAGE: ${{ steps.playwright.outputs.image }}
+          E2E_PROJECT: ${{ matrix.project }}
         run: |
           docker run --rm --init --ipc=host --network host \
             --user "$(id -u):$(id -g)" \
@@ -58,10 +152,40 @@ jobs:
             --volume "$(command -v node):/usr/local/bin/node:ro" \
             --env CI=true \
             --env TEST_DATABASE_URL --env STORYBOOK_DISABLE_TELEMETRY \
-            "$PLAYWRIGHT_IMAGE" npm run test:e2e
-      - name: Audit dependencies, secrets and workflows
-        run: npm run security:audit && npm run security:secrets && npm run security:workflows
+            "$PLAYWRIGHT_IMAGE" npm run test:e2e -- --project "$E2E_PROJECT"
+
+  image:
+    needs: changes
+    if: needs.changes.outputs.image == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:17.7-alpine
+        env:
+          POSTGRES_USER: miaou_test
+          POSTGRES_PASSWORD: local-test-only
+          POSTGRES_DB: miaou_test
+        ports: [54330:5432]
+        options: >-
+          --health-cmd "pg_isready -U miaou_test -d miaou_test"
+          --health-interval 2s --health-timeout 3s --health-retries 30
+    env:
+      TEST_DATABASE_URL: postgresql://miaou_test:local-test-only@127.0.0.1:54330/miaou_test
+      STORYBOOK_DISABLE_TELEMETRY: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: npm ci
       - run: docker build --target runtime -t "miaou-candidate:${GITHUB_SHA}" .
+      # The smoke script imports the compiled server (dist/backend) from the checkout.
+      - name: Build server for the smoke script
+        run: npm run build:server
       - name: Test runtime candidate
         run: MIAOU_IMAGE="miaou-candidate:${GITHUB_SHA}" npm run test:image
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
@@ -73,6 +197,7 @@ jobs:
           exit-code: "1"
           hide-progress: true
       # A tested candidate, never a deployment. Only branch pushes are promotable.
+      # The image is built from the same commit as every other job of this run.
       - name: Package tested candidate
         if: github.event_name == 'push'
         run: |
@@ -88,3 +213,23 @@ jobs:
           name: candidate-${{ github.sha }}
           path: candidate/
           retention-days: 7
+
+  verify:
+    if: always()
+    needs: [changes, quality, server, e2e, image]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every CI job to succeed
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+          IMAGE_RESULT: ${{ needs.image.result }}
+          IMAGE_NEEDED: ${{ needs.changes.outputs.image }}
+        run: |
+          # The image job may only be skipped when the change filter said it was not needed.
+          if [ "$IMAGE_RESULT" = skipped ] && [ "$IMAGE_NEEDED" = false ]; then
+            RESULTS=${RESULTS/skipped/success}
+          fi
+          for result in $RESULTS; do
+            [ "$result" = success ] || { echo "A CI job finished as: $result" >&2; exit 1; }
+          done
