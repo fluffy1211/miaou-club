@@ -93,7 +93,7 @@
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  margin: 2px 4px 0 0;
+  margin: 2px var(--space-1) 0 0;
 }
 .account-rule {
   margin-top: -10px;
@@ -111,7 +111,7 @@
 .account-divider {
   text-align: center;
   border-top: 1px solid var(--line);
-  padding-top: 18px;
+  padding-top: var(--space-4);
 }
 .account-panel .account-google {
   background: var(--white);
@@ -149,8 +149,8 @@
   font-size: var(--text-sm);
 }
 .account-panel section {
-  padding-top: 20px;
-  margin-top: 28px;
+  padding-top: var(--space-5);
+  margin-top: var(--space-6);
   border-top: 1px solid var(--line);
 }
 .account-panel :focus-visible {
@@ -159,23 +159,23 @@
 }
 
 .data-panel > button {
-  margin: 0 8px 12px 0;
+  margin: 0 var(--space-2) var(--space-3) 0;
 }
 .data-panel form > div:has(> button) {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .account-panel > :is(p, ul, a:not(.account-brand)) {
   display: block;
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
 }
 .account-panel > h2 {
-  margin: 28px 0 0;
+  margin: var(--space-6) 0 0;
 }
 .account-panel ul {
-  padding-left: 20px;
+  padding-left: var(--space-5);
 }
 .account-panel a:not(.account-brand) {
   text-decoration: underline;
