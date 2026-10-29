@@ -56,6 +56,9 @@
 }
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  overscroll-behavior-y: none;
 }
 body {
   margin: 0;
@@ -94,9 +97,11 @@ a {
   color: inherit;
   text-decoration: none;
 }
-a:hover {
-  text-decoration: underline;
-  text-underline-offset: 4px;
+@media (hover: hover) {
+  a:hover {
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
 }
 button {
   border: 0;
@@ -145,7 +150,7 @@ h3 {
   margin: auto;
 }
 main {
-  min-height: 65vh;
+  min-height: 65dvh;
 }
 button:focus-visible,
 a:focus-visible,
@@ -207,10 +212,12 @@ input:focus-visible {
   width: 20px;
   height: 20px;
 }
-.button:hover {
-  box-shadow: var(--shadow-lift);
-  transform: translateY(-2px);
-  text-decoration: none;
+@media (hover: hover) {
+  .button:hover {
+    box-shadow: var(--shadow-lift);
+    transform: translateY(-2px);
+    text-decoration: none;
+  }
 }
 .button:active {
   transform: scale(0.96);
