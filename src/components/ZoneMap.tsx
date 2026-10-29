@@ -282,6 +282,10 @@ export function ZoneMap({
   }, [selected]);
   return (
     <>
+      <p className="sr-only">
+        Zones approximatives : les repères montrent une zone, jamais une
+        position exacte.
+      </p>
       <div className="zone-map-wrap">
         <div
           ref={host}
