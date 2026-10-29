@@ -784,3 +784,49 @@ body > .skip-link:focus {
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
+.discovery-hint {
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-4);
+  background: var(--lilac);
+  border-radius: var(--radius-md);
+}
+.discovery-hint a {
+  font-weight: 600;
+  text-decoration: underline;
+}
+.install-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: grid;
+  align-items: end;
+  background: #49366d66;
+}
+.install-prompt {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5) var(--space-5)
+    calc(var(--space-5) + env(safe-area-inset-bottom));
+  background: var(--paper);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  box-shadow: var(--shadow-lift);
+  animation: install-rise 0.25s var(--bounce);
+}
+.install-prompt ol {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+.install-prompt button {
+  justify-self: start;
+}
+@keyframes install-rise {
+  from {
+    transform: translateY(32px);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .install-prompt {
+    animation: none;
+  }
+}
