@@ -1,7 +1,7 @@
 {
   "name": "Miaou Club",
   "short_name": "Miaou",
-  "description": "Le carnet de rencontres de chats du club.",
+  "description": "Le carnet de rencontres de chats du club : photographie les chats croisés, retrouve-les sur la carte et garde tes Polaroids.",
   "lang": "fr",
   "start_url": "/",
   "scope": "/",
@@ -10,13 +10,58 @@
   "background_color": "#fff8ed",
   "theme_color": "#fff8ed",
   "icons": [
-    { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
     {
       "src": "/icons/icon-maskable-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "maskable"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/accueil-mobile.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Les dernières rencontres du club"
+    },
+    {
+      "src": "/screenshots/carnet-mobile.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mon petit carnet de Polaroids"
+    },
+    {
+      "src": "/screenshots/profil-mobile.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Mon profil"
+    },
+    {
+      "src": "/screenshots/accueil-bureau.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Les dernières rencontres du club"
+    },
+    {
+      "src": "/screenshots/carnet-bureau.png",
+      "sizes": "1280x800",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "Mon petit carnet de Polaroids"
     }
   ]
 }
