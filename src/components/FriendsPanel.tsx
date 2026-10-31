@@ -218,10 +218,7 @@ export function FriendsPanel({
         Retour au profil
       </a>
       <h1>Les amis du club.</h1>
-      <p>
-        Ta liste reste personnelle. Retrouve leurs profils et leurs rencontres
-        publiques.
-      </p>
+      <p>Ta liste reste personnelle.</p>
       <form
         className="friend-search"
         onSubmit={(e) => {
@@ -260,7 +257,6 @@ export function FriendsPanel({
             Chercher
           </button>
         </div>
-        <small>Au moins 3 caractères : lettres, chiffres ou tiret bas.</small>
       </form>
       <p role="status" aria-live="polite" className="friend-message">
         {message || (busy ? "Chargement…" : "")}

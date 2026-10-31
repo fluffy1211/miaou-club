@@ -3,7 +3,7 @@ import type { LocationCell } from "@miaou/contracts";
 import { LazyZoneMap } from "./LazyZoneMap";
 export const locationLabel = (c?: LocationCell | null) =>
   c
-    ? `Zone de ${c.size === 500 ? "500 m" : c.size === 1000 ? "1 km" : "2 km"} de côté · cellule ${c.x}/${c.y}`
+    ? `Zone de ${c.size === 500 ? "500 m" : c.size === 1000 ? "1 km" : "2 km"} de côté`
     : "Sans lieu partagé.";
 export function LocationFields({
   value,
@@ -107,12 +107,8 @@ export function LocationFields({
   return (
     <section className="location-fields">
       <h2>Un lieu ? C’est facultatif.</h2>
-      {!editing && (
+      {!editing && !value && (
         <>
-          <p className="location-intro">
-            Ajoute une zone approximative pour retrouver cette rencontre sur la
-            carte.
-          </p>
           <div className="location-options">
             <button
               type="button"
@@ -142,10 +138,8 @@ export function LocationFields({
             </select>
           </label>
           <p className="location-note">
-            Ta position actuelle sert uniquement à proposer une zone
-            approximative, sans suivi. Elle reste sur ton téléphone ; seule la
-            cellule sera partagée. Pour une photo ancienne, vérifie le lieu. La
-            zone ne garantit pas l’anonymat.
+            Ta position sert seulement à proposer une zone approximative, sans
+            suivi.
           </p>
         </>
       )}
@@ -178,7 +172,7 @@ export function LocationFields({
                 .filter((s) => s >= value.size)
                 .map((s) => (
                   <option key={s} value={s}>
-                    {s} m
+                    {s === 500 ? "500 m" : s === 1000 ? "1 km" : "2 km"}
                   </option>
                 ))}
             </select>

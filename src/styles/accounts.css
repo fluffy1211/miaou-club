@@ -372,3 +372,14 @@
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
+
+/* Pages hors connexion : formulaire centré verticalement, sans vide en bas. */
+main:not(.encounter-main):has(.account-panel) {
+  min-height: 100dvh;
+  display: grid;
+  align-content: center;
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+main:not(.encounter-main) .account-panel {
+  margin-block: var(--space-6);
+}

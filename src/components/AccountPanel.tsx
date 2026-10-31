@@ -254,11 +254,9 @@ export function AccountPanel({
                     maxLength={30}
                     required
                   />
-                  <small>
-                    {me.profile?.handle
-                      ? "C’est ton nom sur le club. Il ne peut plus être changé."
-                      : "C’est ton nom sur le club. Unique et définitif après enregistrement."}
-                  </small>
+                  {!me.profile?.handle && (
+                    <small>Définitif après enregistrement.</small>
+                  )}
                 </label>
                 <label>
                   Biographie
@@ -323,8 +321,7 @@ export function AccountPanel({
           <section>
             <h2>Sécurité du compte</h2>
             <p className="account-note">
-              Ton e-mail reste privé. Avant une action sensible (copie de tes
-              données, suppression du compte), confirme ton mot de passe ici.
+              Demandé avant de copier tes données ou de supprimer ton compte.
             </p>
             {me.role === "admin" && me.mfaValid && (
               <button
@@ -587,8 +584,7 @@ export function AccountPanel({
                 />
               </label>
               <small id="handle-rule" className="account-rule">
-                3 à 30 caractères : minuscules, chiffres ou tiret bas. Il ne
-                pourra plus être changé.
+                Minuscules, chiffres ou tiret bas. Définitif.
               </small>
               {email}
               <NewPassword name="password" />
@@ -646,7 +642,6 @@ export function AccountPanel({
       ) : (
         <>
           <h1>Retrouve ton petit monde.</h1>
-          <p className="account-lead">Tes Polaroids, tes amis, ton profil.</p>
           <form onSubmit={login}>
             {email}
             {password()}
@@ -655,7 +650,7 @@ export function AccountPanel({
           </form>
           <a href="/compte">Créer un compte</a>
           <a href="/mot-de-passe-oublie">Mot de passe oublié</a>
-          <p>Si tu as perdu tous tes accès, contacte directement Gabriel.</p>
+          <p className="account-note">Accès perdus ? Écris à Gabriel.</p>
           {options.google && (
             <form onSubmit={google}>
               <div className="account-divider">ou</div>

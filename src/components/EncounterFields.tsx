@@ -32,7 +32,7 @@ export function EncounterFields({
           value={value.description}
           onChange={(e) => onChange({ ...value, description: e.target.value })}
         />
-        <small>Facultatif · 2 000 caractères maximum.</small>
+        <small>Facultatif</small>
       </label>
       <label>
         Date de la rencontre
@@ -74,8 +74,7 @@ export function EncounterFields({
         }
       />
       <p className="encounter-privacy">
-        Vérifie aussi que ta photo et ton texte ne révèlent pas d’adresse ou de
-        personne identifiable.
+        Évite de montrer une adresse ou une personne reconnaissable.
       </p>
     </>
   );

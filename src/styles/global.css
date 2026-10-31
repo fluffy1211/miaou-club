@@ -639,3 +639,7 @@ main:focus {
 .access-notice .button {
   margin-top: var(--space-2);
 }
+
+textarea {
+  resize: none;
+}

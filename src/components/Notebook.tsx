@@ -133,7 +133,6 @@ export function Notebook({ id }: { id?: string }) {
       {!id ? (
         <>
           <h1>Mon petit carnet.</h1>
-          <p>Tes rencontres et leurs Polaroids.</p>
           {!group && !busy && (
             <p className="encounter-privacy">
               Ton espace personnel reste accessible. La publication et l’accès
@@ -168,9 +167,6 @@ export function Notebook({ id }: { id?: string }) {
           ) : !busy && !message ? (
             <div className="empty-notebook">
               <h2>Le premier Polaroid sera le tien.</h2>
-              <p>
-                Photographie un chat rencontré et garde ce petit moment ici.
-              </p>
               {group && (
                 <a className="encounter-button" href="/photo">
                   Ajouter ma première rencontre

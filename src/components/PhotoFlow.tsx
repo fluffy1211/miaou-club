@@ -397,7 +397,6 @@ export function PhotoFlow() {
             <h1 ref={heading} tabIndex={-1}>
               Une nouvelle rencontre.
             </h1>
-            <p>Un Polaroid, quelques mots, et la rencontre est gardée.</p>
             <div className="photo-replace">
               <button
                 className="encounter-link"
@@ -438,11 +437,6 @@ export function PhotoFlow() {
           <h1 ref={heading} tabIndex={-1}>
             Prêt à rejoindre le carnet ?
           </h1>
-          <p>
-            {draft.visibility === "private"
-              ? "Cette rencontre sera visible uniquement par toi."
-              : "Voici ce que les membres du club pourront voir."}
-          </p>
           <div className="encounter-detail">
             {media?.image && (
               <Polaroid image={media.image} title={draft.title} />
@@ -487,10 +481,6 @@ export function PhotoFlow() {
       )}
       {step !== "choose" && (
         <div className="draft-notice">
-          <p>
-            Brouillon gardé dans cet onglet 24 h maximum, jusqu’à sa fermeture
-            ou ta déconnexion.
-          </p>
           <button
             className="encounter-link"
             disabled={busy}

@@ -191,7 +191,9 @@ export function Discovery({
           : mode === "profile"
             ? (profile?.displayName ?? "Profil du club")
             : mode === "map"
-              ? "Les chats du coin."
+              ? choose
+                ? "Choisir un lieu"
+                : "Les chats du coin."
               : "Toutes les rencontres."}
       </h1>
       {profile && (
@@ -211,11 +213,9 @@ export function Discovery({
           {profile.bio ? (
             <p>{profile.bio}</p>
           ) : (
-            <p className="public-profile-empty">
-              {profile.handle === myHandle
-                ? "Tu n’as pas encore écrit de biographie."
-                : "Pas encore de biographie."}
-            </p>
+            profile.handle === myHandle && (
+              <p className="public-profile-empty">Pas encore de biographie.</p>
+            )
           )}
           {!busy && entries.length > 0 && (
             <p className="public-profile-count">
@@ -289,18 +289,9 @@ export function Discovery({
               ))}
             </ul>
           )}
-          <LazyZoneMap
-            providerKey={providerKey}
-            navigationCenter={navigationCenter}
-            entries={entries}
-            focus={focus}
-            selected={selected}
-            selectionSize={selectionSize}
-            onSelect={choose ? setSelected : undefined}
-          />
           {choose && (
-            <section>
-              <h2>Choisir un lieu</h2>
+            <div className="map-choose-head">
+              <p>Touche la carte pour placer la zone.</p>
               <label>
                 Taille de la zone à choisir
                 <select
@@ -312,20 +303,33 @@ export function Discovery({
                     setSelected(null);
                   }}
                 >
-                  {[500, 1000, 2000].map((s) => (
+                  {([500, 1000, 2000] as const).map((s) => (
                     <option key={s} value={s}>
-                      {s} m
+                      {s === 500 ? "500 m" : s === 1000 ? "1 km" : "2 km"}
                     </option>
                   ))}
                 </select>
               </label>
-              <p>
-                Touche la carte pour proposer une cellule.{" "}
-                {locationLabel(selected)}
+            </div>
+          )}
+          <LazyZoneMap
+            providerKey={providerKey}
+            navigationCenter={navigationCenter}
+            entries={entries}
+            focus={focus}
+            selected={selected}
+            selectionSize={selectionSize}
+            onSelect={choose ? setSelected : undefined}
+          />
+          {choose && (
+            <section className="map-choose">
+              <p className="location-current">
+                {selected ? locationLabel(selected) : "Aucune zone choisie."}
               </p>
-              {selected && (
+              <div className="map-choose-actions">
                 <button
                   className="encounter-button"
+                  disabled={!selected}
                   onClick={() => {
                     try {
                       sessionStorage.setItem(
@@ -342,30 +346,34 @@ export function Discovery({
                 >
                   Utiliser cette zone
                 </button>
-              )}
-              <a href="/photo">Revenir sans lieu</a>
+                <a className="encounter-button secondary" href="/photo">
+                  Revenir sans lieu
+                </a>
+              </div>
             </section>
           )}
-          <h2>Les rencontres de la carte</h2>
+          {!choose && <h2>Les rencontres de la carte</h2>}
         </>
       )}
-      <div
-        className={
-          "notebook-grid" + (mode === "home" ? " discovery-home-grid" : "")
-        }
-      >
-        {entries.map(card)}
-      </div>
-      {mode === "map" && ready && noFriends && (
+      {!choose && (
+        <div
+          className={
+            "notebook-grid" + (mode === "home" ? " discovery-home-grid" : "")
+          }
+        >
+          {entries.map(card)}
+        </div>
+      )}
+      {mode === "map" && ready && noFriends && !choose && (
         <p role="note" className="discovery-hint">
           Tu n’as pas encore d’amis : <a href="/amis">ajoute des gens</a> pour
           voir leurs rencontres sur la carte.
         </p>
       )}
-      {!busy && !entries.length && !message && (
+      {!busy && !entries.length && !message && !choose && (
         <p className="discovery-empty">
           {mode === "map"
-            ? "Aucune rencontre avec un lieu pour le moment. Ajoute une zone à une rencontre pour la retrouver ici."
+            ? "Aucune rencontre sur la carte pour l’instant."
             : mode === "profile"
               ? "Aucune rencontre partagée sur ce profil."
               : "Aucune rencontre partagée pour le moment."}
@@ -389,11 +397,7 @@ export function Discovery({
           </h2>
           {own ? (
             <>
-              {entries.some((e) => e.id === own.id) ? (
-                <p>Tes Polaroids t’attendent dans ton carnet.</p>
-              ) : (
-                card(own)
-              )}
+              {entries.some((e) => e.id === own.id) ? null : card(own)}
               <div className="home-notebook-actions">
                 <a className="encounter-button" href="/carnet">
                   Voir tout mon carnet

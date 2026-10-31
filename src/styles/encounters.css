@@ -931,9 +931,8 @@ body > .skip-link:focus {
   display: none;
 }
 .draft-notice {
-  margin: var(--space-6) 0 0;
-  padding-top: var(--space-4);
-  border-top: 1px solid var(--line);
+  justify-content: center;
+  margin: var(--space-4) 0 0;
 }
 
 /* Aperçu et détail */
@@ -972,4 +971,40 @@ body > .skip-link:focus {
 
 .discovery-home-grid {
   margin-top: var(--space-2);
+}
+
+/* Choix d'un lieu sur la carte */
+.map-choose-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-4);
+}
+.map-choose-head p {
+  margin: 0;
+  color: var(--muted);
+}
+.map-choose-head label {
+  min-width: 160px;
+}
+.zone-map-wrap {
+  margin-bottom: var(--space-3);
+}
+.zone-map-wrap ~ p[role="status"]:empty {
+  display: none;
+}
+.map-choose {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+.map-choose-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.map-choose-actions > * {
+  flex: 1 1 160px;
 }
