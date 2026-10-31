@@ -643,3 +643,99 @@ main:focus {
 textarea {
   resize: none;
 }
+
+/* ----------------------------------------------------------------------
+   Système d'actions unique : trois boutons (principal, secondaire, danger)
+   aux mêmes dimensions, et un seul style de lien texte. Le préfixe `body`
+   l'emporte sur les variantes historiques des feuilles de composants.
+   ---------------------------------------------------------------------- */
+body :is(.button, .encounter-button, .account-panel button) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) var(--space-5);
+  border: 2px solid transparent;
+  border-radius: var(--radius-pill);
+  background: var(--gradient-primary) border-box;
+  box-shadow: var(--shadow-button);
+  color: var(--white);
+  font-family: var(--display);
+  font-size: var(--text-md);
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+body
+  :is(
+    .button.secondary,
+    .encounter-button.secondary,
+    .account-panel button.secondary,
+    .account-panel .account-signout,
+    .pill-links a
+  ) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-5);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  box-shadow: none;
+  color: var(--ink);
+  font-family: var(--display);
+  font-size: var(--text-md);
+  font-weight: 600;
+  text-decoration: none;
+}
+body .account-panel button.danger {
+  background: #c2413a;
+  border-color: #c2413a;
+  box-shadow: 0 6px 16px #c2413a40;
+}
+body :is(.button, .encounter-button, .account-panel button):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+/* Lien texte : actions tertiaires et navigation (« Retour », « Effacer »…). */
+body
+  :is(
+    .text-link,
+    .encounter-link,
+    .back-link,
+    .friend-text-action,
+    .account-panel > a:not(.account-brand, .button),
+    .account-panel section > a,
+    .data-panel a:not(.button)
+  ) {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  box-shadow: none;
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: var(--text-md);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--coral);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  cursor: pointer;
+}
+/* Liens dans une phrase : même soulignement, taille du texte. */
+body :is(p, span, label) > a:not(.button, .encounter-button, .text-link) {
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--coral);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}

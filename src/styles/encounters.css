@@ -1008,3 +1008,28 @@ body > .skip-link:focus {
 .map-choose-actions > * {
   flex: 1 1 160px;
 }
+
+/* Le dernier élément ne passe jamais sous la barre de navigation. */
+@media (max-width: 760px) {
+  .encounter-main {
+    margin-bottom: calc(80px + var(--space-7) + env(safe-area-inset-bottom));
+  }
+}
+/* Un bouton seul garde sa largeur naturelle ; les paires se partagent la ligne. */
+.encounter-main form > .encounter-button {
+  justify-self: start;
+}
+.photo-replace {
+  gap: var(--space-5);
+  font-size: var(--text-md);
+}
+.draft-notice {
+  justify-content: flex-start;
+}
+.account-panel .pill-links,
+.pill-links {
+  gap: var(--space-3);
+}
+.encounter-actions > :only-child {
+  flex: 0 1 auto;
+}
