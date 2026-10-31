@@ -373,13 +373,24 @@
   text-underline-offset: 4px;
 }
 
-/* Pages hors connexion : formulaire centré verticalement, sans vide en bas. */
-main:not(.encounter-main):has(.account-panel) {
-  min-height: 100dvh;
-  display: grid;
-  align-content: center;
-  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
-}
+/* Pages hors connexion : logo en haut comme ailleurs, contenu centré
+   dans la hauteur restante (pas de grand vide en bas). */
 main:not(.encounter-main) .account-panel {
-  margin-block: var(--space-6);
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 2 * var(--space-5));
+  margin-block: var(--space-5);
+  padding-top: env(safe-area-inset-top);
+}
+main:not(.encounter-main) .account-panel > * {
+  flex-shrink: 0;
+}
+main:not(.encounter-main) .account-brand {
+  align-self: flex-start;
+}
+main:not(.encounter-main) .account-brand + * {
+  margin-top: auto;
+}
+main:not(.encounter-main) .account-panel > :last-child {
+  margin-bottom: auto;
 }

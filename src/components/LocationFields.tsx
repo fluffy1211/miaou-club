@@ -137,10 +137,6 @@ export function LocationFields({
               ))}
             </select>
           </label>
-          <p className="location-note">
-            Ta position sert seulement à proposer une zone approximative, sans
-            suivi.
-          </p>
         </>
       )}
       <p className="location-current">{locationLabel(value)}</p>

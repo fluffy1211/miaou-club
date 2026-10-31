@@ -73,9 +73,6 @@ export function EncounterFields({
           })
         }
       />
-      <p className="encounter-privacy">
-        Évite de montrer une adresse ou une personne reconnaissable.
-      </p>
     </>
   );
 }
