@@ -1,10 +1,27 @@
 # Synthetic rehearsal only: no provider credentials or remote backup activation.
 name: CI — backup rehearsal
 on:
+  # Not a required check: skipped when nothing the rehearsal exercises changed.
   pull_request:
     branches: [develop, main]
+    paths:
+      - server/**
+      - scripts/**
+      - tests/**
+      - package.json
+      - package-lock.json
+      - .node-version
+      - .github/workflows/backup-rehearsal.yml
   push:
     branches: [develop, main]
+    paths:
+      - server/**
+      - scripts/**
+      - tests/**
+      - package.json
+      - package-lock.json
+      - .node-version
+      - .github/workflows/backup-rehearsal.yml
   workflow_dispatch:
 permissions:
   contents: read

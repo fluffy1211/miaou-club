@@ -46,28 +46,29 @@
     box-shadow 0.15s ease;
 }
 .account-panel :is(input, textarea, select):focus {
-  border-color: var(--coral);
-  box-shadow: 0 0 0 4px #ff7a6133;
+  border-color: var(--violet);
+  box-shadow: 0 0 0 4px #6b50b533;
 }
 .account-panel input[readonly] {
   background: var(--lilac);
 }
 .account-panel small {
-  font-size: 13px;
+  font-size: var(--text-sm);
   font-weight: 400;
 }
 .account-panel button {
   border: 2px solid transparent;
   border-radius: var(--radius-pill);
   background: var(--gradient-primary) border-box;
-  box-shadow: 0 6px 16px #ff7a6140;
-  color: var(--ink);
+  box-shadow: var(--shadow-button);
+  color: var(--white);
   font-family: var(--display);
   font-size: var(--text-md);
   font-weight: 600;
-  padding: var(--space-3) var(--space-5);
+  padding: var(--space-2) var(--space-4);
   cursor: pointer;
-  min-height: var(--control-height);
+  min-height: var(--button-height);
+  justify-self: start;
   transition:
     box-shadow 0.15s ease,
     transform 0.15s var(--bounce);
@@ -86,18 +87,18 @@
 .account-panel .account-consent {
   display: flex;
   align-items: start;
-  font-size: 14px;
+  font-size: var(--text-sm);
   font-weight: 400;
 }
 .account-consent input {
   width: 20px;
   height: 20px;
   flex-shrink: 0;
-  margin: 2px 4px 0 0;
+  margin: 2px var(--space-1) 0 0;
 }
 .account-rule {
   margin-top: -10px;
-  font-size: 14px;
+  font-size: var(--text-sm);
   color: var(--muted);
 }
 .account-rule-ok {
@@ -111,9 +112,10 @@
 .account-divider {
   text-align: center;
   border-top: 1px solid var(--line);
-  padding-top: 18px;
+  padding-top: var(--space-4);
 }
 .account-panel .account-google {
+  color: var(--ink);
   background: var(--white);
   border-color: var(--line);
   box-shadow: none;
@@ -146,11 +148,11 @@
 .account-factor output {
   display: block;
   overflow-wrap: anywhere;
-  font-size: 14px;
+  font-size: var(--text-sm);
 }
 .account-panel section {
-  padding-top: 20px;
-  margin-top: 28px;
+  padding-top: var(--space-5);
+  margin-top: var(--space-6);
   border-top: 1px solid var(--line);
 }
 .account-panel :focus-visible {
@@ -159,23 +161,26 @@
 }
 
 .data-panel > button {
-  margin: 0 8px 12px 0;
+  margin: var(--space-3) var(--space-2) 0 0;
+}
+.data-panel > p {
+  margin-top: var(--space-3);
 }
 .data-panel form > div:has(> button) {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: var(--space-2);
 }
 
 .account-panel > :is(p, ul, a:not(.account-brand)) {
   display: block;
-  margin: 8px 0 0;
+  margin: var(--space-2) 0 0;
 }
 .account-panel > h2 {
-  margin: 28px 0 0;
+  margin: var(--space-6) 0 0;
 }
 .account-panel ul {
-  padding-left: 20px;
+  padding-left: var(--space-5);
 }
 .account-panel a:not(.account-brand) {
   text-decoration: underline;
@@ -191,12 +196,19 @@
 .account-panel button.secondary,
 .account-panel .account-signout {
   background: transparent;
-  border-color: var(--ink);
+  color: var(--ink);
+  border-color: transparent;
   box-shadow: none;
+  min-height: 36px;
+  padding: var(--space-1) 0;
+  text-decoration: underline;
+  text-decoration-color: var(--violet);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
 }
 .account-panel .account-signout {
   display: block;
-  margin-top: var(--space-6);
+  margin-top: var(--space-5);
 }
 .account-panel button.danger {
   background: #c2413a;
@@ -204,7 +216,7 @@
   box-shadow: 0 6px 16px #c2413a40;
 }
 .account-panel section > :is(button, a) {
-  margin: var(--space-3) var(--space-3) 0 0;
+  margin: var(--space-3) var(--space-2) 0 0;
 }
 .account-panel section > a {
   display: inline-block;

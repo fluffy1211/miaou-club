@@ -58,6 +58,9 @@ export function FriendsPanel({
   }
   useEffect(() => {
     alive.current = true;
+    // Jamais de clavier à l'ouverture : on ne focalise le champ qu'au toucher.
+    if (document.activeElement instanceof HTMLInputElement)
+      document.activeElement.blur();
     if (!preview)
       void (async () => {
         try {

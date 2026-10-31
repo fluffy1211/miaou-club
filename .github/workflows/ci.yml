@@ -10,6 +10,14 @@ permissions:
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
+# Jobs run in parallel; the `verify` job is the single required check and
+# fails unless every other job succeeded (a skipped or cancelled job fails it).
+# One job on purpose: Actions minutes are billed per job (rounded up), so splitting
+# into parallel jobs cost more minutes than it saved in wall clock time.
+# `verify` stays the single required check name. Steps are skipped by change type:
+#   docs only  -> formatting, secrets and workflow audit
+#   code       -> full checks, Chromium E2E on pull requests (WebKit too on pushes)
+#   image      -> Docker build, smoke test and Trivy, on pushes or when the PR touches the image
 jobs:
   verify:
     runs-on: ubuntu-24.04
@@ -31,40 +39,75 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          fetch-depth: 0
           persist-credentials: false
+      - name: Classify the change
+        id: filter
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          code=true
+          image=true
+          if [ "$EVENT" = pull_request ]; then
+            changed=$(git diff --name-only "$BASE_SHA" HEAD)
+            if ! printf '%s\n' "$changed" | grep -Evq '^(docs/|mockups/|notes/|\.agents/|\.claude/|NEXT_SESSION\.md$|.*\.md$)'; then
+              code=false
+            fi
+            if ! printf '%s\n' "$changed" | grep -Eq '^(Dockerfile|\.dockerignore|package(-lock)?\.json|\.node-version|server/|scripts/smoke-image\.mjs|\.github/workflows/ci\.yml)'; then
+              image=false
+            fi
+          fi
+          echo "code=$code" >> "$GITHUB_OUTPUT"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .node-version
           cache: npm
       - run: npm ci
+      - name: Check formatting of documentation-only changes
+        if: steps.filter.outputs.code == 'false'
+        run: npm run format:check && npm run security:secrets && npm run security:workflows
+      - name: Verify source and builds
+        if: steps.filter.outputs.code == 'true'
+        run: npm run verify
+      - name: Test server
+        if: steps.filter.outputs.code == 'true'
+        run: npm run test:server
       - name: Resolve Playwright image
+        if: steps.filter.outputs.code == 'true'
         id: playwright
         run: |
           version=$(node -p "require('@playwright/test/package.json').version")
           echo "image=mcr.microsoft.com/playwright:v${version}-noble" >> "$GITHUB_OUTPUT"
-      - name: Verify source and builds
-        run: npm run verify
-      - name: Test server
-        run: npm run test:server
       # Browsers and OS dependencies are preinstalled: no apt mirror on the critical path.
       # Keep the runner's Node version and Linux node_modules in the test container.
-      - name: Test Chromium and WebKit
+      # WebKit is flaky and slow: pull requests run Chromium only, pushes run both.
+      - name: Test E2E
+        if: steps.filter.outputs.code == 'true'
         env:
           PLAYWRIGHT_IMAGE: ${{ steps.playwright.outputs.image }}
+          E2E_ARGS: ${{ github.event_name == 'pull_request' && '--project chromium-mobile' || '' }}
         run: |
+          # shellcheck disable=SC2086
           docker run --rm --init --ipc=host --network host \
             --user "$(id -u):$(id -g)" \
             --volume "$PWD:/work" --workdir /work \
             --volume "$(command -v node):/usr/local/bin/node:ro" \
             --env CI=true \
             --env TEST_DATABASE_URL --env STORYBOOK_DISABLE_TELEMETRY \
-            "$PLAYWRIGHT_IMAGE" npm run test:e2e
+            "$PLAYWRIGHT_IMAGE" npm run test:e2e -- $E2E_ARGS
       - name: Audit dependencies, secrets and workflows
+        if: steps.filter.outputs.code == 'true'
         run: npm run security:audit && npm run security:secrets && npm run security:workflows
-      - run: docker build --target runtime -t "miaou-candidate:${GITHUB_SHA}" .
+      - name: Build runtime image
+        if: steps.filter.outputs.code == 'true' && steps.filter.outputs.image == 'true'
+        run: docker build --target runtime -t "miaou-candidate:${GITHUB_SHA}" .
       - name: Test runtime candidate
+        if: steps.filter.outputs.code == 'true' && steps.filter.outputs.image == 'true'
         run: MIAOU_IMAGE="miaou-candidate:${GITHUB_SHA}" npm run test:image
       - uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # 0.36.0
+        if: steps.filter.outputs.code == 'true' && steps.filter.outputs.image == 'true'
         with:
           version: v0.75.0
           image-ref: miaou-candidate:${{ github.sha }}

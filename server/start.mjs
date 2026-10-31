@@ -33,6 +33,16 @@ const server = createServer(async (req, res) => {
   res.setHeader("X-Request-Id", requestId);
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("Referrer-Policy", "same-origin");
+  res.setHeader(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains",
+  );
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Content-Security-Policy", "frame-ancestors 'none'");
+  res.setHeader(
+    "Permissions-Policy",
+    "geolocation=(self), microphone=(), payment=(), usb=()",
+  );
   res.once("finish", () =>
     console.log(
       JSON.stringify({
