@@ -1,4 +1,5 @@
-import { test, expect, type BrowserContext } from "@playwright/test";
+import type { BrowserContext } from "@playwright/test";
+import { test, expect } from "./fixtures.js";
 import { readFile, mkdir } from "node:fs/promises";
 async function login(context: BrowserContext, role = "reader") {
   const sessions = JSON.parse(
@@ -229,7 +230,7 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
   ).encounter;
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Les derniers mignons." }),
+    page.getByRole("heading", { name: "Les dernières rencontres." }),
   ).toBeVisible();
   await expect(page.getByText(e.title).first()).toBeVisible();
   await mkdir(".cache/lot4-browser", { recursive: true });
@@ -238,7 +239,9 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
     fullPage: true,
   });
   await page.goto("/profil/synthetic_reader");
-  await expect(page.getByText("@synthetic_reader")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "synthetic_reader", exact: true }),
+  ).toBeVisible();
   await expect(page.locator(".public-profile")).toHaveClass(
     /account-color-corail/,
   );
@@ -254,13 +257,13 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
   await page.goto("/carte");
   await expect(
     page.getByRole("heading", {
-      name: "Liste alternative des rencontres localisées",
+      name: "Les rencontres de la carte",
     }),
   ).toBeVisible();
   await expect(page.getByText(e.title)).toBeVisible();
   await expect(page.locator(".zone-marker")).toHaveCount(1);
   await expect(page.locator(".zone-map")).toHaveAttribute("data-ready", "true");
-  await expect(page.getByText(/fond local simplifié/)).toBeVisible();
+  await expect(page.getByText(/jamais une position exacte/)).toBeVisible();
   expect(
     await page.evaluate(
       () => document.documentElement.scrollWidth <= innerWidth,
@@ -278,13 +281,13 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
   });
   expect(foreign).toEqual([]);
   await page.goto("/rencontre/" + e.id);
-  await page.getByRole("button", { name: "Modifier le souvenir" }).click();
+  await page.getByRole("button", { name: "Modifier la rencontre" }).click();
   await page.getByLabel("Taille de la zone").selectOption("2000");
   await page
     .getByRole("button", { name: "Enregistrer les changements" })
     .click();
   await expect(page.getByText(/Zone de 2 km de côté/)).toBeVisible();
-  await page.getByRole("button", { name: "Modifier le souvenir" }).click();
+  await page.getByRole("button", { name: "Modifier la rencontre" }).click();
   await page.getByRole("button", { name: "Retirer le lieu" }).click();
   const edited = page.waitForResponse(
     (r) =>
@@ -296,14 +299,17 @@ test("local discovery and coarse GPS flow: action only, no precise request/stora
     .click();
   expect((await edited).status()).toBe(200);
   await expect(
-    page.getByRole("button", { name: "Modifier le souvenir" }),
+    page.getByRole("button", { name: "Modifier la rencontre" }),
   ).toBeVisible();
   const map = await context.request.get("/api/v1/map");
   expect(
     (await map.json()).encounters.some((x: { id: string }) => x.id === e.id),
   ).toBe(false);
-  await page.getByRole("button", { name: "Supprimer ma rencontre" }).click();
-  await page.getByRole("button", { name: "Confirmer la suppression" }).click();
+  // Cleanup through the API: the delete dialog is covered by encounters.test.ts.
+  const removed = await context.request.delete("/api/v1/encounters/" + e.id, {
+    headers: { origin: "http://localhost:43991" },
+  });
+  expect(removed.ok()).toBe(true);
 });
 test("home and notebook avoid geographic JavaScript; a failed geographic import leaves the photo flow usable", async ({
   page,
@@ -327,11 +333,13 @@ test("home and notebook avoid geographic JavaScript; a failed geographic import 
   });
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Les derniers mignons." }),
+    page.getByRole("heading", { name: "Les dernières rencontres." }),
   ).toBeVisible();
   await page.goto("/carnet");
   await expect(
-    page.getByRole("link", { name: "Ajouter une rencontre" }).first(),
+    page
+      .getByRole("link", { name: /Ajouter (une|ma première) rencontre/ })
+      .first(),
   ).toBeVisible();
   expect(geographicResources).toEqual([]);
   await page.route("**/_astro/location.*.js", (route) => route.abort());
@@ -458,8 +466,12 @@ test("manual map selection preserves the draft and publishes only the selected c
   await expect(
     page.getByRole("heading", { name: title, exact: true }),
   ).toBeVisible();
-  await page.getByRole("button", { name: "Supprimer ma rencontre" }).click();
-  await page.getByRole("button", { name: "Confirmer la suppression" }).click();
+  // Cleanup through the API: the delete dialog is covered by encounters.test.ts.
+  const removed = await context.request.delete(
+    "/api/v1/encounters/" + new URL(page.url()).pathname.split("/").at(-1)!,
+    { headers: { origin: "http://localhost:43991" } },
+  );
+  expect(removed.ok()).toBe(true);
 });
 
 for (const download of ["delayed", "failed"] as const) {

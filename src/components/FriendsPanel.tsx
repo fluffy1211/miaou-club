@@ -14,7 +14,7 @@ const errorMessage = (e: unknown) => {
   if (e instanceof EncounterAPIError && e.code === "not_found")
     return "Ce lien n’est plus disponible. Recharge la page pour retrouver tes demandes et tes amis.";
   if (e instanceof EncounterAPIError && e.code === "invalid_request")
-    return "Vérifie le pseudonyme : 3 à 30 lettres, chiffres ou tirets bas.";
+    return "Vérifie le pseudo : 3 à 30 lettres, chiffres ou tirets bas.";
   return (e as Error).message;
 };
 const empty = (): Page => ({ people: [], next: null });
@@ -58,6 +58,9 @@ export function FriendsPanel({
   }
   useEffect(() => {
     alive.current = true;
+    // Jamais de clavier à l'ouverture : on ne focalise le champ qu'au toucher.
+    if (document.activeElement instanceof HTMLInputElement)
+      document.activeElement.blur();
     if (!preview)
       void (async () => {
         try {
@@ -159,10 +162,7 @@ export function FriendsPanel({
         <div className="friend-person">
           {p.handle ? (
             <>
-              <a href={"/profil/" + encodeURIComponent(p.handle)}>
-                {p.displayName}
-              </a>
-              <small>@{p.handle}</small>
+              <a href={"/profil/" + encodeURIComponent(p.handle)}>{p.handle}</a>
             </>
           ) : (
             <strong>{p.displayName}</strong>
@@ -226,6 +226,11 @@ export function FriendsPanel({
         className="friend-search"
         onSubmit={(e) => {
           e.preventDefault();
+          // Easter egg: Figue, Gabriel's cat, is found by name.
+          if (query.trim().toLowerCase() === "figue") {
+            window.location.assign("/figue");
+            return;
+          }
           void run(async () => {
             const q = query.trim().toLowerCase();
             const found = await encounterAPI<Page>(
@@ -238,7 +243,7 @@ export function FriendsPanel({
           });
         }}
       >
-        <label htmlFor="friend-query">Chercher un pseudonyme</label>
+        <label htmlFor="friend-query">Chercher un pseudo</label>
         <div>
           <input
             id="friend-query"
@@ -249,7 +254,7 @@ export function FriendsPanel({
             maxLength={30}
             required
             pattern="[A-Za-z0-9_]{3,30}"
-            placeholder="Pseudonyme…"
+            placeholder="Pseudo…"
           />
           <button className="button secondary" disabled={busy || preview}>
             Chercher
@@ -266,7 +271,7 @@ export function FriendsPanel({
           {results.people.length ? (
             <ul>{results.people.map((p) => row(p))}</ul>
           ) : (
-            <p>Aucun membre trouvé avec ce pseudonyme.</p>
+            <p>Aucun membre trouvé avec ce pseudo.</p>
           )}
           {results.next && (
             <button

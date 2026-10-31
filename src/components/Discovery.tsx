@@ -30,6 +30,7 @@ export function Discovery({
     [owner, setOwner] = useState(""),
     [name, setName] = useState(""),
     [profile, setProfile] = useState<Profile | null>(null),
+    [noFriends, setNoFriends] = useState(false),
     [message, setMessage] = useState(""),
     [busy, setBusy] = useState(true),
     [ready, setReady] = useState(false),
@@ -93,14 +94,21 @@ export function Discovery({
             )
           : null;
         const page = await encounterAPI<Page>(endpoint);
+        const friends =
+          mode === "map"
+            ? await encounterAPI<{ people: unknown[] }>(
+                "/api/v1/me/friends?kind=friends",
+              )
+            : null;
         const notebook =
           mode === "home"
             ? await encounterAPI<Page>("/api/v1/me/encounters")
             : null;
         if (alive) {
           setReady(true);
+          setNoFriends(friends !== null && friends.people.length === 0);
           setOwner(me.user.id);
-          setName(me.profile?.displayName ?? "Membre");
+          setName(me.profile?.handle ?? me.profile?.displayName ?? "Membre");
           setProfile(p?.profile ?? null);
           setEntries(page.encounters);
           setNext(page.next);
@@ -165,15 +173,17 @@ export function Discovery({
   }
   return (
     <section aria-busy={busy}>
-      {mode === "home" && name && <p>Bonjour {name}</p>}
+      {mode === "home" && name && (
+        <p className="discovery-greeting">Bonjour {name}</p>
+      )}
       <h1>
         {mode === "home"
-          ? "Les derniers mignons."
+          ? "Les dernières rencontres."
           : mode === "profile"
             ? (profile?.displayName ?? "Profil du club")
             : mode === "map"
               ? "Les chats du coin."
-              : "Tous les mignons."}
+              : "Toutes les rencontres."}
       </h1>
       {profile && (
         <div className={"public-profile account-color-" + profile.color}>
@@ -195,16 +205,15 @@ export function Discovery({
               profile.displayName.slice(0, 1)
             )}
           </div>
-          <p>@{profile.handle}</p>
           <p>{profile.bio}</p>
         </div>
       )}
       <p role="status">{message || (busy ? "Chargement…" : "")}</p>
-      <div className="encounter-actions">
-        <a href="/rencontres">Les mignons</a>
-        <a href="/carte">La carte</a>
-        <a href="/photo">Ajouter une rencontre</a>
-      </div>
+      {mode === "home" && (
+        <a className="text-link" href="/rencontres">
+          Voir toutes les rencontres
+        </a>
+      )}
       {mode === "map" && ready && (
         <>
           {providerKey && (
@@ -309,11 +318,7 @@ export function Discovery({
               <a href="/photo">Revenir sans lieu</a>
             </section>
           )}
-          <h2>Liste alternative des rencontres localisées</h2>
-          <p>
-            La carte et la liste affichent les mêmes rencontres chargées.
-            Charger la suite ajoute aussi les zones.
-          </p>
+          <h2>Les rencontres de la carte</h2>
         </>
       )}
       <div
@@ -323,8 +328,14 @@ export function Discovery({
       >
         {entries.map(card)}
       </div>
+      {mode === "map" && ready && noFriends && (
+        <p role="note" className="discovery-hint">
+          Tu n’as pas encore d’amis : <a href="/amis">ajoute des gens</a> pour
+          voir leurs rencontres sur la carte.
+        </p>
+      )}
       {!busy && !entries.length && !message && (
-        <p>Aucun souvenir partagé ici pour le moment.</p>
+        <p>Aucune rencontre partagée pour le moment.</p>
       )}
       {next && (
         <button
@@ -337,15 +348,21 @@ export function Discovery({
       )}
       {mode === "home" && (
         <section className="home-notebook">
-          <h2>Ton dernier souvenir</h2>
-          <a href="/carnet">Ton carnet</a>
+          <h2>{own ? "Ta dernière rencontre" : "Ton carnet"}</h2>
           {own ? (
-            card(own)
+            <>
+              {card(own)}
+              <a className="text-link" href="/carnet">
+                Voir tout mon carnet
+              </a>
+            </>
           ) : (
-            <p>
-              Le prochain Polaroid, c’est le tien.{" "}
-              <a href="/photo">Photographier un chat</a>
-            </p>
+            <>
+              <p>Le prochain Polaroid, c’est le tien.</p>
+              <a className="encounter-button" href="/photo">
+                Photographier un chat
+              </a>
+            </>
           )}
         </section>
       )}

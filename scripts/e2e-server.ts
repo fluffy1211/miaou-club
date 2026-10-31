@@ -73,12 +73,8 @@ try {
     );
     if (role.startsWith("friend-"))
       await pool.query(
-        "update profile set handle=$1,display_name=$2 where user_id=$3",
-        [
-          role.replaceAll("-", "_"),
-          role.includes("-a-") ? "Camille synthétique" : "Lou synthétique",
-          body.user.id,
-        ],
+        "update profile set handle=$1,display_name=$1 where user_id=$2",
+        [role.replaceAll("-", "_"), body.user.id],
       );
     if (role === "reader")
       await pool.query(

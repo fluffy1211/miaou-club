@@ -64,7 +64,7 @@ async function setup(url: string, folder = "server/drizzle") {
         body: JSON.stringify({
           email,
           password: "synthetic-password-long",
-          name: "Synthetic " + handle,
+          name: handle,
           acceptedTerms: true,
         }),
       }),
@@ -73,10 +73,6 @@ async function setup(url: string, folder = "server/drizzle") {
     );
     assert.equal(r.status, 200);
     const user = (await r.json()).user;
-    await pool.query("update profile set handle=$1 where user_id=$2", [
-      handle,
-      user.id,
-    ]);
     const cookies = r.headers
       .getSetCookie()
       .map((x) => x.split(";")[0])

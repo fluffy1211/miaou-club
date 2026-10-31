@@ -1,0 +1,43 @@
+/* Figue easter egg: page entrance and the 404 hint. */
+/* Photos fly in from the sides: never widen the page. */
+.figue-page {
+  overflow-x: clip;
+}
+.figue-title {
+  display: block;
+}
+.figue-title > span {
+  display: inline-block;
+}
+.figue-subtitle {
+  display: block;
+}
+.figue-toy {
+  margin-top: var(--space-5);
+}
+.figue-hint {
+  display: inline-block;
+  border-radius: 16px;
+  transition: transform 150ms ease;
+}
+.figue-hint:hover,
+.figue-hint:focus-visible {
+  animation: figue-wiggle 600ms ease-in-out;
+}
+@keyframes figue-wiggle {
+  25% {
+    transform: rotate(-8deg) scale(1.08);
+  }
+  50% {
+    transform: rotate(6deg) scale(1.08);
+  }
+  75% {
+    transform: rotate(-3deg) scale(1.04);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .figue-hint:hover,
+  .figue-hint:focus-visible {
+    animation: none;
+  }
+}

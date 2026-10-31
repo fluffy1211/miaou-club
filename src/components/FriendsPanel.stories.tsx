@@ -20,7 +20,7 @@ export const Empty: Story = {};
 const person = {
   id: "synthetic",
   handle: "camille_synthetique",
-  displayName: "Camille synthétique",
+  displayName: "camille_synthetique",
   color: "violet",
   avatar: "initials",
 };
@@ -34,7 +34,7 @@ export const Requests: Story = {
             ...person,
             id: "sent",
             handle: "lou_synthetique",
-            displayName: "Lou synthétique",
+            displayName: "lou_synthetique",
           },
         ],
         next: null,

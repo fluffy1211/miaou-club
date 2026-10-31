@@ -282,11 +282,9 @@ export function ZoneMap({
   }, [selected]);
   return (
     <>
-      <p>
-        Zones approximatives ·{" "}
-        {providerKey
-          ? "les repères représentent des zones, jamais des positions exactes."
-          : "fond local simplifié, sans rues. Le fond détaillé et la recherche de ville sont indisponibles pour le moment."}
+      <p className="sr-only">
+        Zones approximatives : les repères montrent une zone, jamais une
+        position exacte.
       </p>
       <div className="zone-map-wrap">
         <div

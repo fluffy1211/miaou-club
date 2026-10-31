@@ -47,7 +47,7 @@ export function EncounterFields({
         />
       </label>
       <label>
-        Qui peut voir ce souvenir ?
+        Qui peut voir cette rencontre ?
         <select
           name="visibility"
           value={value.visibility}

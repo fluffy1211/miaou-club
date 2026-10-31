@@ -24,6 +24,10 @@ const errorMessages: Record<string, string> = {
   PASSWORD_TOO_SHORT: `Ton mot de passe doit faire au moins ${minPasswordLength} caractères.`,
   PASSWORD_TOO_LONG: "Ton mot de passe est trop long (128 caractères maximum).",
   INVALID_EMAIL_OR_PASSWORD: "E-mail ou mot de passe incorrect.",
+  HANDLE_INVALID:
+    "Ton pseudo doit faire 3 à 30 caractères : minuscules, chiffres ou tiret bas.",
+  HANDLE_TAKEN: "Ce pseudo est déjà pris, choisis-en un autre.",
+  conflict: "Ce pseudo est déjà pris, choisis-en un autre.",
 };
 function NewPassword({ name }: { name: string }) {
   const [length, setLength] = useState(0);
@@ -171,6 +175,7 @@ export function AccountPanel({
     </p>
   );
   const profile = me && (mode === "profile" || mode === "login");
+  const name = me?.profile?.handle ?? me?.profile?.displayName ?? "Ton compte";
   // Les formulaires de connexion affichent le message près de leur bouton.
   const inlineStatus =
     !profile && !challenge && (mode !== "signup" || options.signup);
@@ -193,11 +198,9 @@ export function AccountPanel({
             className={`account-paper account-color-${me.profile?.color ?? "violet"}`}
           >
             <span className="account-avatar" aria-hidden="true">
-              {me.profile?.avatar === "cat"
-                ? "∧ ∧"
-                : (me.profile?.displayName ?? "M").slice(0, 1)}
+              {me.profile?.avatar === "cat" ? "∧ ∧" : name.slice(0, 1)}
             </span>
-            <h2>{me.profile?.displayName ?? "Ton compte"}</h2>
+            <h2>{name}</h2>
             <p>{me.profile?.bio}</p>
           </div>
           {me.access !== "group" ? (
@@ -216,19 +219,14 @@ export function AccountPanel({
             </div>
           ) : (
             <>
-              <p>
-                <a href="/photo">Photographier un chat</a> ·{" "}
-                <a href="/carnet">Mon carnet</a> · <a href="/amis">Mes amis</a>
+              <nav className="pill-links" aria-label="Mon espace">
+                <a href="/amis">Mes amis</a>
                 {me.profile?.handle && (
-                  <>
-                    {" "}
-                    ·{" "}
-                    <a href={"/profil/" + me.profile.handle}>
-                      Voir mon profil public
-                    </a>
-                  </>
+                  <a href={"/profil/" + me.profile.handle}>
+                    Voir mon profil public
+                  </a>
                 )}
-              </p>
+              </nav>
               <form
                 onSubmit={async (e) => {
                   const v = values(e);
@@ -240,7 +238,7 @@ export function AccountPanel({
               >
                 <h2>Personnaliser mon profil</h2>
                 <label>
-                  Identifiant public
+                  Pseudo
                   <input
                     name="handle"
                     defaultValue={me.profile?.handle ?? ""}
@@ -250,16 +248,10 @@ export function AccountPanel({
                     maxLength={30}
                     required
                   />
-                  <small>Unique et définitif après enregistrement.</small>
-                </label>
-                <label>
-                  Nom affiché
-                  <input
-                    name="displayName"
-                    defaultValue={me.profile?.displayName ?? ""}
-                    maxLength={60}
-                    required
-                  />
+                  <small>
+                    C’est ton nom sur le club. Unique et définitif après
+                    enregistrement.
+                  </small>
                 </label>
                 <label>
                   Biographie
@@ -296,9 +288,7 @@ export function AccountPanel({
           )}
           <section>
             <h2>Sécurité du compte</h2>
-            <p>
-              Méthodes liées : {me.methods.join(", ")}. Ton e-mail reste privé.
-            </p>
+            <p className="account-note">Ton e-mail reste privé.</p>
             {me.role === "admin" && me.mfaValid && (
               <button
                 disabled={busy}
@@ -370,6 +360,7 @@ export function AccountPanel({
               </button>
             )}
             <button
+              className="secondary"
               disabled={busy}
               onClick={async () => {
                 if (await send("/api/v1/me/revoke-others", {}))
@@ -487,6 +478,7 @@ export function AccountPanel({
             )}
           </section>
           <button
+            className="account-signout"
             disabled={busy}
             onClick={async () => {
               if (await send("/api/auth/sign-out", {})) {
@@ -546,14 +538,21 @@ export function AccountPanel({
           {options.signup ? (
             <form onSubmit={signup}>
               <label>
-                Ton nom affiché
+                Ton pseudo
                 <input
                   name="name"
-                  autoComplete="nickname"
-                  maxLength={60}
+                  autoComplete="username"
+                  pattern="[a-z0-9_]{3,30}"
+                  minLength={3}
+                  maxLength={30}
+                  aria-describedby="handle-rule"
                   required
                 />
               </label>
+              <small id="handle-rule" className="account-rule">
+                3 à 30 caractères : minuscules, chiffres ou tiret bas. Il ne
+                pourra plus être changé.
+              </small>
               {email}
               <NewPassword name="password" />
               {terms}
@@ -609,17 +608,14 @@ export function AccountPanel({
         </>
       ) : (
         <>
-          <h1>Retrouve ton petit monde.</h1>
-          <p>Tes Polaroids, tes amis, ton profil.</p>
+          <h1 className="sr-only">Retrouve ton petit monde.</h1>
           <form onSubmit={login}>
             {email}
             {password()}
             {status}
             <button disabled={busy}>Se connecter</button>
           </form>
-          <p>
-            Première visite ? <a href="/compte">Créer un compte</a>
-          </p>
+          <a href="/compte">Créer un compte</a>
           <a href="/mot-de-passe-oublie">Mot de passe oublié</a>
           <p>Si tu as perdu tous tes accès, contacte directement Gabriel.</p>
           {options.google && (

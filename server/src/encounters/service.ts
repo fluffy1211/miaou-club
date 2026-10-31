@@ -7,17 +7,10 @@ import type { ObjectStorage } from "./storage.js";
 import { objectKeys } from "./storage.js";
 import { optimize, MAX_BYTES, InvalidPhoto } from "./pipeline.js";
 import { publicEncounter, visibleMember } from "../accounts/visibility.js";
-export class EncounterError extends Error {
-  constructor(
-    public code: string,
-    public status = 400,
-    public retryAfter?: number,
-  ) {
-    super(code);
-  }
-}
+import { ApiError, uuid } from "../http/member-api.js";
+
 const fail = (code: string, status = 400, retryAfter?: number): never => {
-  throw new EncounterError(code, status, retryAfter);
+  throw new ApiError(code, status, retryAfter);
 };
 export type Draft = {
   title: string;
@@ -66,9 +59,6 @@ function parseLocation(value: unknown) {
     return fail("invalid_location");
   }
 }
-export const uuid = (x: unknown): x is string =>
-  typeof x === "string" &&
-  /^[a-f0-9]{8}(-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(x);
 const joined = `from encounter e join media m on m.id=e.media_id join user_policy p on p.user_id=e.owner_id join "user" u on u.id=e.owner_id left join admission a on a.email=lower(u.email) left join profile f on f.user_id=e.owner_id`;
 const permitted = `e.deleted_at is null and m.state='ready' and (e.owner_id=$1 or ($2 and ${publicEncounter} and ${visibleMember}))`;
 function project(row: QueryResultRow, ownerId: string) {
@@ -81,7 +71,7 @@ function project(row: QueryResultRow, ownerId: string) {
     visibility: row.visibility,
     revision: row.revision,
     owned: row.owner_id === ownerId,
-    author: row.display_name ?? "Membre",
+    author: row.handle ?? row.display_name ?? "Membre",
     authorHandle: row.handle ?? null,
     image: `/media/${row.media_id}/image`,
     thumbnail: `/media/${row.media_id}/thumb`,
@@ -642,8 +632,7 @@ export class Encounters {
             await this.process(c, row.id);
         });
       } catch (e) {
-        if (!(e instanceof EncounterError && e.code === "processing_busy"))
-          throw e;
+        if (!(e instanceof ApiError && e.code === "processing_busy")) throw e;
       }
     }
     // Deleted publication keys remain only for the 7-day recovery window. The

@@ -1,4 +1,5 @@
-import { test, expect, type BrowserContext } from "@playwright/test";
+import type { BrowserContext } from "@playwright/test";
+import { test, expect } from "./fixtures.js";
 import { readFile, mkdir } from "node:fs/promises";
 const origin = "http://localhost:43991";
 async function login(context: BrowserContext, role: string) {
@@ -27,7 +28,7 @@ test("real friendship journey persists requests/acceptance/removal/refusal and n
       page.getByRole("heading", { name: "Les amis du club." }),
     ).toBeVisible();
     await expect(page.getByRole("status")).toBeEmpty();
-    await page.getByLabel("Chercher un pseudonyme").fill(b);
+    await page.getByLabel("Chercher un pseudo").fill(b);
     await page.getByRole("button", { name: "Chercher", exact: true }).click();
     const results = page.locator(".friend-section").filter({
       has: page.getByRole("heading", { name: "Résultats", exact: true }),
@@ -41,12 +42,10 @@ test("real friendship journey persists requests/acceptance/removal/refusal and n
         exact: true,
       }),
     });
-    await expect(
-      sent.getByText("Lou synthétique", { exact: true }),
-    ).toBeVisible();
+    await expect(sent.getByText(b, { exact: true })).toBeVisible();
     await sent.getByRole("button", { name: "Annuler" }).click();
     await expect(page.getByRole("status")).toHaveText("Demande annulée.");
-    await page.getByLabel("Chercher un pseudonyme").fill(b);
+    await page.getByLabel("Chercher un pseudo").fill(b);
     await page.getByRole("button", { name: "Chercher", exact: true }).click();
     await results.getByRole("button", { name: "Ajouter", exact: true }).click();
     await expect(page.getByRole("status")).toHaveText("Demande envoyée.");
@@ -69,9 +68,7 @@ test("real friendship journey persists requests/acceptance/removal/refusal and n
         exact: true,
       }),
     });
-    await expect(
-      received.getByText("Camille synthétique", { exact: true }),
-    ).toBeVisible();
+    await expect(received.getByText(a, { exact: true })).toBeVisible();
     await mkdir(".cache/friends-visual", { recursive: true });
     await peerPage.screenshot({
       path: ".cache/friends-visual/" + info.project.name + "-received.png",
@@ -86,7 +83,7 @@ test("real friendship journey persists requests/acceptance/removal/refusal and n
       has: page.getByRole("heading", { name: "Mes amis", exact: true }),
     });
     await expect(
-      friends.getByRole("link", { name: "Lou synthétique", exact: true }),
+      friends.getByRole("link", { name: b, exact: true }),
     ).toBeVisible();
     const bytes = await readFile(".cache/e2e-photo.png");
     const memories = [];
@@ -133,11 +130,9 @@ test("real friendship journey persists requests/acceptance/removal/refusal and n
         () => document.documentElement.scrollWidth <= window.innerWidth,
       ),
     ).toBe(true);
-    await friends
-      .getByRole("link", { name: "Lou synthétique", exact: true })
-      .click();
+    await friends.getByRole("link", { name: b, exact: true }).click();
     await expect(
-      page.getByRole("heading", { name: "Lou synthétique", exact: true }),
+      page.getByRole("heading", { name: b, exact: true }),
     ).toBeVisible();
     await expect(
       page.getByRole("link", { name: memories[0].title, exact: true }),
@@ -195,7 +190,7 @@ test("real friendship journey persists requests/acceptance/removal/refusal and n
       ).toBe(200);
     }
     expect(limited).toBe(true);
-    await page.getByLabel("Chercher un pseudonyme").fill(b);
+    await page.getByLabel("Chercher un pseudo").fill(b);
     await page.getByRole("button", { name: "Chercher", exact: true }).click();
     await results.getByRole("button", { name: "Ajouter", exact: true }).click();
     await expect(page.getByRole("status")).toContainText(

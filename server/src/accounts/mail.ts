@@ -47,7 +47,7 @@ export function inactivitySender(
   const text =
     "Ton compte Miaou Club n’a pas été utilisé depuis 24 mois. Tu disposes de 30 jours pour te reconnecter et conserver ton compte, ou copier tes données depuis ton profil :\n" +
     new URL("/donnees", baseURL).href +
-    "\nSans retour pendant ce délai, ton compte et tes souvenirs seront supprimés. Pour une aide ou un complément, contacte Gabriel par le canal connu.";
+    "\nSans retour pendant ce délai, ton compte et tes rencontres seront supprimés. Pour une aide ou un complément, contacte Gabriel par le canal connu.";
   return async (email: string, idempotencyKey: string) => {
     await limits.reserve("mail:global", [[86400000, 100]]);
     let result = "failed";

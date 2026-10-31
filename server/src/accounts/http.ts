@@ -1,5 +1,6 @@
 import { and, eq, ne, sql, isNotNull } from "drizzle-orm";
 import { decodeHandle } from "../http/path.js";
+import { publicHandle } from "./handle.js";
 import type { Database } from "../infrastructure/db/client.js";
 import type { Auth } from "../infrastructure/auth/auth.js";
 import {
@@ -256,25 +257,16 @@ async function accountsHTTPInternal(
         )
       )
         return bad();
-      const displayName = body.displayName;
       const bio = body.bio ?? "";
       const color = body.color ?? "violet";
       const avatar = body.avatar ?? "initials";
-      const handle =
-        typeof body.handle === "string"
-          ? body.handle.trim().toLowerCase()
-          : null;
+      const handle = publicHandle(body.handle);
       if (
-        typeof displayName !== "string" ||
-        !displayName.trim() ||
-        displayName.length > 60 ||
         typeof bio !== "string" ||
         bio.length > 240 ||
         !["violet", "corail", "sauge"].includes(String(color)) ||
         !["initials", "cat"].includes(String(avatar)) ||
-        !handle ||
-        !/^[a-z0-9_]{3,30}$/.test(handle) ||
-        ["admin", "miaou", "support", "system"].includes(handle)
+        !handle
       )
         return bad();
       try {
@@ -291,7 +283,7 @@ async function accountsHTTPInternal(
             .update(profile)
             .set({
               handle,
-              displayName: displayName.trim(),
+              displayName: handle,
               bio,
               color: String(color),
               avatar: String(avatar),
@@ -313,7 +305,7 @@ async function accountsHTTPInternal(
       const [p] = await db
         .select({
           handle: profile.handle,
-          displayName: profile.displayName,
+          displayName: profile.handle,
           bio: profile.bio,
           color: profile.color,
           avatar: profile.avatar,

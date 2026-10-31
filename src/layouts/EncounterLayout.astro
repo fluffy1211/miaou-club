@@ -1,5 +1,7 @@
 ---
+import AppHead from "./AppHead.astro";
 import Icon from "../components/Icon.astro";
+import { InstallPrompt } from "../components/InstallPrompt";
 import "../styles/global.css";
 import "../styles/encounters.css";
 const { title = "Ton carnet" } = Astro.props;
@@ -10,13 +12,7 @@ const path = Astro.url.pathname;
 <!doctype html>
 <html lang="fr">
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex" />
-    <meta name="referrer" content="no-referrer" />
-    <meta name="theme-color" content="#fff8ed" />
-    <title>{title} — Miaou Club</title>
-    <link rel="stylesheet" href="/fonts/fonts.css" />
+    <AppHead title={`${title} — Miaou Club`} />
   </head>
   <body>
     <a class="skip-link" href="#main">
@@ -32,7 +28,12 @@ const path = Astro.url.pathname;
       <slot />
     </main>
     <nav class="encounter-nav" aria-label="Navigation principale">
-      <a href="/" aria-current={path === "/" ? "page" : undefined}>
+      <a
+        href="/"
+        aria-current={
+          path === "/" || path === "/rencontres" ? "page" : undefined
+        }
+      >
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z" />
         </svg>
@@ -52,18 +53,6 @@ const path = Astro.url.pathname;
         Photo
       </a>
       <a
-        href="/profil"
-        aria-current={
-          path.startsWith("/profil") || path === "/amis" ? "page" : undefined
-        }
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="7" r="4" />
-          <path d="M4 22v-3a8 8 0 0 1 16 0v3" />
-        </svg>
-        Profil
-      </a>
-      <a
         href="/carnet"
         aria-current={
           path === "/carnet" || path.startsWith("/rencontre/")
@@ -76,6 +65,22 @@ const path = Astro.url.pathname;
         </svg>
         Carnet
       </a>
+      <a
+        href="/profil"
+        aria-current={
+          path.startsWith("/profil") ||
+          ["/amis", "/donnees", "/administration"].includes(path)
+            ? "page"
+            : undefined
+        }
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 22v-2a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v2" />
+        </svg>
+        Profil
+      </a>
     </nav>
+    <InstallPrompt client:idle />
   </body>
 </html>

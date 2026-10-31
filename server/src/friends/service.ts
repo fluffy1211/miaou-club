@@ -1,10 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { Pool, PoolClient } from "pg";
 import { groupAllowed, type Identity } from "../accounts/security.js";
-import { EncounterError, uuid } from "../encounters/service.js";
+import { ApiError, uuid } from "../http/member-api.js";
 import { visibleMember } from "../accounts/visibility.js";
 const fail = (code: string, status = 400, retryAfter?: number): never => {
-  throw new EncounterError(code, status, retryAfter);
+  throw new ApiError(code, status, retryAfter);
 };
 const handleValid = (h: string) => /^[a-z0-9_]{3,30}$/.test(h);
 // Shared projection: no auth ID, e-mail, social list or private encounters.
@@ -44,7 +44,7 @@ export class Friends {
     return this.transaction(i, async (c) => {
       const rows = (
         await c.query(
-          `select f.handle,f.display_name as "displayName",f.color,f.avatar ${members} where ${visible} and u.id<>$1 and position($2 in f.handle)>0 and f.handle>$3 order by f.handle limit 31`,
+          `select f.handle,f.handle as "displayName",f.color,f.avatar ${members} where ${visible} and u.id<>$1 and position($2 in f.handle)>0 and f.handle>$3 order by f.handle limit 31`,
           [i.user.id, q, after],
         )
       ).rows;
@@ -69,7 +69,7 @@ export class Friends {
       // without revealing that account's profile or status to another member.
       const rows = (
         await c.query(
-          `select s.id,case when ${visible} then f.handle else null end as handle,case when ${visible} then f.display_name else 'Membre indisponible' end as "displayName",case when ${visible} then f.color else 'violet' end as color,case when ${visible} then f.avatar else 'initials' end as avatar,coalesce(${visible},false) as available,s.created_at as "createdAt",s.accepted_at as "acceptedAt" from friendship s join "user" u on u.id=case when s.low_id=$1 then s.high_id else s.low_id end join user_policy p on p.user_id=u.id left join profile f on f.user_id=u.id left join admission a on a.email=lower(u.email) where (s.low_id=$1 or s.high_id=$1) and ${condition} and ($2::uuid is null or s.id>$2::uuid) order by s.id limit 31`,
+          `select s.id,case when ${visible} then f.handle else null end as handle,case when ${visible} then coalesce(f.handle,f.display_name) else 'Membre indisponible' end as "displayName",case when ${visible} then f.color else 'violet' end as color,case when ${visible} then f.avatar else 'initials' end as avatar,coalesce(${visible},false) as available,s.created_at as "createdAt",s.accepted_at as "acceptedAt" from friendship s join "user" u on u.id=case when s.low_id=$1 then s.high_id else s.low_id end join user_policy p on p.user_id=u.id left join profile f on f.user_id=u.id left join admission a on a.email=lower(u.email) where (s.low_id=$1 or s.high_id=$1) and ${condition} and ($2::uuid is null or s.id>$2::uuid) order by s.id limit 31`,
           [i.user.id, after || null],
         )
       ).rows;

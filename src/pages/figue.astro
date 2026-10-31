@@ -1,79 +1,15 @@
 ---
 import EncounterLayout from "../layouts/EncounterLayout.astro";
+import { FigueReveal } from "../components/FigueReveal";
 import { photos } from "../lib/media";
+import "../styles/figue.css";
 ---
 
 <EncounterLayout title="Figue">
-  <article>
-    <section class="figue-intro">
-      <figure class="polaroid tape">
-        <img
-          src={photos["figue-cover.jpg"].src}
-          width={photos["figue-cover.jpg"].width}
-          height={photos["figue-cover.jpg"].height}
-          alt="Figue, chat noir, endormi sur une couverture"
-        />
-        <figcaption class="hand">Entre deux aventures.</figcaption>
-      </figure>
-      <div class="figue-copy">
-        <span class="badge yellow">Membre d’honneur</span>
-        <h1>
-          Figue
-          <br />
-          le chat figue.
-        </h1>
-        <p>
-          Un petit chat noir très intelligent, avec plein d’idées. Lance-lui son
-          jouet : il aime te le rapporter.
-        </p>
-      </div>
-    </section>
-    <section class="figue-notes" aria-label="Les petites choses sur Figue">
-      <div class="note yellow">
-        <h2 class="hand">Ses surnoms</h2>
-        <p>
-          Figue le chat figue,
-          <br />
-          Figolu et Guff.
-        </p>
-      </div>
-      <div class="note">
-        <h2 class="hand">Son talent spécial</h2>
-        <p>
-          Rapporter son jouet.
-          <br />
-          Encore. Et encore.
-        </p>
-      </div>
-      <div class="note lilac">
-        <h2 class="hand">Son endroit préféré</h2>
-        <p>Son hamac.</p>
-      </div>
-    </section>
-    <section class="section">
-      <h2>Dans le carnet de Figue</h2>
-      <div class="figue-gallery">
-        <figure class="polaroid">
-          <img
-            src={photos["figue-guff.jpg"].src}
-            width={photos["figue-guff.jpg"].width}
-            height={photos["figue-guff.jpg"].height}
-            alt="Gros plan de Figue, avec de grands yeux, regardant l’objectif"
-            loading="lazy"
-          />
-          <figcaption class="hand">Guff inspecte l’objectif.</figcaption>
-        </figure>
-        <figure class="polaroid">
-          <img
-            src={photos["figue-sieste.jpg"].src}
-            width={photos["figue-sieste.jpg"].width}
-            height={photos["figue-sieste.jpg"].height}
-            alt="Figue endormi sur le dos, les pattes repliées"
-            loading="lazy"
-          />
-          <figcaption class="hand">Figolu en recharge.</figcaption>
-        </figure>
-      </div>
-    </section>
-  </article>
+  <FigueReveal
+    client:load
+    cover={photos["figue-cover.jpg"]}
+    guff={photos["figue-guff.jpg"]}
+    sieste={photos["figue-sieste.jpg"]}
+  />
 </EncounterLayout>

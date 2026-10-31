@@ -354,7 +354,7 @@ export function PhotoFlow() {
               <path d="M3 7h5l2-3h4l2 3h5v13H3Z" />
               <circle cx="12" cy="13" r="4" />
             </svg>
-            <p>Un museau à garder ?</p>
+            <p>Une rencontre à garder ?</p>
             <button
               className="encounter-button"
               disabled={busy || !owner}
@@ -402,9 +402,9 @@ export function PhotoFlow() {
           </aside>
           <div>
             <h1 ref={heading} tabIndex={-1}>
-              Un nouveau museau.
+              Une nouvelle rencontre.
             </h1>
-            <p>Une photo, quelques mots et le souvenir est gardé.</p>
+            <p>Un Polaroid, quelques mots, et la rencontre est gardée.</p>
             <div className="photo-replace">
               <button
                 className="encounter-link"
@@ -447,7 +447,7 @@ export function PhotoFlow() {
           </h1>
           <p>
             {draft.visibility === "private"
-              ? "Ce souvenir sera visible uniquement par toi."
+              ? "Cette rencontre sera visible uniquement par toi."
               : "Voici ce que les membres du club pourront voir."}
           </p>
           <div className="encounter-detail">
