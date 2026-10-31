@@ -27,6 +27,16 @@ updates:
       # @astrojs/check only support up to 6.x. Revisit when they add 7.
       - dependency-name: typescript
         update-types: ["version-update:semver-major"]
+      # @astrojs/react (<= 7.1.2) declares oxc-transform-react ^0.145.0 while
+      # @vitejs/plugin-react >= 6.1.2 requires ^0.152.0, so bumping either side
+      # breaks the Docker npm prune with ERESOLVE (#41, #81). Revisit when
+      # @astrojs/react accepts a newer oxc-transform-react.
+      - dependency-name: oxc-transform-react
+        versions: [">=0.146.0"]
+      - dependency-name: "@vitejs/plugin-react"
+        versions: [">=6.1.2"]
+      - dependency-name: "@astrojs/react"
+        versions: [">=7.1.1"]
     groups:
       production-minor-patch:
         dependency-type: production
