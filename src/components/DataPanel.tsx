@@ -41,7 +41,9 @@ export function DataPanel({
   };
   return (
     <section className="account-panel data-panel">
-      <a href="/profil">Retour au profil</a>
+      <a className="back-link" href="/profil">
+        Retour au profil
+      </a>
       <h1>Tes données</h1>
       <p>
         Ces actions restent accessibles après suspension ou retrait du club.

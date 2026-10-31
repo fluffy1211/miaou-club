@@ -231,3 +231,144 @@
 .account-panel .pill-links a {
   text-decoration: none;
 }
+
+.account-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.account-brand svg {
+  width: 32px;
+  height: 32px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.account-panel h1 {
+  margin-bottom: var(--space-3);
+}
+.account-lead {
+  color: var(--muted);
+}
+/* Le message vide ne crée pas d'écart avant le bouton. */
+.account-panel form > .account-message:empty {
+  min-height: 0;
+  margin-top: calc(-1 * var(--space-4));
+}
+.account-rule {
+  margin-top: calc(-1 * var(--space-2));
+  color: var(--ink);
+  opacity: 0.8;
+}
+.account-consent input {
+  width: 24px;
+  height: 24px;
+  margin-right: var(--space-2);
+  accent-color: var(--violet);
+}
+.account-panel input[readonly] {
+  background: transparent;
+  border-color: transparent;
+  padding: 0;
+  font-weight: 700;
+  min-height: auto;
+}
+.account-panel .pill-links {
+  margin: var(--space-5) 0 var(--space-2);
+}
+.account-panel form h2 {
+  margin: 0;
+}
+.account-panel section {
+  display: grid;
+  gap: var(--space-3);
+  justify-items: start;
+}
+.account-panel section > :is(button, a, h2, p, form) {
+  margin: 0;
+}
+.account-panel section form {
+  width: 100%;
+}
+.account-panel .account-choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  border: 0;
+  padding: 0;
+  margin: 0;
+}
+.account-choices legend {
+  font-weight: 600;
+  margin-bottom: var(--space-2);
+  padding: 0;
+}
+.account-panel .account-choices label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-1) var(--space-4) var(--space-1) var(--space-1);
+  border: 2px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--white);
+  font-weight: 600;
+  cursor: pointer;
+}
+.account-panel .account-choices input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  min-height: 0;
+}
+.account-choices label:has(input:checked) {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 2px var(--ink) inset;
+}
+.account-choices label:has(input:focus-visible) {
+  outline: 3px solid var(--ink);
+  outline-offset: 3px;
+}
+.account-swatch span {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--lilac);
+}
+.account-swatch.account-color-corail span {
+  background: var(--coral);
+}
+.account-swatch.account-color-sauge span {
+  background: var(--mint);
+}
+.account-avatar-choice span {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--lilac);
+  font-family: var(--display);
+  font-size: var(--text-sm);
+}
+.account-panel .account-signout {
+  margin-top: var(--space-6);
+  padding: var(--space-2) var(--space-5);
+  border: 2px solid var(--ink);
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  min-height: var(--button-height);
+}
+.account-panel > a.back-link {
+  display: inline-block;
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--coral);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}

@@ -298,31 +298,31 @@ export function FriendsPanel({
           )}
         </section>
       )}
-      {(Object.keys(headings) as Kind[]).map((kind) => (
-        <section className="friend-section" key={kind}>
-          <h2>{headings[kind]}</h2>
-          {pages[kind].people.length ? (
-            <ul>{pages[kind].people.map((p) => row(p, kind))}</ul>
-          ) : (
-            <p>
-              {kind === "received"
-                ? "Aucune demande reçue."
-                : kind === "sent"
-                  ? "Aucune demande envoyée."
-                  : "Ton cercle attend ses premiers amis."}
-            </p>
-          )}
-          {pages[kind].next && (
-            <button
-              className="button secondary"
-              disabled={busy || preview}
-              onClick={() => void more(kind)}
-            >
-              Voir plus — {headings[kind].toLowerCase()}
-            </button>
-          )}
-        </section>
-      ))}
+      {!pages.received.people.length && !pages.sent.people.length && (
+        <p className="friend-pending-empty">Aucune demande en attente.</p>
+      )}
+      {(Object.keys(headings) as Kind[])
+        // Les demandes vides tiennent sur une seule ligne au-dessus.
+        .filter((kind) => kind === "friends" || pages[kind].people.length > 0)
+        .map((kind) => (
+          <section className="friend-section" key={kind}>
+            <h2>{headings[kind]}</h2>
+            {pages[kind].people.length ? (
+              <ul>{pages[kind].people.map((p) => row(p, kind))}</ul>
+            ) : (
+              <p>Ton cercle attend ses premiers amis.</p>
+            )}
+            {pages[kind].next && (
+              <button
+                className="button secondary"
+                disabled={busy || preview}
+                onClick={() => void more(kind)}
+              >
+                Voir plus — {headings[kind].toLowerCase()}
+              </button>
+            )}
+          </section>
+        ))}
     </section>
   );
 }

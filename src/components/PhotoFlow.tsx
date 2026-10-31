@@ -322,24 +322,17 @@ export function PhotoFlow() {
   return (
     <section className="photo-flow" aria-busy={busy}>
       {pickers}
-      <p className="encounter-message" role="status" aria-live="polite">
+      <p
+        className={
+          "encounter-message" +
+          // Le Polaroid affiché suffit visuellement ; l'annonce reste lue.
+          (message === "Photo prête." && step !== "choose" ? " sr-only" : "")
+        }
+        role="status"
+        aria-live="polite"
+      >
         {message}
       </p>
-      {step !== "choose" && (
-        <div className="draft-notice">
-          <p>
-            Ton brouillon reste dans cet onglet pendant 24 h maximum, jusqu’à sa
-            fermeture ou ta déconnexion.
-          </p>
-          <button
-            className="encounter-link"
-            disabled={busy}
-            onClick={() => void abandon()}
-          >
-            Effacer le brouillon
-          </button>
-        </div>
-      )}
       {step === "choose" ? (
         <>
           <h1 ref={heading} tabIndex={-1}>
@@ -455,9 +448,15 @@ export function PhotoFlow() {
               <Polaroid image={media.image} title={draft.title} />
             )}
             <div>
-              <h2>{draft.title}</h2>
-              <p className="encounter-description">{draft.description}</p>
-              <p>{frenchDate(draft.encounterDate)}</p>
+              <div className="encounter-summary">
+                <h2>{draft.title}</h2>
+                {draft.description && (
+                  <p className="encounter-description">{draft.description}</p>
+                )}
+                <p className="encounter-meta">
+                  Rencontré le {frenchDate(draft.encounterDate)}
+                </p>
+              </div>
               <p className="encounter-privacy">
                 {draft.visibility === "private"
                   ? "Privé · toi uniquement"
@@ -485,6 +484,21 @@ export function PhotoFlow() {
             </div>
           </div>
         </>
+      )}
+      {step !== "choose" && (
+        <div className="draft-notice">
+          <p>
+            Brouillon gardé dans cet onglet 24 h maximum, jusqu’à sa fermeture
+            ou ta déconnexion.
+          </p>
+          <button
+            className="encounter-link"
+            disabled={busy}
+            onClick={() => void abandon()}
+          >
+            Effacer le brouillon
+          </button>
+        </div>
       )}
     </section>
   );

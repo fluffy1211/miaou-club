@@ -29,6 +29,7 @@ export function Discovery({
     [own, setOwn] = useState<EncounterView | null>(null),
     [owner, setOwner] = useState(""),
     [name, setName] = useState(""),
+    [myHandle, setMyHandle] = useState(""),
     [profile, setProfile] = useState<Profile | null>(null),
     [noFriends, setNoFriends] = useState(false),
     [message, setMessage] = useState(""),
@@ -109,6 +110,7 @@ export function Discovery({
           setNoFriends(friends !== null && friends.people.length === 0);
           setOwner(me.user.id);
           setName(me.profile?.handle ?? me.profile?.displayName ?? "Membre");
+          setMyHandle(me.profile?.handle ?? "");
           setProfile(p?.profile ?? null);
           setEntries(page.encounters);
           setNext(page.next);
@@ -160,11 +162,18 @@ export function Discovery({
           <Polaroid small image={e.thumbnail} title={e.title} />
         </a>
         <p className="encounter-meta">
-          {frenchDate(e.encounterDate)} · partagé par{" "}
-          {e.authorHandle ? (
-            <a href={"/profil/" + e.authorHandle}>{e.author}</a>
+          {frenchDate(e.encounterDate)}
+          {e.owned ? (
+            " · par toi"
           ) : (
-            e.author
+            <>
+              {" · partagé par "}
+              {e.authorHandle ? (
+                <a href={"/profil/" + e.authorHandle}>{e.author}</a>
+              ) : (
+                e.author
+              )}
+            </>
           )}
         </p>
         {mode === "map" && <p>{locationLabel(e.location)}</p>}
@@ -187,12 +196,6 @@ export function Discovery({
       </h1>
       {profile && (
         <div className={"public-profile account-color-" + profile.color}>
-          <a
-            className="text-link"
-            href={"/amis?q=" + encodeURIComponent(profile.handle)}
-          >
-            Retrouver ce membre dans mes amis
-          </a>
           <div className="profile-initial" aria-hidden="true">
             {profile.avatar === "cat" ? (
               <svg viewBox="0 0 24 24">
@@ -202,14 +205,39 @@ export function Discovery({
                 <path d="m10 16 2 1 2-1" />
               </svg>
             ) : (
-              profile.displayName.slice(0, 1)
+              profile.displayName.slice(0, 1).toUpperCase()
             )}
           </div>
-          <p>{profile.bio}</p>
+          {profile.bio ? (
+            <p>{profile.bio}</p>
+          ) : (
+            <p className="public-profile-empty">
+              {profile.handle === myHandle
+                ? "Tu n’as pas encore écrit de biographie."
+                : "Pas encore de biographie."}
+            </p>
+          )}
+          {!busy && entries.length > 0 && (
+            <p className="public-profile-count">
+              {`${entries.length}${next ? "+" : ""} rencontre${entries.length > 1 ? "s" : ""} partagée${entries.length > 1 ? "s" : ""}`}
+            </p>
+          )}
+          {profile.handle === myHandle ? (
+            <a className="text-link" href="/profil">
+              Modifier mon profil
+            </a>
+          ) : (
+            <a
+              className="text-link"
+              href={"/amis?q=" + encodeURIComponent(profile.handle)}
+            >
+              Retrouver ce membre dans mes amis
+            </a>
+          )}
         </div>
       )}
       <p role="status">{message || (busy ? "Chargement…" : "")}</p>
-      {mode === "home" && (
+      {mode === "home" && entries.length > 0 && (
         <a className="text-link" href="/rencontres">
           Voir toutes les rencontres
         </a>
@@ -335,7 +363,13 @@ export function Discovery({
         </p>
       )}
       {!busy && !entries.length && !message && (
-        <p>Aucune rencontre partagée pour le moment.</p>
+        <p className="discovery-empty">
+          {mode === "map"
+            ? "Aucune rencontre avec un lieu pour le moment. Ajoute une zone à une rencontre pour la retrouver ici."
+            : mode === "profile"
+              ? "Aucune rencontre partagée sur ce profil."
+              : "Aucune rencontre partagée pour le moment."}
+        </p>
       )}
       {next && (
         <button
@@ -348,13 +382,26 @@ export function Discovery({
       )}
       {mode === "home" && (
         <section className="home-notebook">
-          <h2>{own ? "Ta dernière rencontre" : "Ton carnet"}</h2>
+          <h2>
+            {own && !entries.some((e) => e.id === own.id)
+              ? "Ta dernière rencontre"
+              : "Ton carnet"}
+          </h2>
           {own ? (
             <>
-              {card(own)}
-              <a className="text-link" href="/carnet">
-                Voir tout mon carnet
-              </a>
+              {entries.some((e) => e.id === own.id) ? (
+                <p>Tes Polaroids t’attendent dans ton carnet.</p>
+              ) : (
+                card(own)
+              )}
+              <div className="home-notebook-actions">
+                <a className="encounter-button" href="/carnet">
+                  Voir tout mon carnet
+                </a>
+                <a className="encounter-button secondary" href="/photo">
+                  Photographier un chat
+                </a>
+              </div>
             </>
           ) : (
             <>

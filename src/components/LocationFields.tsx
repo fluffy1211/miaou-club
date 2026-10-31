@@ -109,7 +109,24 @@ export function LocationFields({
       <h2>Un lieu ? C’est facultatif.</h2>
       {!editing && (
         <>
-          <label>
+          <p className="location-intro">
+            Ajoute une zone approximative pour retrouver cette rencontre sur la
+            carte.
+          </p>
+          <div className="location-options">
+            <button
+              type="button"
+              className="encounter-button secondary"
+              disabled={busy}
+              onClick={locate}
+            >
+              Utiliser ma position actuelle
+            </button>
+            <a className="encounter-button secondary" href="/carte?choisir=1">
+              Choisir une zone sur la carte
+            </a>
+          </div>
+          <label className="location-size">
             Taille proposée
             <select
               value={size}
@@ -119,32 +136,20 @@ export function LocationFields({
             >
               {[500, 1000, 2000].map((s) => (
                 <option key={s} value={s}>
-                  {s} m
+                  {s === 500 ? "500 m" : s === 1000 ? "1 km" : "2 km"}
                 </option>
               ))}
             </select>
           </label>
-          <p>
+          <p className="location-note">
             Ta position actuelle sert uniquement à proposer une zone
             approximative, sans suivi. Elle reste sur ton téléphone ; seule la
             cellule sera partagée. Pour une photo ancienne, vérifie le lieu. La
             zone ne garantit pas l’anonymat.
           </p>
-          <button
-            type="button"
-            className="encounter-button secondary"
-            disabled={busy}
-            onClick={locate}
-          >
-            Utiliser ma position actuelle
-          </button>
-          <p>
-            <a href="/carte?choisir=1">Choisir une zone sur la carte</a> puis
-            revenir à ce formulaire.
-          </p>
         </>
       )}
-      <p>{locationLabel(value)}</p>
+      <p className="location-current">{locationLabel(value)}</p>
       {value && <LazyZoneMap selected={value} />}
       {value && (
         <>
