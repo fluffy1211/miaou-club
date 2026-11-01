@@ -5,20 +5,23 @@ test("shared React notice renders its closed and unavailable stories", async ({
   page.on("pageerror", (error) =>
     console.error("Story preview error:", error.message),
   );
-  for (const [story, message] of [
-    ["closed", "L’accès au club est réservé aux membres admis."],
-    ["unavailable", "Le club est temporairement indisponible."],
+  for (const [story, heading, message] of [
+    ["closed", "Accès réservé.", "Le club est réservé aux membres admis."],
+    [
+      "unavailable",
+      "Le club fait une pause.",
+      "Il est temporairement indisponible.",
+    ],
   ]) {
     await page.goto(
       `http://localhost:43992/iframe.html?id=${encodeURIComponent(`accès-notice--${story}`)}&viewMode=story`,
     );
-    await expect(
-      page.getByRole("heading", { name: "Miaou Club" }),
-    ).toBeVisible();
+    await expect(page.getByRole("heading", { name: heading })).toBeVisible();
     await expect(page.getByText(message)).toBeVisible();
-    await expect(page.locator(".access-notice")).toHaveCSS(
-      "background-color",
-      "rgb(255, 255, 255)",
+    // Shared action styles load in Storybook: 44 px touch target.
+    await expect(page.getByRole("link", { name: "Se connecter" })).toHaveCSS(
+      "min-height",
+      "44px",
     );
     if (story === "unavailable")
       await expect(page.getByRole("alert")).toBeVisible();
