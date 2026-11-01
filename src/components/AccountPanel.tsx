@@ -351,12 +351,14 @@ export function AccountPanel({
                 }}
               >
                 {password()}
-                <button disabled={busy}>Confirmer mon identité</button>
+                <button className="secondary" disabled={busy}>
+                  Confirmer mon identité
+                </button>
               </form>
             ) : (
               options.google && (
                 <form onSubmit={google}>
-                  <button disabled={busy}>
+                  <button className="secondary" disabled={busy}>
                     Confirmer mon identité avec Google
                   </button>
                 </form>
@@ -364,6 +366,7 @@ export function AccountPanel({
             )}
             {options.google && !me.methods.includes("google") && (
               <button
+                className="secondary"
                 disabled={busy}
                 onClick={async () => {
                   const r = await send("/api/auth/link-social", {
@@ -378,6 +381,7 @@ export function AccountPanel({
             )}
             {!me.methods.includes("credential") && (
               <button
+                className="secondary"
                 disabled={busy}
                 onClick={async () => {
                   if (
@@ -648,9 +652,15 @@ export function AccountPanel({
             {status}
             <button disabled={busy}>Se connecter</button>
           </form>
-          <a href="/compte">Créer un compte</a>
-          <a href="/mot-de-passe-oublie">Mot de passe oublié</a>
-          <p className="account-note">Accès perdus ? Écris à Gabriel.</p>
+          <div className="account-links">
+            <a className="text-link" href="/compte">
+              Créer un compte
+            </a>
+            <a className="text-link" href="/mot-de-passe-oublie">
+              Mot de passe oublié
+            </a>
+            <p className="account-note">Accès perdus ? Écris à Gabriel.</p>
+          </div>
           {options.google && (
             <form onSubmit={google}>
               <div className="account-divider">ou</div>

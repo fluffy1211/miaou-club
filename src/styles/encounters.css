@@ -1033,3 +1033,34 @@ body > .skip-link:focus {
 .encounter-actions > :only-child {
   flex: 0 1 auto;
 }
+
+/* Choix du lieu : même empilement qu'au téléphone (consigne puis taille),
+   et des boutons à leur largeur naturelle sur grand écran. */
+.map-choose-head {
+  display: grid;
+  justify-content: start;
+}
+.map-choose-head label {
+  max-width: 240px;
+}
+@media (min-width: 761px) {
+  .map-choose-actions > * {
+    flex: 0 1 auto;
+  }
+}
+
+/* Alignement : un seul bord gauche par page (logo, titre, contenu). Les
+   colonnes étroites s'alignent sur le logo au lieu de flotter au centre. */
+.encounter-main :is(.account-panel, .friends-panel, .photo-flow) {
+  margin-inline: 0;
+}
+.photo-flow > h1,
+.photo-flow > p:not(.encounter-message) {
+  text-align: start;
+}
+.photo-flow .capture-frame {
+  margin-inline: 0;
+}
+.capture-frame .capture-gallery {
+  margin: var(--space-3) 0 0;
+}

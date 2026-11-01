@@ -319,6 +319,18 @@ export function PhotoFlow() {
       />
     </>
   );
+  const discard = (
+    <div className="draft-notice">
+      <button
+        className="encounter-link"
+        disabled={busy}
+        onClick={() => void abandon()}
+      >
+        Effacer le brouillon
+      </button>
+    </div>
+  );
+
   return (
     <section className="photo-flow" aria-busy={busy}>
       {pickers}
@@ -355,14 +367,14 @@ export function PhotoFlow() {
             >
               Prendre une photo
             </button>
+            <button
+              className="encounter-link capture-gallery"
+              disabled={busy || !owner}
+              onClick={() => gallery.current?.click()}
+            >
+              Choisir dans la galerie
+            </button>
           </div>
-          <button
-            className="encounter-link capture-gallery"
-            disabled={busy || !owner}
-            onClick={() => gallery.current?.click()}
-          >
-            Choisir dans la galerie
-          </button>
           <p className="photo-help">
             JPEG, PNG ou WebP · 30 Mo et 60 Mpx maximum.
             <br />
@@ -430,6 +442,7 @@ export function PhotoFlow() {
                 Voir l’aperçu
               </button>
             </form>
+            {discard}
           </div>
         </div>
       ) : (
@@ -475,20 +488,10 @@ export function PhotoFlow() {
                   Modifier
                 </button>
               </div>
+              {discard}
             </div>
           </div>
         </>
-      )}
-      {step !== "choose" && (
-        <div className="draft-notice">
-          <button
-            className="encounter-link"
-            disabled={busy}
-            onClick={() => void abandon()}
-          >
-            Effacer le brouillon
-          </button>
-        </div>
       )}
     </section>
   );

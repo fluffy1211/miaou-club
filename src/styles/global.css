@@ -16,7 +16,7 @@
   --coat-mixed: #f0dfcc;
   --coat-unknown: var(--white);
   --white: #fff;
-  --muted: #786d84;
+  --muted: #5f546c;
   --line: #dfd3df;
   /* Système de design : espacements en base 8, six tailles de texte, trois arrondis. */
   --space-1: 4px;
@@ -53,15 +53,15 @@
   --body: "DM Sans", sans-serif;
   --hand: "Caveat", cursive;
 }
-/* Échelle compacte et fluide sur téléphone (360 à 430px de large) : plus
-   d'infos sans défiler. Le texte courant reste à 16px (pas de zoom iOS dans
-   les champs). */
+/* Échelle compacte sur téléphone : chaque grand espacement descend d'un cran
+   sur la même grille de 8px (jamais de valeur intermédiaire). Le texte courant
+   reste à 16px (pas de zoom iOS dans les champs). */
 @media (max-width: 640px) {
   :root {
-    --space-5: clamp(14px, 4vw, 20px);
-    --space-6: clamp(16px, 5vw, 24px);
-    --space-7: clamp(28px, 8vw, 40px);
-    --space-8: clamp(40px, 12vw, 56px);
+    --space-5: 16px;
+    --space-6: 24px;
+    --space-7: 32px;
+    --space-8: 48px;
     --text-lg: clamp(17px, 4.8vw, 20px);
     --text-xl: clamp(20px, 5.6vw, 26px);
     --text-title: clamp(26px, 7vw, 34px);
@@ -580,18 +580,6 @@ main:focus {
   display: none !important;
 }
 
-.access-notice {
-  display: grid;
-  gap: var(--space-3);
-  justify-items: start;
-  max-width: 480px;
-  padding: var(--space-6);
-  border: 1px solid var(--line);
-  border-radius: var(--radius-card);
-  background: var(--white);
-  box-shadow: var(--shadow-paper);
-}
-
 /* Entrées animées façon page Figue : seulement transform et opacité, une seule
    couche par bloc de premier niveau, pour rester fluide sur mobile. */
 @keyframes rise-in {
@@ -625,19 +613,6 @@ main:focus {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
-}
-
-.access-logo {
-  width: 40px;
-  height: 40px;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-.access-notice .button {
-  margin-top: var(--space-2);
 }
 
 textarea {
@@ -738,4 +713,54 @@ body :is(p, span, label) > a:not(.button, .encounter-button, .text-link) {
   text-decoration-color: var(--coral);
   text-decoration-thickness: 2px;
   text-underline-offset: 3px;
+}
+
+/* ----------------------------------------------------------------------
+   Grille de design (docs/DEVELOPPEMENT.md#grille-design) appliquée à toutes les pages.
+   ---------------------------------------------------------------------- */
+
+/* Proximité : liens secondaires d'un formulaire groupés sur une ligne,
+   collés à l'action qu'ils complètent. */
+.account-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  column-gap: var(--space-5);
+  margin-top: calc(-1 * var(--space-2));
+}
+.account-links > a {
+  margin: 0;
+}
+body .account-panel a.button {
+  align-self: flex-start;
+  text-decoration: none;
+}
+.account-links > .account-note {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+/* Cibles tactiles : 44 px minimum, logo compris. */
+:is(.encounter-header .logo, .account-brand) {
+  min-height: 44px;
+}
+body .maplibregl-ctrl-group button {
+  width: 44px;
+  height: 44px;
+}
+body .maplibregl-ctrl-top-right .maplibregl-ctrl {
+  margin: var(--space-2) var(--space-2) 0 0;
+}
+body .maplibregl-ctrl-bottom-right .maplibregl-ctrl {
+  margin: 0 var(--space-2) var(--space-2) 0;
+}
+body .zone-marker {
+  min-width: 44px;
+  height: 44px;
+  font-size: var(--text-md);
+}
+
+/* Contraste : sur une carte colorée, le texte secondaire reste en encre. */
+.public-profile :is(.public-profile-empty, .public-profile-count) {
+  color: var(--ink);
 }

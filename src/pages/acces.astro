@@ -1,28 +1,9 @@
 ---
 import { AccessNotice } from "../components/AccessNotice";
-import AppHead from "../layouts/AppHead.astro";
-import "../styles/global.css";
+import AccountLayout from "../layouts/AccountLayout.astro";
 const unavailable = Astro.url.searchParams.get("etat") === "indisponible";
-Astro.response.headers.set("Cache-Control", "no-store");
 ---
 
-<!doctype html>
-<html lang="fr">
-  <head>
-    <AppHead title="Miaou Club — accès" />
-  </head>
-  <body>
-    <main>
-      <AccessNotice unavailable={unavailable} />
-    </main>
-  </body>
-</html>
-<style>
-  main {
-    min-height: 100dvh;
-    display: grid;
-    justify-items: center;
-    align-items: start;
-    padding: max(15dvh, 48px) 24px 24px;
-  }
-</style>
+<AccountLayout title="accès">
+  <AccessNotice unavailable={unavailable} />
+</AccountLayout>
