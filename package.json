@@ -50,15 +50,15 @@
     "backup:rehearse": "node --import tsx --test server/backup-tests/*.test.ts tests/remote-backup-repository.test.mjs tests/backup-render-quiescence.test.mjs tests/backup-remote-runner.test.mjs"
   },
   "dependencies": {
-    "@astrojs/check": "^0.9.10",
+    "@astrojs/check": "^0.9.12",
     "@astrojs/node": "11.1.9",
     "@astrojs/react": "7.1.0",
     "@tailwindcss/vite": "^4.3.3",
     "astro": "^7.4.2",
     "canvas-confetti": "1.9.4",
     "dotenv": "^18.0.8",
-    "maplibre-gl": "6.14.0",
-    "motion": "14.6.0",
+    "maplibre-gl": "6.16.0",
+    "motion": "14.7.1",
     "oxc-transform-react": "0.145.0",
     "proj4": "2.22.0",
     "react": "19.3.1",
@@ -69,23 +69,23 @@
   "devDependencies": {
     "@eslint/js": "10.0.1",
     "@playwright/test": "1.64.1",
-    "@storybook/addon-a11y": "10.6.2",
-    "@storybook/react-vite": "10.6.2",
+    "@storybook/addon-a11y": "10.6.4",
+    "@storybook/react-vite": "10.6.4",
     "@types/canvas-confetti": "1.9.0",
     "@types/node": "^26.6.5",
     "@types/pg": "8.23.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.1",
-    "auth": "1.7.10",
+    "auth": "1.7.14",
     "drizzle-kit": "0.31.11",
-    "eslint": "10.12.0",
+    "eslint": "10.13.0",
     "eslint-plugin-astro": "3.2.1",
     "prettier": "^3.9.10",
     "prettier-plugin-astro": "^1.1.2",
-    "storybook": "10.6.2",
+    "storybook": "10.6.4",
     "tsx": "4.23.15",
-    "typescript-eslint": "8.71.2"
+    "typescript-eslint": "8.72.1"
   },
   "engines": {
     "node": ">=24.21.0"
