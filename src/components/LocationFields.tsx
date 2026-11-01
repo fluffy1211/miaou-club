@@ -107,7 +107,7 @@ export function LocationFields({
   return (
     <section className="location-fields">
       <h2>Un lieu ? C’est facultatif.</h2>
-      {!editing && !value && (
+      {!editing && (
         <>
           <div className="location-options">
             <button
@@ -122,21 +122,23 @@ export function LocationFields({
               Choisir une zone sur la carte
             </a>
           </div>
-          <label className="location-size">
-            Taille proposée
-            <select
-              value={size}
-              onChange={(e) =>
-                setSize(Number(e.target.value) as LocationCell["size"])
-              }
-            >
-              {[500, 1000, 2000].map((s) => (
-                <option key={s} value={s}>
-                  {s === 500 ? "500 m" : s === 1000 ? "1 km" : "2 km"}
-                </option>
-              ))}
-            </select>
-          </label>
+          {!value && (
+            <label className="location-size">
+              Taille proposée
+              <select
+                value={size}
+                onChange={(e) =>
+                  setSize(Number(e.target.value) as LocationCell["size"])
+                }
+              >
+                {[500, 1000, 2000].map((s) => (
+                  <option key={s} value={s}>
+                    {s === 500 ? "500 m" : s === 1000 ? "1 km" : "2 km"}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </>
       )}
       <p className="location-current">{locationLabel(value)}</p>
