@@ -41,7 +41,9 @@ export function DataPanel({
   };
   return (
     <section className="account-panel data-panel">
-      <a href="/profil">Retour au profil</a>
+      <a className="back-link" href="/profil">
+        Retour au profil
+      </a>
       <h1>Tes données</h1>
       <p>
         Ces actions restent accessibles après suspension ou retrait du club.
@@ -49,14 +51,8 @@ export function DataPanel({
       <p role="status">{message}</p>
       <h2>Copier tes données</h2>
       <p>
-        Le fichier ZIP contient tes données en JSON et CSV et les photos encore
-        conservées. Il reste disponible pendant 24 heures. Certaines données
-        nécessitent un complément auprès de Gabriel.
-      </p>
-      <p>
-        Pour demander ou télécharger une copie, reconnecte-toi depuis moins de
-        cinq minutes. L’administrateur doit aussi déverrouiller sa session avec
-        son second facteur.
+        Un fichier ZIP avec tes données et tes photos, disponible 24 heures. Il
+        faut t’être connecté il y a moins de cinq minutes.
       </p>
       <button
         disabled={busy}
@@ -120,8 +116,8 @@ export function DataPanel({
       </ul>
       <h2>Supprimer mon compte</h2>
       <p>
-        Ton profil et tes rencontres deviennent immédiatement inaccessibles.
-        Leurs fichiers sont ensuite purgés. Cette action est définitive.
+        Ton profil et tes rencontres disparaissent aussitôt, puis leurs fichiers
+        sont purgés. C’est définitif.
       </p>
       <form
         onSubmit={(e) => {

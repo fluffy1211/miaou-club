@@ -1,5 +1,9 @@
 # Miaou Club — reprise
 
+## Passe de design systématique — 1er novembre 2026
+
+Branche `fix/design-review-polish` (worktree `cats-design-review`), non poussée. Grille de huit règles consignée dans [DEVELOPPEMENT#grille-design](docs/DEVELOPPEMENT.md#grille-design) et appliquée à toutes les pages (390 et 1280 px) : espacements mobiles fixés sur la grille de 8 px, liens de connexion groupés, `/acces` sur le gabarit de connexion avec logo, colonnes étroites alignées sur le logo, une seule action principale (sécurité du profil en secondaire), cibles de 44 px (logo, contrôles et repères de carte), `--muted` assombri (≥ 4,5:1 sur tous les fonds), textes de `/donnees` raccourcis. Contrôles : Prettier, ESLint, `astro check`, E2E Chromium mobile locaux 21/21. Reste : revue, push et PR sur accord de Gabriel.
+
 ## Catalogue des races retiré — 26 octobre 2026
 
 Sur décision de Gabriel, le site se recentre sur les photos de chats : `/races`, `/race/*`, `/favoris`, `/a-propos`, l’ancien gabarit `Layout.astro`, la collection `breeds` (TheCatAPI, Wikimedia), `CAT_API_KEY`, `MIAOU_OFFLINE_CATALOG`, `build:offline` et `data:refresh` sont supprimés. `/figue` et la page 404 passent sur le gabarit du club. Suite (PR Figue) : recherche « figue » sur `/amis` et petit chat de la 404 mènent à `/figue`, animée avec `motion` et `canvas-confetti` (respect de `prefers-reduced-motion`), E2E `e2e/figue.test.ts`.

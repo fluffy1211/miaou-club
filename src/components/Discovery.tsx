@@ -29,6 +29,7 @@ export function Discovery({
     [own, setOwn] = useState<EncounterView | null>(null),
     [owner, setOwner] = useState(""),
     [name, setName] = useState(""),
+    [myHandle, setMyHandle] = useState(""),
     [profile, setProfile] = useState<Profile | null>(null),
     [noFriends, setNoFriends] = useState(false),
     [message, setMessage] = useState(""),
@@ -109,6 +110,7 @@ export function Discovery({
           setNoFriends(friends !== null && friends.people.length === 0);
           setOwner(me.user.id);
           setName(me.profile?.handle ?? me.profile?.displayName ?? "Membre");
+          setMyHandle(me.profile?.handle ?? "");
           setProfile(p?.profile ?? null);
           setEntries(page.encounters);
           setNext(page.next);
@@ -160,11 +162,18 @@ export function Discovery({
           <Polaroid small image={e.thumbnail} title={e.title} />
         </a>
         <p className="encounter-meta">
-          {frenchDate(e.encounterDate)} · partagé par{" "}
-          {e.authorHandle ? (
-            <a href={"/profil/" + e.authorHandle}>{e.author}</a>
+          {frenchDate(e.encounterDate)}
+          {e.owned ? (
+            " · par toi"
           ) : (
-            e.author
+            <>
+              {" · partagé par "}
+              {e.authorHandle ? (
+                <a href={"/profil/" + e.authorHandle}>{e.author}</a>
+              ) : (
+                e.author
+              )}
+            </>
           )}
         </p>
         {mode === "map" && <p>{locationLabel(e.location)}</p>}
@@ -182,17 +191,13 @@ export function Discovery({
           : mode === "profile"
             ? (profile?.displayName ?? "Profil du club")
             : mode === "map"
-              ? "Les chats du coin."
+              ? choose
+                ? "Choisir un lieu"
+                : "Les chats du coin."
               : "Toutes les rencontres."}
       </h1>
       {profile && (
         <div className={"public-profile account-color-" + profile.color}>
-          <a
-            className="text-link"
-            href={"/amis?q=" + encodeURIComponent(profile.handle)}
-          >
-            Retrouver ce membre dans mes amis
-          </a>
           <div className="profile-initial" aria-hidden="true">
             {profile.avatar === "cat" ? (
               <svg viewBox="0 0 24 24">
@@ -202,14 +207,37 @@ export function Discovery({
                 <path d="m10 16 2 1 2-1" />
               </svg>
             ) : (
-              profile.displayName.slice(0, 1)
+              profile.displayName.slice(0, 1).toUpperCase()
             )}
           </div>
-          <p>{profile.bio}</p>
+          {profile.bio ? (
+            <p>{profile.bio}</p>
+          ) : (
+            profile.handle === myHandle && (
+              <p className="public-profile-empty">Pas encore de biographie.</p>
+            )
+          )}
+          {!busy && entries.length > 0 && (
+            <p className="public-profile-count">
+              {`${entries.length}${next ? "+" : ""} rencontre${entries.length > 1 ? "s" : ""} partagée${entries.length > 1 ? "s" : ""}`}
+            </p>
+          )}
+          {profile.handle === myHandle ? (
+            <a className="text-link" href="/profil">
+              Modifier mon profil
+            </a>
+          ) : (
+            <a
+              className="text-link"
+              href={"/amis?q=" + encodeURIComponent(profile.handle)}
+            >
+              Retrouver ce membre dans mes amis
+            </a>
+          )}
         </div>
       )}
       <p role="status">{message || (busy ? "Chargement…" : "")}</p>
-      {mode === "home" && (
+      {mode === "home" && entries.length > 0 && (
         <a className="text-link" href="/rencontres">
           Voir toutes les rencontres
         </a>
@@ -261,18 +289,9 @@ export function Discovery({
               ))}
             </ul>
           )}
-          <LazyZoneMap
-            providerKey={providerKey}
-            navigationCenter={navigationCenter}
-            entries={entries}
-            focus={focus}
-            selected={selected}
-            selectionSize={selectionSize}
-            onSelect={choose ? setSelected : undefined}
-          />
           {choose && (
-            <section>
-              <h2>Choisir un lieu</h2>
+            <div className="map-choose-head">
+              <p>Touche la carte pour placer la zone.</p>
               <label>
                 Taille de la zone à choisir
                 <select
@@ -284,20 +303,33 @@ export function Discovery({
                     setSelected(null);
                   }}
                 >
-                  {[500, 1000, 2000].map((s) => (
+                  {([500, 1000, 2000] as const).map((s) => (
                     <option key={s} value={s}>
-                      {s} m
+                      {s === 500 ? "500 m" : s === 1000 ? "1 km" : "2 km"}
                     </option>
                   ))}
                 </select>
               </label>
-              <p>
-                Touche la carte pour proposer une cellule.{" "}
-                {locationLabel(selected)}
+            </div>
+          )}
+          <LazyZoneMap
+            providerKey={providerKey}
+            navigationCenter={navigationCenter}
+            entries={entries}
+            focus={focus}
+            selected={selected}
+            selectionSize={selectionSize}
+            onSelect={choose ? setSelected : undefined}
+          />
+          {choose && (
+            <section className="map-choose">
+              <p className="location-current">
+                {selected ? locationLabel(selected) : "Aucune zone choisie."}
               </p>
-              {selected && (
+              <div className="map-choose-actions">
                 <button
                   className="encounter-button"
+                  disabled={!selected}
                   onClick={() => {
                     try {
                       sessionStorage.setItem(
@@ -314,28 +346,38 @@ export function Discovery({
                 >
                   Utiliser cette zone
                 </button>
-              )}
-              <a href="/photo">Revenir sans lieu</a>
+                <a className="encounter-button secondary" href="/photo">
+                  Revenir sans lieu
+                </a>
+              </div>
             </section>
           )}
-          <h2>Les rencontres de la carte</h2>
+          {!choose && <h2>Les rencontres de la carte</h2>}
         </>
       )}
-      <div
-        className={
-          "notebook-grid" + (mode === "home" ? " discovery-home-grid" : "")
-        }
-      >
-        {entries.map(card)}
-      </div>
-      {mode === "map" && ready && noFriends && (
+      {!choose && (
+        <div
+          className={
+            "notebook-grid" + (mode === "home" ? " discovery-home-grid" : "")
+          }
+        >
+          {entries.map(card)}
+        </div>
+      )}
+      {mode === "map" && ready && noFriends && !choose && (
         <p role="note" className="discovery-hint">
           Tu n’as pas encore d’amis : <a href="/amis">ajoute des gens</a> pour
           voir leurs rencontres sur la carte.
         </p>
       )}
-      {!busy && !entries.length && !message && (
-        <p>Aucune rencontre partagée pour le moment.</p>
+      {!busy && !entries.length && !message && !choose && (
+        <p className="discovery-empty">
+          {mode === "map"
+            ? "Aucune rencontre sur la carte pour l’instant."
+            : mode === "profile"
+              ? "Aucune rencontre partagée sur ce profil."
+              : "Aucune rencontre partagée pour le moment."}
+        </p>
       )}
       {next && (
         <button
@@ -348,13 +390,22 @@ export function Discovery({
       )}
       {mode === "home" && (
         <section className="home-notebook">
-          <h2>{own ? "Ta dernière rencontre" : "Ton carnet"}</h2>
+          <h2>
+            {own && !entries.some((e) => e.id === own.id)
+              ? "Ta dernière rencontre"
+              : "Ton carnet"}
+          </h2>
           {own ? (
             <>
-              {card(own)}
-              <a className="text-link" href="/carnet">
-                Voir tout mon carnet
-              </a>
+              {entries.some((e) => e.id === own.id) ? null : card(own)}
+              <div className="home-notebook-actions">
+                <a className="encounter-button" href="/carnet">
+                  Voir tout mon carnet
+                </a>
+                <a className="encounter-button secondary" href="/photo">
+                  Photographier un chat
+                </a>
+              </div>
             </>
           ) : (
             <>

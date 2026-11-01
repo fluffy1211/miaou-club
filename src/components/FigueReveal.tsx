@@ -23,7 +23,8 @@ function celebrate(origin = { x: 0.5, y: 0.45 }) {
   const base = { colors, disableForReducedMotion: true, zIndex: 40 };
   void confetti({
     ...base,
-    particleCount: 90,
+    particleCount: 60,
+    ticks: 140,
     spread: 100,
     startVelocity: 42,
     origin,
@@ -41,19 +42,21 @@ function celebrate(origin = { x: 0.5, y: 0.45 }) {
 
 function welcome() {
   const base = { colors, disableForReducedMotion: true, zIndex: 40 };
-  const end = Date.now() + 900;
+  const end = Date.now() + 450;
   let frame = 0;
   (function burst() {
     void confetti({
       ...base,
-      particleCount: 5,
+      particleCount: 3,
+      ticks: 140,
       angle: 60,
       spread: 60,
       origin: { x: 0, y: 0.75 },
     });
     void confetti({
       ...base,
-      particleCount: 5,
+      particleCount: 3,
+      ticks: 140,
       angle: 120,
       spread: 60,
       origin: { x: 1, y: 0.75 },

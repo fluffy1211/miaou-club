@@ -3,7 +3,7 @@ import type { LocationCell } from "@miaou/contracts";
 import { LazyZoneMap } from "./LazyZoneMap";
 export const locationLabel = (c?: LocationCell | null) =>
   c
-    ? `Zone de ${c.size === 500 ? "500 m" : c.size === 1000 ? "1 km" : "2 km"} de côté · cellule ${c.x}/${c.y}`
+    ? `Zone de ${c.size === 500 ? "500 m" : c.size === 1000 ? "1 km" : "2 km"} de côté`
     : "Sans lieu partagé.";
 export function LocationFields({
   value,
@@ -109,42 +109,39 @@ export function LocationFields({
       <h2>Un lieu ? C’est facultatif.</h2>
       {!editing && (
         <>
-          <label>
-            Taille proposée
-            <select
-              value={size}
-              onChange={(e) =>
-                setSize(Number(e.target.value) as LocationCell["size"])
-              }
+          <div className="location-options">
+            <button
+              type="button"
+              className="encounter-button secondary"
+              disabled={busy}
+              onClick={locate}
             >
-              {[500, 1000, 2000].map((s) => (
-                <option key={s} value={s}>
-                  {s} m
-                </option>
-              ))}
-            </select>
-          </label>
-          <p>
-            Ta position actuelle sert uniquement à proposer une zone
-            approximative, sans suivi. Elle reste sur ton téléphone ; seule la
-            cellule sera partagée. Pour une photo ancienne, vérifie le lieu. La
-            zone ne garantit pas l’anonymat.
-          </p>
-          <button
-            type="button"
-            className="encounter-button secondary"
-            disabled={busy}
-            onClick={locate}
-          >
-            Utiliser ma position actuelle
-          </button>
-          <p>
-            <a href="/carte?choisir=1">Choisir une zone sur la carte</a> puis
-            revenir à ce formulaire.
-          </p>
+              Utiliser ma position actuelle
+            </button>
+            <a className="encounter-button secondary" href="/carte?choisir=1">
+              Choisir une zone sur la carte
+            </a>
+          </div>
+          {!value && (
+            <label className="location-size">
+              Taille proposée
+              <select
+                value={size}
+                onChange={(e) =>
+                  setSize(Number(e.target.value) as LocationCell["size"])
+                }
+              >
+                {[500, 1000, 2000].map((s) => (
+                  <option key={s} value={s}>
+                    {s === 500 ? "500 m" : s === 1000 ? "1 km" : "2 km"}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
         </>
       )}
-      <p>{locationLabel(value)}</p>
+      <p className="location-current">{locationLabel(value)}</p>
       {value && <LazyZoneMap selected={value} />}
       {value && (
         <>
@@ -173,7 +170,7 @@ export function LocationFields({
                 .filter((s) => s >= value.size)
                 .map((s) => (
                   <option key={s} value={s}>
-                    {s} m
+                    {s === 500 ? "500 m" : s === 1000 ? "1 km" : "2 km"}
                   </option>
                 ))}
             </select>

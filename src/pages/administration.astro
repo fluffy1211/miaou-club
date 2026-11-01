@@ -1,7 +1,18 @@
 ---
 import EncounterLayout from "../layouts/EncounterLayout.astro";
 import { ModerationPanel } from "../components/ModerationPanel";
+import { handleRequest } from "@miaou/server/http";
 import "../styles/accounts.css";
+// Les membres sans rôle d'administration voient une page introuvable ; les
+// données restent protégées côté API (rôle et second facteur vérifiés).
+const me = await handleRequest(
+  new Request(new URL("/api/v1/me", Astro.url), {
+    headers: Astro.request.headers,
+  }),
+);
+const role =
+  me.status === 200 ? ((await me.json()) as { role?: string }).role : null;
+if (role !== "admin") return Astro.rewrite("/404");
 ---
 
 <EncounterLayout title="Administration">

@@ -801,3 +801,266 @@ body > .skip-link:focus {
     animation: none;
   }
 }
+
+/* Rythme vertical par défaut (spécificité nulle : les composants priment). */
+.encounter-main :where(p, ul) {
+  margin-block: 0 var(--space-3);
+}
+.encounter-main :where(h2) {
+  margin-block: var(--space-6) var(--space-3);
+}
+.encounter-main :where(h3) {
+  margin-block: var(--space-5) var(--space-2);
+}
+.encounter-main :where(p, ul, h2, h3):where(:last-child) {
+  margin-bottom: 0;
+}
+.encounter-main :where(section, div, article) > :where(h2):first-child {
+  margin-top: 0;
+}
+.encounter-main :where(.text-link, .back-link) {
+  margin-bottom: var(--space-4);
+}
+.encounter-main :where(.encounter-message):empty {
+  min-height: 0;
+  margin: 0;
+}
+.back-link + h1 {
+  margin-top: var(--space-1);
+}
+
+/* Navigation : barre flottante centrée sur grand écran. */
+@media (min-width: 761px) {
+  .encounter-nav {
+    left: 50%;
+    right: auto;
+    bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+    transform: translateX(-50%);
+    width: min(520px, 100% - 2 * var(--space-5));
+    padding: var(--space-1) var(--space-3);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-pill);
+    box-shadow: var(--shadow-paper);
+  }
+  .encounter-main {
+    margin-bottom: calc(112px + env(safe-area-inset-bottom));
+  }
+}
+/* Même colonne pour l'en-tête et le contenu. */
+.encounter-header {
+  width: min(1040px, 100% - 2 * var(--space-5));
+}
+
+/* Accueil */
+.discovery-empty {
+  color: var(--muted);
+}
+.home-notebook > p {
+  margin: 0;
+}
+.home-notebook-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.home-notebook article {
+  margin-bottom: var(--space-2);
+}
+
+/* Profil public */
+.public-profile {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: var(--space-4);
+  row-gap: var(--space-2);
+}
+.public-profile .profile-initial {
+  grid-row: span 2;
+}
+.public-profile > p {
+  margin: 0;
+}
+.public-profile > a {
+  grid-column: 1 / -1;
+  margin: var(--space-2) 0 0;
+}
+.public-profile-empty,
+.public-profile-count {
+  color: var(--muted);
+  font-size: var(--text-sm);
+}
+
+/* Formulaire photo : section lieu */
+.location-fields {
+  display: grid;
+  gap: var(--space-4);
+}
+.location-fields > * {
+  margin: 0;
+}
+.location-fields h2 {
+  margin: 0;
+}
+.location-intro {
+  color: var(--ink);
+}
+.location-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.location-size {
+  max-width: 240px;
+}
+.location-note {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  background: var(--white);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+.location-current {
+  font-weight: 600;
+  padding: var(--space-2) var(--space-4);
+  background: var(--lilac);
+  border-radius: var(--radius-pill);
+  justify-self: start;
+}
+.location-fields > p[role="status"]:empty {
+  display: none;
+}
+.draft-notice {
+  justify-content: center;
+  margin: var(--space-4) 0 0;
+}
+
+/* Aperçu et détail */
+.encounter-summary {
+  display: grid;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+}
+.encounter-summary > * {
+  margin: 0;
+}
+.encounter-detail > div > * + * {
+  margin-top: var(--space-4);
+}
+.encounter-detail > div > * {
+  margin-bottom: 0;
+}
+.encounter-success {
+  margin: var(--space-2) 0 var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: var(--mint);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+}
+
+/* Carte */
+.zone-map-wrap + h2 {
+  margin-top: var(--space-6);
+}
+
+/* Amis */
+.friend-pending-empty {
+  margin-top: var(--space-4);
+  color: var(--muted);
+}
+
+.discovery-home-grid {
+  margin-top: var(--space-2);
+}
+
+/* Choix d'un lieu sur la carte */
+.map-choose-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-3) var(--space-5);
+  margin-bottom: var(--space-4);
+}
+.map-choose-head p {
+  margin: 0;
+  color: var(--muted);
+}
+.map-choose-head label {
+  min-width: 160px;
+}
+.zone-map-wrap {
+  margin-bottom: var(--space-3);
+}
+.zone-map-wrap ~ p[role="status"]:empty {
+  display: none;
+}
+.map-choose {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+}
+.map-choose-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.map-choose-actions > * {
+  flex: 1 1 160px;
+}
+
+/* Le dernier élément ne passe jamais sous la barre de navigation. */
+@media (max-width: 760px) {
+  .encounter-main {
+    margin-bottom: calc(80px + var(--space-7) + env(safe-area-inset-bottom));
+  }
+}
+/* Un bouton seul garde sa largeur naturelle ; les paires se partagent la ligne. */
+.encounter-main form > .encounter-button {
+  justify-self: start;
+}
+.photo-replace {
+  gap: var(--space-5);
+  font-size: var(--text-md);
+}
+.draft-notice {
+  justify-content: flex-start;
+}
+.account-panel .pill-links,
+.pill-links {
+  gap: var(--space-3);
+}
+.encounter-actions > :only-child {
+  flex: 0 1 auto;
+}
+
+/* Choix du lieu : même empilement qu'au téléphone (consigne puis taille),
+   et des boutons à leur largeur naturelle sur grand écran. */
+.map-choose-head {
+  display: grid;
+  justify-content: start;
+}
+.map-choose-head label {
+  max-width: 240px;
+}
+@media (min-width: 761px) {
+  .map-choose-actions > * {
+    flex: 0 1 auto;
+  }
+}
+
+/* Alignement : un seul bord gauche par page (logo, titre, contenu). Les
+   colonnes étroites s'alignent sur le logo au lieu de flotter au centre. */
+.encounter-main :is(.account-panel, .friends-panel, .photo-flow) {
+  margin-inline: 0;
+}
+.photo-flow > h1,
+.photo-flow > p:not(.encounter-message) {
+  text-align: start;
+}
+.photo-flow .capture-frame {
+  margin-inline: 0;
+}
+.capture-frame .capture-gallery {
+  margin: var(--space-3) 0 0;
+}

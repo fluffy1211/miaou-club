@@ -188,6 +188,10 @@ export function AccountPanel({
   return (
     <section className="account-panel">
       <a className="account-brand" href="/profil">
+        <svg viewBox="0 0 44 44" aria-hidden="true">
+          <path d="M8 20 6 5l13 9h7L38 5l-2 17c5 15-27 22-28-2Z" />
+          <path d="m14 25 4 1m10-1-4 1m-5 6q3 3 6 0" />
+        </svg>
         miaou club
       </a>
       {!inlineStatus && status}
@@ -198,7 +202,9 @@ export function AccountPanel({
             className={`account-paper account-color-${me.profile?.color ?? "violet"}`}
           >
             <span className="account-avatar" aria-hidden="true">
-              {me.profile?.avatar === "cat" ? "∧ ∧" : name.slice(0, 1)}
+              {me.profile?.avatar === "cat"
+                ? "∧ ∧"
+                : name.slice(0, 1).toUpperCase()}
             </span>
             <h2>{name}</h2>
             <p>{me.profile?.bio}</p>
@@ -248,10 +254,9 @@ export function AccountPanel({
                     maxLength={30}
                     required
                   />
-                  <small>
-                    C’est ton nom sur le club. Unique et définitif après
-                    enregistrement.
-                  </small>
+                  {!me.profile?.handle && (
+                    <small>Définitif après enregistrement.</small>
+                  )}
                 </label>
                 <label>
                   Biographie
@@ -261,34 +266,63 @@ export function AccountPanel({
                     maxLength={240}
                   />
                 </label>
-                <label>
-                  Couleur
-                  <select
-                    name="color"
-                    defaultValue={me.profile?.color ?? "violet"}
-                  >
-                    <option value="violet">Violet</option>
-                    <option value="corail">Corail</option>
-                    <option value="sauge">Sauge</option>
-                  </select>
-                </label>
-                <label>
-                  Avatar
-                  <select
-                    name="avatar"
-                    defaultValue={me.profile?.avatar ?? "initials"}
-                  >
-                    <option value="initials">Initiale</option>
-                    <option value="cat">Chat</option>
-                  </select>
-                </label>
+                <fieldset className="account-choices">
+                  <legend>Couleur</legend>
+                  {(
+                    [
+                      ["violet", "Violet"],
+                      ["corail", "Corail"],
+                      ["sauge", "Sauge"],
+                    ] as const
+                  ).map(([value, label]) => (
+                    <label
+                      key={value}
+                      className={`account-swatch account-color-${value}`}
+                    >
+                      <input
+                        type="radio"
+                        name="color"
+                        value={value}
+                        defaultChecked={
+                          (me.profile?.color ?? "violet") === value
+                        }
+                      />
+                      <span aria-hidden="true" />
+                      {label}
+                    </label>
+                  ))}
+                </fieldset>
+                <fieldset className="account-choices">
+                  <legend>Avatar</legend>
+                  {(
+                    [
+                      ["initials", name.slice(0, 1).toUpperCase(), "Initiale"],
+                      ["cat", "∧ ∧", "Chat"],
+                    ] as const
+                  ).map(([value, preview, label]) => (
+                    <label key={value} className="account-avatar-choice">
+                      <input
+                        type="radio"
+                        name="avatar"
+                        value={value}
+                        defaultChecked={
+                          (me.profile?.avatar ?? "initials") === value
+                        }
+                      />
+                      <span aria-hidden="true">{preview}</span>
+                      {label}
+                    </label>
+                  ))}
+                </fieldset>
                 <button disabled={busy}>Enregistrer le profil</button>
               </form>
             </>
           )}
           <section>
             <h2>Sécurité du compte</h2>
-            <p className="account-note">Ton e-mail reste privé.</p>
+            <p className="account-note">
+              Demandé avant de copier tes données ou de supprimer ton compte.
+            </p>
             {me.role === "admin" && me.mfaValid && (
               <button
                 disabled={busy}
@@ -317,12 +351,14 @@ export function AccountPanel({
                 }}
               >
                 {password()}
-                <button disabled={busy}>Confirmer mon identité</button>
+                <button className="secondary" disabled={busy}>
+                  Confirmer mon identité
+                </button>
               </form>
             ) : (
               options.google && (
                 <form onSubmit={google}>
-                  <button disabled={busy}>
+                  <button className="secondary" disabled={busy}>
                     Confirmer mon identité avec Google
                   </button>
                 </form>
@@ -330,6 +366,7 @@ export function AccountPanel({
             )}
             {options.google && !me.methods.includes("google") && (
               <button
+                className="secondary"
                 disabled={busy}
                 onClick={async () => {
                   const r = await send("/api/auth/link-social", {
@@ -344,6 +381,7 @@ export function AccountPanel({
             )}
             {!me.methods.includes("credential") && (
               <button
+                className="secondary"
                 disabled={busy}
                 onClick={async () => {
                   if (
@@ -550,8 +588,7 @@ export function AccountPanel({
                 />
               </label>
               <small id="handle-rule" className="account-rule">
-                3 à 30 caractères : minuscules, chiffres ou tiret bas. Il ne
-                pourra plus être changé.
+                Minuscules, chiffres ou tiret bas. Définitif.
               </small>
               {email}
               <NewPassword name="password" />
@@ -608,16 +645,22 @@ export function AccountPanel({
         </>
       ) : (
         <>
-          <h1 className="sr-only">Retrouve ton petit monde.</h1>
+          <h1>Retrouve ton petit monde.</h1>
           <form onSubmit={login}>
             {email}
             {password()}
             {status}
             <button disabled={busy}>Se connecter</button>
           </form>
-          <a href="/compte">Créer un compte</a>
-          <a href="/mot-de-passe-oublie">Mot de passe oublié</a>
-          <p>Si tu as perdu tous tes accès, contacte directement Gabriel.</p>
+          <div className="account-links">
+            <a className="text-link" href="/compte">
+              Créer un compte
+            </a>
+            <a className="text-link" href="/mot-de-passe-oublie">
+              Mot de passe oublié
+            </a>
+            <p className="account-note">Accès perdus ? Écris à Gabriel.</p>
+          </div>
           {options.google && (
             <form onSubmit={google}>
               <div className="account-divider">ou</div>
