@@ -319,27 +319,32 @@ export function PhotoFlow() {
       />
     </>
   );
+  const discard = (
+    <div className="draft-notice">
+      <button
+        className="encounter-link"
+        disabled={busy}
+        onClick={() => void abandon()}
+      >
+        Effacer le brouillon
+      </button>
+    </div>
+  );
+
   return (
     <section className="photo-flow" aria-busy={busy}>
       {pickers}
-      <p className="encounter-message" role="status" aria-live="polite">
+      <p
+        className={
+          "encounter-message" +
+          // Le Polaroid affiché suffit visuellement ; l'annonce reste lue.
+          (message === "Photo prête." && step !== "choose" ? " sr-only" : "")
+        }
+        role="status"
+        aria-live="polite"
+      >
         {message}
       </p>
-      {step !== "choose" && (
-        <div className="draft-notice">
-          <p>
-            Ton brouillon reste dans cet onglet pendant 24 h maximum, jusqu’à sa
-            fermeture ou ta déconnexion.
-          </p>
-          <button
-            className="encounter-link"
-            disabled={busy}
-            onClick={() => void abandon()}
-          >
-            Effacer le brouillon
-          </button>
-        </div>
-      )}
       {step === "choose" ? (
         <>
           <h1 ref={heading} tabIndex={-1}>
@@ -362,14 +367,14 @@ export function PhotoFlow() {
             >
               Prendre une photo
             </button>
+            <button
+              className="encounter-link capture-gallery"
+              disabled={busy || !owner}
+              onClick={() => gallery.current?.click()}
+            >
+              Choisir dans la galerie
+            </button>
           </div>
-          <button
-            className="encounter-link capture-gallery"
-            disabled={busy || !owner}
-            onClick={() => gallery.current?.click()}
-          >
-            Choisir dans la galerie
-          </button>
           <p className="photo-help">
             JPEG, PNG ou WebP · 30 Mo et 60 Mpx maximum.
             <br />
@@ -404,7 +409,6 @@ export function PhotoFlow() {
             <h1 ref={heading} tabIndex={-1}>
               Une nouvelle rencontre.
             </h1>
-            <p>Un Polaroid, quelques mots, et la rencontre est gardée.</p>
             <div className="photo-replace">
               <button
                 className="encounter-link"
@@ -438,6 +442,7 @@ export function PhotoFlow() {
                 Voir l’aperçu
               </button>
             </form>
+            {discard}
           </div>
         </div>
       ) : (
@@ -445,19 +450,20 @@ export function PhotoFlow() {
           <h1 ref={heading} tabIndex={-1}>
             Prêt à rejoindre le carnet ?
           </h1>
-          <p>
-            {draft.visibility === "private"
-              ? "Cette rencontre sera visible uniquement par toi."
-              : "Voici ce que les membres du club pourront voir."}
-          </p>
           <div className="encounter-detail">
             {media?.image && (
               <Polaroid image={media.image} title={draft.title} />
             )}
             <div>
-              <h2>{draft.title}</h2>
-              <p className="encounter-description">{draft.description}</p>
-              <p>{frenchDate(draft.encounterDate)}</p>
+              <div className="encounter-summary">
+                <h2>{draft.title}</h2>
+                {draft.description && (
+                  <p className="encounter-description">{draft.description}</p>
+                )}
+                <p className="encounter-meta">
+                  Rencontré le {frenchDate(draft.encounterDate)}
+                </p>
+              </div>
               <p className="encounter-privacy">
                 {draft.visibility === "private"
                   ? "Privé · toi uniquement"
@@ -482,6 +488,7 @@ export function PhotoFlow() {
                   Modifier
                 </button>
               </div>
+              {discard}
             </div>
           </div>
         </>

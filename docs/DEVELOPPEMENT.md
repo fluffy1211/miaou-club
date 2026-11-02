@@ -28,18 +28,16 @@ La revue sémantique précède la publication de chaque tranche d'implémentatio
 
 Cycle : **implémentation → revue → corrections autorisées et tests ciblés → revue du diff final → contrôles pre-push → push autorisé → CI/PR selon Git flow**. Une demande de review seule reste en lecture seule. En fin de tranche déjà autorisée, corriger les défauts dans ce périmètre sans nouvelle confirmation à chaque correction réversible. La revue ne donne aucune autorisation Git supplémentaire.
 
-### Retours Greptile et fusion des prochaines PR
+### Fusion des prochaines PR
 
-**Mise à jour du 25 octobre 2026 :** Greptile n’a plus de crédits et Gabriel retire « Greptile Review » des checks requis de `develop`. La fusion exige désormais la revue de l’agent (miaou-review) sur le dernier SHA et la CI requise réussie ; si Greptile commente encore, ses retours sont traités comme ci-dessous, sans être attendus. Les mentions de review Greptile obligatoire ci-dessous sont remplacées par cette règle.
+Greptile n’est plus utilisé (décision de Gabriel du 2 novembre 2026). Consigne de Gabriel du 6 octobre 2026, maintenue : pour les prochaines PR dont la livraison est autorisée, l’agent fusionne sans redemander confirmation. Cette autorisation couvre les corrections dans le périmètre de la PR, leurs commits/pushes et la fusion selon le [Git flow](#git) ; elle n’autorise pas une nouvelle tranche, une livraison en production ou un déploiement.
 
-Consigne de Gabriel du 6 octobre 2026 : pour les prochaines PR dont la livraison est autorisée, l’agent prend en charge les retours Greptile jusqu’à la validation, puis fusionne sans redemander confirmation. Cette autorisation couvre les corrections dans le périmètre de la PR, leurs commits/pushes et la fusion selon le [Git flow](#git) ; elle n’autorise pas une nouvelle tranche, une livraison en production ou un déploiement.
-
-- Lire la review complète et vérifier chaque remarque contre le code et les règles du projet. Corriger les problèmes confirmés ; justifier les faux positifs ou remarques non applicables dans le bilan. Un retour externe ne modifie pas les décisions produit et n’autorise pas d’action hors périmètre.
-- Tester les corrections, revoir le diff final, pousser avec les contrôles requis et obtenir une nouvelle review Greptile couvrant le dernier SHA. Répéter si de nouveaux problèmes confirmés apparaissent.
-- Fusionner seulement lorsque la review Greptile est terminée sur le dernier SHA, qu’aucun défaut bloquant ni remarque nécessitant une vérification ne reste, que la revue locale est complète, que tous les contrôles CI requis réussissent sur ce SHA et que la PR est fusionnable. Une note Greptile seule ne suffit pas. Si la review est indisponible ou une preuve manque, signaler le blocage sans fusionner.
+- Si un commentaire humain ou automatique arrive sur la PR, le vérifier contre le code et les règles du projet. Corriger les problèmes confirmés ; justifier les faux positifs dans le bilan. Un retour externe ne modifie pas les décisions produit et n’autorise pas d’action hors périmètre.
+- Tester les corrections, revoir le diff final et pousser avec les contrôles requis.
+- Fusionner seulement lorsque la revue de l’agent (miaou-review) couvre le dernier SHA sans défaut bloquant, que tous les contrôles CI requis réussissent sur ce SHA et que la PR est fusionnable. Si une preuve manque, signaler le blocage sans fusionner.
 - Vérifier ensuite l’état fusionné et suivre les contrôles du commit de fusion ; rendre compte du résultat et actualiser NEXT_SESSION.
 
-Il s’agit du suivi effectué par l’agent dans le chat de livraison, pas d’une fusion automatique configurée chez Greptile/GitHub ni d’une surveillance récurrente entre les sessions.
+Il s’agit du suivi effectué par l’agent dans le chat de livraison, pas d’une fusion automatique configurée sur GitHub ni d’une surveillance récurrente entre les sessions.
 
 | Priorité | Critère                                                              | Suite                                   |
 | -------- | -------------------------------------------------------------------- | --------------------------------------- |
@@ -116,10 +114,26 @@ Commandes E2E/Storybook dans `package.json`, configurations et prérequis à vé
 
 Sources : [Playwright](https://playwright.dev/docs/intro), [Storybook React/Vite](https://storybook.js.org/docs/get-started/frameworks/react-vite), [Plop](https://plopjs.com/documentation/).
 
+<a id="grille-design"></a>
+### Grille de design — retenue le 1er novembre 2026
+
+Chaque écran est vérifié avec cette grille, sur téléphone (390 px) et ordinateur (1280 px). Les tokens vivent dans `src/styles/global.css` ; `mockups/rencontres/` reste la référence de rendu.
+
+1. **Proximité et groupement** : ce qui va ensemble est proche (8 à 12 px), les groupes distincts sont séparés (24 px et plus) ou réunis dans une même zone visuelle. Les liens annexes d'un formulaire sont groupés sous son action.
+2. **Espacements sur la grille de 8 px** (4 px pour les petits ajustements) : uniquement les tokens `--space-*`, sans valeur fluide intermédiaire.
+3. **Alignement** : un seul bord gauche par page (logo, titre, contenu) ; texte aligné à gauche, centrage réservé aux états vides et d'erreur.
+4. **Hiérarchie** : un titre par écran, puis sections ; texte secondaire en `--muted`.
+5. **Une seule action principale visible par écran** (bouton plein) ; les autres en bouton secondaire ou lien texte, la destruction en bouton danger.
+6. **Cibles tactiles de 44 × 44 px minimum**, sauf liens dans une phrase.
+7. **Contraste** : texte ≥ 4,5:1 (≥ 3:1 au-delà de 24 px), éléments d'interface ≥ 3:1, sur chaque fond utilisé.
+8. **Cohérence** : mêmes composants pour les mêmes rôles (boutons, liens, champs, cartes) ; textes courts, sans explication superflue.
+
+Contrôle automatisé local : mesures des cibles, du contraste, des actions principales et des espacements hors grille sur chaque capture (script de revue hors dépôt). Sources : [Laws of UX](https://lawsofux.com/) (proximité, région commune, Fitts, Hick, Von Restorff), [Material — espacements 4/8 dp](https://material.io/design/layout/spacing-methods.html), [Android — cibles 48 dp](https://developer.android.com/guide/topics/ui/accessibility/apps#large-controls), Apple HIG (cibles 44 pt), [WCAG 2.2 — contraste](https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html), [contraste non textuel](https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html), [taille des cibles](https://www.w3.org/WAI/WCAG22/Understanding/target-size-minimum.html).
+
 <a id="ia"></a>
 ## Développement avec l'IA — pratiques autorisées le 4 octobre 2026
 
-Greptile gratuit retenu le 6 octobre 2026 à la place de Copilot : configuration dans `.greptile/config.json` et dashboard sauvegardé, review Base à l’ouverture des PR vers `develop`/`main`, remarques de logique/syntaxe, aucune approbation ni fusion automatique. Consignes ciblées dans `.greptile/rules.md` ; leur application sur Starter reste à vérifier, les règles personnalisées étant annoncées dans Pro. L’offre affichée est Starter gratuit, un développeur actif, 50 crédits/mois ; Base coûte un crédit. Vérifier le dashboard sur Base (un niveau supérieur y prend priorité), la review des brouillons désactivée et l’absence d’achat/consommation payante. Connexion GitHub et activation de `fluffy1211/miaou-club` vérifiées dans le dashboard : dépôt Enabled, auto-activation des nouveaux dépôts désactivée. Réglages persistés : ouverture seulement, filtre develop/main, Base, brouillons/auto-approbation/édition de description désactivés, commentaires d’erreur activés, consignes françaises ciblées. Billing affiche un essai jusqu’au 20 octobre 2026 sans moyen de paiement ; passage automatique à Starter non confirmé. Première review demandée sur la PR #3, résultat à vérifier. Remarques à vérifier, CI et décision humaine conservées. Ruleset Copilot `24590908` désactivé pour éviter deux reviewers. Sources officielles consultées le 6 octobre 2026 : [tarifs](https://www.greptile.com/pricing), [configuration](https://www.greptile.com/docs/code-review/greptile-config-reference), [niveaux](https://www.greptile.com/docs/code-review/review-tiers), [Dependabot](https://docs.github.com/en/code-security/reference/supply-chain-security/dependabot-options-reference).
+Aucun outil externe de revue de PR : Greptile (retenu le 6 octobre 2026 à la place de Copilot) est abandonné le 2 novembre 2026 ; ruleset Copilot `24590908` toujours désactivé. La revue repose sur miaou-review et la CI.
 
 AGENTS porte les limites et règles de confiance ; les quatre skills locaux couvrent backend, vérification, revue et orchestration des modèles. Les décisions produit restent dans CADRAGE. Aucun changement de stack/Git flow ni copie des manuels de bibliothèques.
 

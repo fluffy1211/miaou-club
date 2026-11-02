@@ -81,7 +81,9 @@ export function ModerationPanel({
   };
   return (
     <section className="account-panel data-panel">
-      <a href="/profil">Retour au profil</a>
+      <a className="back-link" href="/profil">
+        Retour au profil
+      </a>
       <h1>Administration</h1>
       <p role="status">{message}</p>
       <button disabled={busy} onClick={() => void action(load)}>

@@ -12,7 +12,8 @@ export function Notebook({ id }: { id?: string }) {
   const [draft, setDraft] = useState<EncounterDraft | null>(null),
     [group, setGroup] = useState(false);
   const [busy, setBusy] = useState(true),
-    [message, setMessage] = useState("");
+    [message, setMessage] = useState(""),
+    [published, setPublished] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const dialog = useRef<HTMLDialogElement>(null),
     deleteButton = useRef<HTMLButtonElement>(null),
@@ -32,6 +33,12 @@ export function Notebook({ id }: { id?: string }) {
           if (alive) {
             setEntry(r.encounter);
             setDraft(r.encounter);
+            const url = new URL(window.location.href);
+            if (url.searchParams.has("publie")) {
+              setPublished(true);
+              url.searchParams.delete("publie");
+              window.history.replaceState(null, "", url);
+            }
           }
         } else {
           const r = await encounterAPI<{
@@ -126,7 +133,6 @@ export function Notebook({ id }: { id?: string }) {
       {!id ? (
         <>
           <h1>Mon petit carnet.</h1>
-          <p>Tes rencontres et leurs Polaroids.</p>
           {!group && !busy && (
             <p className="encounter-privacy">
               Ton espace personnel reste accessible. La publication et l’accès
@@ -161,9 +167,6 @@ export function Notebook({ id }: { id?: string }) {
           ) : !busy && !message ? (
             <div className="empty-notebook">
               <h2>Le premier Polaroid sera le tien.</h2>
-              <p>
-                Photographie un chat rencontré et garde ce petit moment ici.
-              </p>
               {group && (
                 <a className="encounter-button" href="/photo">
                   Ajouter ma première rencontre
@@ -183,9 +186,14 @@ export function Notebook({ id }: { id?: string }) {
         </>
       ) : (
         <>
-          <a className="encounter-link" href="/carnet">
+          <a className="back-link" href="/carnet">
             Retour au carnet
           </a>
+          {published && !editing && (
+            <p className="encounter-success" role="status">
+              C’est publié : ta rencontre est dans ton carnet.
+            </p>
+          )}
           {entry &&
             (editing && draft ? (
               <div className="encounter-editor">
@@ -238,11 +246,16 @@ export function Notebook({ id }: { id?: string }) {
                   <Polaroid image={entry.image} title={entry.title} />
                   <div>
                     <p className="encounter-description">{entry.description}</p>
-                    <p>Rencontré le {frenchDate(entry.encounterDate)}</p>
                     <p className="encounter-meta">
+                      Rencontré le {frenchDate(entry.encounterDate)}
+                      <br />
                       Publié le{" "}
-                      {new Date(entry.publishedAt).toLocaleDateString("fr-FR")}{" "}
-                      · {entry.author}
+                      {new Date(entry.publishedAt).toLocaleDateString("fr-FR", {
+                        day: "numeric",
+                        month: "long",
+                        year: "numeric",
+                      })}{" "}
+                      · {entry.owned ? "par toi" : entry.author}
                     </p>
                     <p className="encounter-privacy">
                       {entry.visibility === "private"

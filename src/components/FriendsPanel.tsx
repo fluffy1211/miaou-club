@@ -41,7 +41,8 @@ export function FriendsPanel({
     [query, setQuery] = useState(""),
     [searched, setSearched] = useState(""),
     [message, setMessage] = useState(initialMessage),
-    [busy, setBusy] = useState(!preview);
+    [busy, setBusy] = useState(!preview),
+    [loaded, setLoaded] = useState(Boolean(preview));
   const alive = useRef(true);
   async function reload() {
     const values = await Promise.all(
@@ -53,8 +54,9 @@ export function FriendsPanel({
           ] as const,
       ),
     );
-    if (alive.current)
-      setPages(Object.fromEntries(values) as Record<Kind, Page>);
+    if (!alive.current) return;
+    setPages(Object.fromEntries(values) as Record<Kind, Page>);
+    setLoaded(true);
   }
   useEffect(() => {
     alive.current = true;
@@ -218,10 +220,7 @@ export function FriendsPanel({
         Retour au profil
       </a>
       <h1>Les amis du club.</h1>
-      <p>
-        Ta liste reste personnelle. Retrouve leurs profils et leurs rencontres
-        publiques.
-      </p>
+      <p>Ta liste reste personnelle.</p>
       <form
         className="friend-search"
         onSubmit={(e) => {
@@ -260,7 +259,6 @@ export function FriendsPanel({
             Chercher
           </button>
         </div>
-        <small>Au moins 3 caractères : lettres, chiffres ou tiret bas.</small>
       </form>
       <p role="status" aria-live="polite" className="friend-message">
         {message || (busy ? "Chargement…" : "")}
@@ -298,31 +296,31 @@ export function FriendsPanel({
           )}
         </section>
       )}
-      {(Object.keys(headings) as Kind[]).map((kind) => (
-        <section className="friend-section" key={kind}>
-          <h2>{headings[kind]}</h2>
-          {pages[kind].people.length ? (
-            <ul>{pages[kind].people.map((p) => row(p, kind))}</ul>
-          ) : (
-            <p>
-              {kind === "received"
-                ? "Aucune demande reçue."
-                : kind === "sent"
-                  ? "Aucune demande envoyée."
-                  : "Ton cercle attend ses premiers amis."}
-            </p>
-          )}
-          {pages[kind].next && (
-            <button
-              className="button secondary"
-              disabled={busy || preview}
-              onClick={() => void more(kind)}
-            >
-              Voir plus — {headings[kind].toLowerCase()}
-            </button>
-          )}
-        </section>
-      ))}
+      {loaded && !pages.received.people.length && !pages.sent.people.length && (
+        <p className="friend-pending-empty">Aucune demande en attente.</p>
+      )}
+      {(Object.keys(headings) as Kind[])
+        // Les demandes vides tiennent sur une seule ligne au-dessus.
+        .filter((kind) => kind === "friends" || pages[kind].people.length > 0)
+        .map((kind) => (
+          <section className="friend-section" key={kind}>
+            <h2>{headings[kind]}</h2>
+            {pages[kind].people.length ? (
+              <ul>{pages[kind].people.map((p) => row(p, kind))}</ul>
+            ) : (
+              <p>Ton cercle attend ses premiers amis.</p>
+            )}
+            {pages[kind].next && (
+              <button
+                className="button secondary"
+                disabled={busy || preview}
+                onClick={() => void more(kind)}
+              >
+                Voir plus — {headings[kind].toLowerCase()}
+              </button>
+            )}
+          </section>
+        ))}
     </section>
   );
 }
