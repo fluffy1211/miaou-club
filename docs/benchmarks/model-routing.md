@@ -36,7 +36,7 @@ Les tokens en cache sont inclus dans l'entrée, pas à additionner. L'usage du t
 | Transformation JSON ou pagination entièrement spécifiées et testables                            | GPT-6 Luna                     | 3/3 sur chaque fixture ; généralisation au code réel à vérifier          |
 | Composant/service limité avec contrats établis                                                   | GPT-6 Luna supervisé           | Pas encore benchmarké sur une vraie tranche du projet                    |
 | Plan, architecture, diagnostic ambigu, permissions, auth, médias privés, migrations, concurrence | GPT-6.1 Sol                    | Choix conservateur ; pas une supériorité universelle démontrée           |
-| Revue finale du diff réel                                                                        | GPT-6.1 Sol                    | Complétée par les contrôles du projet et Greptile si livraison autorisée |
+| Revue finale du diff réel                                                                        | GPT-6.1 Sol                    | Complétée par les contrôles du projet et la CI si livraison autorisée |
 
 Smoke de délégation séparé : sous-agent `gpt-5.6-luna`, effort `low`, contexte `fork_turns: none`, via les outils de ce chat ; extraction exacte `M-8`, `M-21` réussie parmi cinq statuts. Aucun usage tokens reçu pour ce smoke, donc exclu du tableau et des 27 appels. Le test CLI natif de délégation aux rôles TOML a été arrêté après des erreurs réseau ; leur invocation native n'est pas confirmée par ce test. Le CLI accepte la configuration projet en mode strict et le skill est présent dans son prompt natif ; la délégation avec choix explicite du modèle fonctionne dans ce chat.
 
