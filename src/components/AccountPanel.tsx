@@ -588,7 +588,8 @@ export function AccountPanel({
                 />
               </label>
               <small id="handle-rule" className="account-rule">
-                Minuscules, chiffres ou tiret bas. Définitif.
+                3 à 30 caractères : minuscules, chiffres ou tiret bas.
+                Définitif.
               </small>
               {email}
               <NewPassword name="password" />

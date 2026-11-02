@@ -5,6 +5,7 @@ import { Polaroid } from "./Polaroid";
 import { LazyZoneMap } from "./LazyZoneMap";
 import { searchPlaces, type SearchPlace } from "../lib/map-provider";
 import { locationLabel } from "./LocationFields";
+const noEntries: EncounterView[] = [];
 type Page = { encounters: EncounterView[]; next: string | null };
 type Profile = {
   handle: string;
@@ -315,7 +316,7 @@ export function Discovery({
           <LazyZoneMap
             providerKey={providerKey}
             navigationCenter={navigationCenter}
-            entries={entries}
+            entries={choose ? noEntries : entries}
             focus={focus}
             selected={selected}
             selectionSize={selectionSize}
@@ -379,7 +380,7 @@ export function Discovery({
               : "Aucune rencontre partagée pour le moment."}
         </p>
       )}
-      {next && (
+      {next && !choose && (
         <button
           className="encounter-button secondary"
           disabled={busy}

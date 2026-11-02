@@ -216,12 +216,6 @@ export function ZoneMap({
           },
         });
         map.addControl(new NavigationControl({ showCompass: false }));
-        // Attribution stays one tap away ("i") instead of covering the map.
-        map.once("load", () => {
-          host.current
-            ?.querySelector(".maplibregl-ctrl-attrib.maplibregl-compact-show")
-            ?.classList.remove("maplibregl-compact-show");
-        });
         instance.current = map;
         map.on("movestart", () => {
           if (alive && host.current) delete host.current.dataset.ready;

@@ -41,7 +41,8 @@ export function FriendsPanel({
     [query, setQuery] = useState(""),
     [searched, setSearched] = useState(""),
     [message, setMessage] = useState(initialMessage),
-    [busy, setBusy] = useState(!preview);
+    [busy, setBusy] = useState(!preview),
+    [loaded, setLoaded] = useState(Boolean(preview));
   const alive = useRef(true);
   async function reload() {
     const values = await Promise.all(
@@ -53,8 +54,9 @@ export function FriendsPanel({
           ] as const,
       ),
     );
-    if (alive.current)
-      setPages(Object.fromEntries(values) as Record<Kind, Page>);
+    if (!alive.current) return;
+    setPages(Object.fromEntries(values) as Record<Kind, Page>);
+    setLoaded(true);
   }
   useEffect(() => {
     alive.current = true;
@@ -294,7 +296,7 @@ export function FriendsPanel({
           )}
         </section>
       )}
-      {!pages.received.people.length && !pages.sent.people.length && (
+      {loaded && !pages.received.people.length && !pages.sent.people.length && (
         <p className="friend-pending-empty">Aucune demande en attente.</p>
       )}
       {(Object.keys(headings) as Kind[])
