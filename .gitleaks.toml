@@ -7,4 +7,4 @@ paths = ['''(^|/)(node_modules|\.git|\.cache|dist|storybook-static|test-results|
 
 [[allowlists]]
 description = "Local private environment and editor state; examples stay scanned"
-paths = ['''(^|/)\.env$''', '''(^|/)\.codex/''']
+paths = ['''(^|/)\.env$''', '''(^|/)\.env\.preproduction(-[a-z0-9-]+)?$''', '''(^|/)\.codex/''']
