@@ -1,5 +1,9 @@
 # Miaou Club — reprise
 
+## Dépôt public et revue Copilot légère — 3 novembre 2026
+
+Dépôt passé en public pour les minutes Actions gratuites, après scan gitleaks de tout l’historique distant (branches et refs de PR, aucun secret) et retrait des métadonnées EXIF des photos de Figue (PR #89). Aucune licence (tous droits réservés). Réglages GitHub : environnement `preproduction` limité à `develop`, approbation des workflows pour tous les contributeurs externes, secret scanning et push protection actifs. Revue Copilot légère active ([DEVELOPPEMENT#ia](docs/DEVELOPPEMENT.md#ia)) ; première revue réelle à observer sur la prochaine PR.
+
 ## Passe de design systématique — 1er novembre 2026
 
 Fusionnée dans `develop` (PR #87). Grille de huit règles consignée dans [DEVELOPPEMENT#grille-design](docs/DEVELOPPEMENT.md#grille-design) et appliquée à toutes les pages (390 et 1280 px) : espacements mobiles fixés sur la grille de 8 px, liens de connexion groupés, `/acces` sur le gabarit de connexion avec logo, colonnes étroites alignées sur le logo, une seule action principale (sécurité du profil en secondaire), cibles de 44 px (logo, contrôles et repères de carte), `--muted` assombri (≥ 4,5:1 sur tous les fonds), textes de `/donnees` raccourcis. Contrôles : Prettier, ESLint, `astro check`, E2E Chromium mobile locaux 21/21. Revue après fusion (2 novembre) : petits points corrigés dans `fix/design-review-followups` (choix de taille toujours visible, pas de repères ni de « Voir la suite » en choix de zone, crédit de carte visible au chargement, état vide des amis après chargement, règle de pseudo « 3 à 30 caractères »). Écartés par Gabriel : annonces d'état masquées pour les lecteurs d'écran. CADRAGE et ARCHITECTURE assouplis (2 novembre) : le clic sur « Utiliser ma position actuelle » vaut consentement, reprise de brouillon discrète, liste alternative hors choix de zone.
