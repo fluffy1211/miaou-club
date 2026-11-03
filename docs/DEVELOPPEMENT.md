@@ -18,7 +18,7 @@ Règles : [CADRAGE.md](CADRAGE.md) · Montage : [ARCHITECTURE.md](ARCHITECTURE.m
 | Hotfix | Depuis main, PR vers main, report immédiat develop |
 
 Pas de push forcé ; PR/contrôles requis, pas d'approbateur supplémentaire obligatoire en solo. Préserver l'historique commun main/develop. Conventional Commits proposé ; versions 0.x pour les tests puis 1.0.0 pour un lancement validé proposées. Pas de changement version pour chaque tâche documentaire.
-Protections à configurer au lot GitHub après inspection permissions/offre ; elles ne sont pas déjà appliquées.
+Protections actives sur `develop` et `main` (constat du 3 novembre 2026) : PR obligatoire, check `verify` requis sur une branche à jour, push forcé interdit. Le ruleset Copilot (voir [pratiques IA](#ia)) demande une revue sans la rendre bloquante.
 
 <a id="review"></a>
 
