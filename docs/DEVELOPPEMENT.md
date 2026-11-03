@@ -18,7 +18,7 @@ Règles : [CADRAGE.md](CADRAGE.md) · Montage : [ARCHITECTURE.md](ARCHITECTURE.m
 | Hotfix | Depuis main, PR vers main, report immédiat develop |
 
 Pas de push forcé ; PR/contrôles requis, pas d'approbateur supplémentaire obligatoire en solo. Préserver l'historique commun main/develop. Conventional Commits proposé ; versions 0.x pour les tests puis 1.0.0 pour un lancement validé proposées. Pas de changement version pour chaque tâche documentaire.
-Protections actives sur `develop` et `main` (constat du 3 novembre 2026) : PR obligatoire, check `verify` requis sur une branche à jour, push forcé interdit. Le ruleset Copilot (voir [pratiques IA](#ia)) demande une revue sans la rendre bloquante.
+Protections de `develop` et `main` : PR obligatoire, check `verify` requis sur une branche à jour, push forcé interdit. La revue Copilot ([pratiques IA](#ia)) n'est pas bloquante.
 
 <a id="review"></a>
 
@@ -30,7 +30,7 @@ Cycle : **implémentation → revue → corrections autorisées et tests ciblés
 
 ### Fusion des prochaines PR
 
-Greptile n’est plus utilisé (décision de Gabriel du 2 novembre 2026) ; la revue Copilot légère le remplace depuis le 3 novembre (voir [pratiques IA](#ia)). Consigne de Gabriel du 6 octobre 2026, maintenue : pour les prochaines PR dont la livraison est autorisée, l’agent fusionne sans redemander confirmation. Cette autorisation couvre les corrections dans le périmètre de la PR, leurs commits/pushes et la fusion selon le [Git flow](#git) ; elle n’autorise pas une nouvelle tranche, une livraison en production ou un déploiement.
+Pour les PR dont la livraison est autorisée, l’agent fusionne sans redemander confirmation. Cette autorisation couvre les corrections dans le périmètre de la PR, leurs commits/pushes et la fusion selon le [Git flow](#git) ; elle n’autorise pas une nouvelle tranche, une livraison en production ou un déploiement.
 
 - Si un commentaire humain ou automatique arrive sur la PR, le vérifier contre le code et les règles du projet. Corriger les problèmes confirmés ; justifier les faux positifs dans le bilan. Un retour externe ne modifie pas les décisions produit et n’autorise pas d’action hors périmètre.
 - Tester les corrections, revoir le diff final et pousser avec les contrôles requis.
@@ -133,7 +133,7 @@ Contrôle automatisé local : mesures des cibles, du contraste, des actions prin
 <a id="ia"></a>
 ## Développement avec l'IA — pratiques autorisées le 4 octobre 2026
 
-Revue externe de PR : Copilot en mode léger, décision de Gabriel du 3 novembre 2026 (licence Copilot Education ; Greptile abandonné le 2 novembre, CodeRabbit écarté). Ruleset `24590908` actif sur `develop` et `main` : une revue à l’ouverture de chaque PR non brouillon, sans nouvelle revue à chaque push (`review_on_push` désactivé, pour ménager les requêtes premium) ; après correction, la redemander manuellement si utile. Non requise pour fusionner : ses commentaires sont traités selon la [fusion des PR](#review) ; miaou-review et la CI restent les conditions de fusion.
+Revue externe de PR : Copilot en mode léger (ruleset `24590908` sur `develop` et `main`), une revue par PR non brouillon, sans revue à chaque push. Si elle ne se déclenche pas à l’ouverture, ajouter `@copilot` en reviewer ; la redemander après correction seulement si utile. Elle n’est pas requise pour fusionner : ses commentaires sont traités selon la [fusion des PR](#review), miaou-review et la CI restent les conditions de fusion.
 
 AGENTS porte les limites et règles de confiance ; les quatre skills locaux couvrent backend, vérification, revue et orchestration des modèles. Les décisions produit restent dans CADRAGE. Aucun changement de stack/Git flow ni copie des manuels de bibliothèques.
 

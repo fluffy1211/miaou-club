@@ -1,8 +1,8 @@
 # Miaou Club — reprise
 
-## Dépôt public et revue Copilot légère — 3 novembre 2026
+## Dépôt public — 3 novembre 2026
 
-Dépôt passé en public pour les minutes Actions gratuites, après scan gitleaks de tout l’historique distant (branches et refs de PR, aucun secret) et retrait des métadonnées EXIF des photos de Figue (PR #89). Aucune licence (tous droits réservés). Réglages GitHub : environnement `preproduction` limité à `develop`, approbation des workflows pour tous les contributeurs externes, secret scanning et push protection actifs. Revue Copilot légère active ([DEVELOPPEMENT#ia](docs/DEVELOPPEMENT.md#ia)). Première revue réelle sur la PR #90 (effort Lite, deux remarques documentaires fondées et corrigées), mais obtenue par demande manuelle : la revue automatique à l’ouverture ne s’est pas déclenchée. À vérifier sur la prochaine PR ; à défaut, demander `@copilot` en reviewer à l’ouverture.
+Dépôt public, sans licence (tous droits réservés). Réglages GitHub : environnement `preproduction` limité à `develop`, approbation des workflows des contributeurs externes, secret scanning et push protection. Revue Copilot légère : voir [DEVELOPPEMENT#ia](docs/DEVELOPPEMENT.md#ia) ; vérifier sur la prochaine PR qu’elle se déclenche seule à l’ouverture.
 
 ## Passe de design systématique — 1er novembre 2026
 
